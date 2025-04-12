@@ -1,0 +1,50 @@
+# Smithery configuration file: https://smithery.ai/docs/config#smitheryyaml
+
+startCommand:
+  type: stdio
+  configSchema:
+    # JSON Schema defining the configuration options for the MCP.
+    type: object
+    required:
+      - llmProvider
+      - deepseekApiKey
+    properties:
+      llmProvider:
+        type: string
+        default: deepseek
+        description: "LLM Provider. Options: deepseek, groq, openrouter."
+      deepseekApiKey:
+        type: string
+        description: API key for DeepSeek. Required if llmProvider is 'deepseek'.
+      groqApiKey:
+        type: string
+        default: ""
+        description: API key for Groq. Required if llmProvider is 'groq'.
+      openrouterApiKey:
+        type: string
+        default: ""
+        description: API key for OpenRouter. Required if llmProvider is 'openrouter'.
+      exaApiKey:
+        type: string
+        default: ""
+        description: API key for Exa if using the Researcher agent.
+  commandFunction:
+    # A JS function that produces the CLI command based on the given config to start the MCP on stdio.
+    |-
+    (config) => ({
+      command: 'mcp-server-mas-sequential-thinking',
+      args: [],
+      env: {
+        LLM_PROVIDER: config.llmProvider,
+        DEEPSEEK_API_KEY: config.deepseekApiKey,
+        GROQ_API_KEY: config.groqApiKey,
+        OPENROUTER_API_KEY: config.openrouterApiKey,
+        EXA_API_KEY: config.exaApiKey
+      }
+    })
+  exampleConfig:
+    llmProvider: deepseek
+    deepseekApiKey: your_deepseek_api_key
+    groqApiKey: ""
+    openrouterApiKey: ""
+    exaApiKey: your_exa_api_key
