@@ -1,11 +1,12 @@
 [project]
 name = "mcp-server-mas-sequential-thinking"
-version = "0.2.3"
+version = "0.3.0"
 description = "MCP Agent Implementation for Sequential Thinking"
 readme = "README.md"
 requires-python = ">=3.10"
 authors = [
     { name = "Frad LEE", email = "fradser@gmail.com" },
+    { name = "Alain Ivars", email = "alainivars@gmail.com" },
 ]
 dependencies = [
     "agno>=0.2.4",
@@ -14,6 +15,9 @@ dependencies = [
     "python-dotenv",
     "mcp",
     "groq",
+    "ollama",
+    "openrouter",
+    "httpx[socks]>=0.28.1",
     "sqlalchemy",
 ]
 

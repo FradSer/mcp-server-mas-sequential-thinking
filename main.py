@@ -2,13 +2,14 @@ import os
 import sys
 from contextlib import asynccontextmanager
 from dataclasses import dataclass, field
-from typing import Any, AsyncIterator, Dict, List, Optional, Type, ClassVar
+from typing import AsyncIterator, Dict, List, Optional, Type, ClassVar
 
 from mcp.server.fastmcp import FastMCP
 from agno.agent import Agent
 from agno.models.base import Model
 from agno.models.deepseek import DeepSeek
 from agno.models.groq import Groq
+from agno.models.ollama import Ollama
 from agno.models.openrouter import OpenRouter
 from agno.team.team import Team
 from agno.tools.exa import ExaTools
@@ -292,6 +293,11 @@ def get_model_config() -> tuple[Type[Model], str, str]:
         team_model_id = os.environ.get("OPENROUTER_TEAM_MODEL_ID", "deepseek/deepseek-chat-v3-0324")
         agent_model_id = os.environ.get("OPENROUTER_AGENT_MODEL_ID", "deepseek/deepseek-r1")
         logger.info(f"Using OpenRouter: Team Model='{team_model_id}', Agent Model='{agent_model_id}'")
+    elif provider.lower() == "ollama":
+        ModelClass = Ollama
+        team_model_id = os.environ.get("OLLAMA_TEAM_MODEL_ID", "devstral:24b")
+        agent_model_id = os.environ.get("OLLAMA_AGENT_MODEL_ID", "devstral:24b")
+        logger.info(f"Using Ollama: Team Model='{team_model_id}', Agent Model='{agent_model_id}'")
     else:
         logger.error(f"Unsupported LLM_PROVIDER: {provider}. Defaulting to DeepSeek.")
         ModelClass = DeepSeek
@@ -801,7 +807,7 @@ async def sequentialthinking(thought: str, thoughtNumber: int, totalThoughts: in
         # Return only the error message string
         return f"Input validation failed: {e}"
     except Exception as e:
-        logger.exception(f"Error processing tool call") # Log full traceback
+        logger.exception("Error processing tool call") # Log full traceback
         # Return only the error message string
         return f"An unexpected error occurred: {str(e)}"
 

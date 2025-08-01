@@ -1,0 +1,21 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Python Debugger: Current File with Arguments",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "main.py",
+            "console": "integratedTerminal",
+            // "args": "${command:pickArgs}"
+            "env": {
+                "LLM_PROVIDER": "deepseek",
+                "DEEPSEEK_API_KEY": "your_deepseek_api_key",
+                "LLM_TEMPERATURE": "0.0"
+            }
+        }
+    ]
+}

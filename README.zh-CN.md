@@ -87,11 +87,11 @@
         "mcp-server-mas-sequential-thinking" // 或指向主脚本的路径, 例如 "main.py"
       ],
       "env": {
-        "LLM_PROVIDER": "deepseek", // 或 "groq", "openrouter"
+        "LLM_PROVIDER": "deepseek", // 或 "ollama", "groq", "openrouter"
         // "GROQ_API_KEY": "你的_groq_api_密钥", // 仅当 LLM_PROVIDER="groq" 时需要
         "DEEPSEEK_API_KEY": "你的_deepseek_api_密钥", // 默认提供商
         // "OPENROUTER_API_KEY": "你的_openrouter_api_密钥", // 仅当 LLM_PROVIDER="openrouter" 时需要
-        "DEEPSEEK_BASE_URL": "你的_base_url_如果需要", // 可选：如果为 DeepSeek 使用自定义端点
+        "LLM_BASE_URL": "你的_base_url_如果需要", // 可选：如果为 DeepSeek 使用自定义端点
         "EXA_API_KEY": "你的_exa_api_密钥" // 仅当使用 Exa 时需要
       }
     }
@@ -120,7 +120,7 @@
     # OPENROUTER_API_KEY="你的_openrouter_api_密钥"
 
     # 可选: 基础 URL 覆盖 (例如, 用于自定义 DeepSeek 端点)
-    # DEEPSEEK_BASE_URL="你的_base_url_如果需要"
+    # LLM_BASE_URL="你的_base_url_如果需要"
 
     # 可选: 为团队协调器和专家智能体指定不同的模型
     # 如果未设置这些环境变量，则代码会根据提供商设置默认值。
