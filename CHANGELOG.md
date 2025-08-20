@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.0] - 2025-08-20
+
+### Added
+- Modular architecture restructuring for improved maintainability
+
+### Fixed
+- FastMCP compatibility issue with app_lifespan function signature
+- Hotfix for v0.4.1 compatibility improvements
+
 ## [0.4.0] - 2025-08-06
 
 ### Added
@@ -86,7 +95,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - MCP server implementation with FastMCP
 - Distributed intelligence across specialized agents
 
-[Unreleased]: https://github.com/FradSer/mcp-server-mas-sequential-thinking/compare/v0.4.0...HEAD
+[Unreleased]: https://github.com/FradSer/mcp-server-mas-sequential-thinking/compare/v0.5.0...HEAD
+[0.5.0]: https://github.com/FradSer/mcp-server-mas-sequential-thinking/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/FradSer/mcp-server-mas-sequential-thinking/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/FradSer/mcp-server-mas-sequential-thinking/compare/v0.2.3...v0.3.0
 [0.2.3]: https://github.com/FradSer/mcp-server-mas-sequential-thinking/compare/v0.2.2...v0.2.3
