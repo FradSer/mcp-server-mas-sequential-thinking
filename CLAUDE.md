@@ -18,17 +18,22 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - Testing: `pytest`
 
 ### Running the Server
-- Direct execution: `uv run python main.py`
-- Using uv: `uv run mcp-server-mas-sequential-thinking`
+- Direct execution: `uv run python src/mcp_server_mas_sequential_thinking/main.py`
+- Using uv: `uv run mcp-server-mas-sequential-thinking`  
 - Package execution: `uvx mcp-server-mas-sequential-thinking`
 
 ## Project Architecture
 
-This is a Multi-Agent System (MAS) for sequential thinking built with the Agno framework and served via MCP.
+This is a Multi-Agent System (MAS) for sequential thinking built with the Agno framework and served via MCP. The project follows modern Python packaging standards with **src layout** structure.
 
 ### Core Components
 
-**Main Entry Point:** `main.py` contains all core logic:
+**Project Structure:**
+- `src/mcp_server_mas_sequential_thinking/` contains all Python modules
+- `tests/` directory with comprehensive unit and integration tests
+- `docs/` directory for documentation organization
+
+**Main Entry Point:** `src/mcp_server_mas_sequential_thinking/main.py` contains all core logic:
 - FastMCP server setup
 - ThoughtData Pydantic model for input validation
 - Multi-agent team creation and coordination
@@ -48,10 +53,15 @@ This is a Multi-Agent System (MAS) for sequential thinking built with the Agno f
 ### Configuration
 
 Environment variables control behavior:
-- `LLM_PROVIDER`: Provider selection (deepseek, groq, openrouter)
-- `{PROVIDER}_API_KEY`: API keys for each provider
+- `LLM_PROVIDER`: Provider selection (deepseek, groq, openrouter, ollama, github)
+- `{PROVIDER}_API_KEY`: API keys for each provider (e.g., `DEEPSEEK_API_KEY`, `GITHUB_TOKEN`)
 - `{PROVIDER}_{TEAM|AGENT}_MODEL_ID`: Model selection for coordinator vs specialists
 - `EXA_API_KEY`: For research capabilities
+
+**GitHub Models Support:**
+- Enhanced GitHub token validation with format checking
+- Supports PAT tokens and OAuth tokens
+- Uses custom `GitHubOpenAI` class extending OpenAI for GitHub Models API
 
 ### Data Flow
 
@@ -68,9 +78,24 @@ Environment variables control behavior:
 - **Logging:** Structured logging to `~/.sequential_thinking/logs/`
 - **Branch Management:** Supports non-linear thinking with branch tracking
 
+### Testing Architecture
+
+**Test Structure:**
+- Comprehensive test coverage with unit tests in `tests/unit/`
+- Integration tests at `tests/` root level
+- Well-organized fixtures in `tests/conftest.py`
+- Factory pattern for creating mock test data in `tests/helpers/`
+
+**Key Testing Patterns:**
+- Async test configuration with proper event loop management
+- Comprehensive mocking of external dependencies (Agno teams, API calls)
+- Validation testing for Pydantic models and error handling
+- Test-driven development approach evident in validation tests
+
 ## Important Notes
 
-- This is a high-token-usage system due to multi-agent architecture
-- All agent definitions are contained in `main.py`
-- The system supports revisions and branching for complex problem-solving
-- Configuration is entirely environment-based (no config files)
+- **High token usage**: Multi-agent architecture leads to 3-6x higher token consumption per thought
+- **Modular design**: Clean separation allows independent agent development and testing
+- **Modern Python practices**: Uses dataclasses, type hints, async/await, and pattern matching
+- **Environment-based configuration**: No config files, all settings via environment variables
+- **Comprehensive logging**: Structured logging with rotation to `~/.sequential_thinking/logs/`
