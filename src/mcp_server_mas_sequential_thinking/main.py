@@ -12,11 +12,11 @@ from pydantic import ValidationError
 from dotenv import load_dotenv
 
 # Import simplified modules
-from config import check_required_api_keys
-from models import ThoughtData
-from session import SessionMemory
-from team import create_team
-from utils import setup_logging
+from .config import check_required_api_keys
+from .models import ThoughtData
+from .session import SessionMemory
+from .team import create_team
+from .utils import setup_logging
 
 # Initialize environment and logging
 load_dotenv()

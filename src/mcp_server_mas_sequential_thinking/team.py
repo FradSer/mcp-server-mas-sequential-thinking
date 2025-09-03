@@ -2,8 +2,8 @@
 
 import logging
 from agno.team.team import Team
-from config import get_model_config
-from agents import create_all_agents
+from .config import get_model_config
+from .agents import create_all_agents
 
 logger = logging.getLogger(__name__)
 

@@ -3,7 +3,7 @@
 from dataclasses import dataclass, field
 from typing import Dict, List
 from agno.team.team import Team
-from models import ThoughtData
+from .models import ThoughtData
 
 
 @dataclass
