@@ -74,12 +74,12 @@ class StandardAgentBuilder(AgentBuilder):
         if "extra_instructions" in kwargs:
             instructions.extend(kwargs.pop("extra_instructions"))
         
-        # Determine agent name based on mode
-        name_suffix = "Enhanced" if enhanced_mode else ""
+        # Determine agent name based on mode (optimized string operations)
         clean_role = self.capability.role.replace(" ", "").replace("&", "And")
+        agent_name = f"Enhanced{clean_role}" if enhanced_mode else clean_role
         
         agent_kwargs = {
-            "name": f"{name_suffix}{clean_role}",
+            "name": agent_name,
             "role": self.capability.role,
             "description": self.capability.description,
             "tools": self.capability.create_tools(),

@@ -13,6 +13,7 @@ from .server_core import (
     create_server_lifespan, 
     create_validated_thought_data,
     ProcessingError,
+    ServerConfig,
     ServerState,
     ThoughtProcessor,
 )
@@ -166,7 +167,7 @@ async def sequentialthinking(
 
 def run() -> None:
     """Run the MCP server with enhanced error handling and graceful shutdown."""
-    config = ServerConfig.from_env()
+    config = ServerConfig.from_environment()
     logger.info(f"Starting Sequential Thinking Server with {config.provider} provider")
 
     try:

@@ -180,7 +180,8 @@ class UnifiedTeamFactory:
     def create_team(self, team_type: str = "standard", config: Optional[ModelConfig] = None) -> Team:
         """Create team using unified factory with simplified logic."""
         if team_type not in self._builders:
-            raise ValueError(f"Unknown team type: {team_type}. Available: {list(self._builders.keys())}")
+            available_types = ', '.join(sorted(self._builders.keys()))
+            raise ValueError(f"Unknown team type '{team_type}'. Available types: {available_types}")
         
         if config is None:
             config = get_model_config()

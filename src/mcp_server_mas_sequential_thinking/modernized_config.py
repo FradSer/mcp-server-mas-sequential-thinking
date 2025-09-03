@@ -111,7 +111,7 @@ class BaseProviderStrategy(ABC):
 
     def _get_env_with_fallback(self, env_var: str, fallback: str) -> str:
         """Get environment variable with fallback to default."""
-        value = os.environ.get(env_var)
+        value = os.environ.get(env_var, "").strip()
         return value if value else fallback
 
     def get_config(self) -> ModelConfig:
@@ -125,10 +125,11 @@ class BaseProviderStrategy(ABC):
             f"{prefix}_AGENT_MODEL_ID", self.default_agent_model
         )
 
-        # Get API key with proper None handling
-        api_key = os.environ.get(self.api_key_name) if self.api_key_name else None
-        if api_key == "":
-            api_key = None
+        # Get API key with enhanced validation and None handling
+        api_key = None
+        if self.api_key_name:
+            api_key = os.environ.get(self.api_key_name, "").strip()
+            api_key = api_key if api_key else None
 
         return ModelConfig(
             provider_class=self.provider_class,

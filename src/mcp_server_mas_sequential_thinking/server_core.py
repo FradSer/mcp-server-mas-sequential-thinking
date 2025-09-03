@@ -216,21 +216,25 @@ class ThoughtProcessor:
             raise ProcessingError(f"Team coordination failed: {e}") from e
     
     def _build_context_prompt(self, thought_data: ThoughtData) -> str:
-        """Build context-aware input prompt using pattern matching."""
-        components = [f"Process Thought #{thought_data.thought_number}:\n"]
+        """Build context-aware input prompt with optimized string construction."""
+        # Pre-calculate base components for efficiency
+        base = f"Process Thought #{thought_data.thought_number}:\n"
+        content = f'\nThought Content: "{thought_data.thought}"'
         
-        # Add context using pattern matching for cleaner logic
+        # Add context using pattern matching with optimized string building
         match thought_data:
             case ThoughtData(is_revision=True, revises_thought=revision_num) if revision_num:
                 original = self._session.find_thought_content(revision_num)
-                components.append(f'**REVISION of Thought #{revision_num}** (Original: "{original}")\n')
+                context = f'**REVISION of Thought #{revision_num}** (Original: "{original}")\n'
+                return f"{base}{context}{content}"
             
             case ThoughtData(branch_from=branch_from, branch_id=branch_id) if branch_from and branch_id:
                 origin = self._session.find_thought_content(branch_from)
-                components.append(f'**BRANCH (ID: {branch_id}) from Thought #{branch_from}** (Origin: "{origin}")\n')
-        
-        components.append(f'\nThought Content: "{thought_data.thought}"')
-        return "".join(components)
+                context = f'**BRANCH (ID: {branch_id}) from Thought #{branch_from}** (Origin: "{origin}")\n'
+                return f"{base}{context}{content}"
+            
+            case _:
+                return f"{base}{content}"
     
     def _format_response(self, content: str, thought_data: ThoughtData) -> str:
         """Format response with appropriate guidance."""
