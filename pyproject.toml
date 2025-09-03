@@ -2,7 +2,7 @@
 name = "mcp-server-mas-sequential-thinking"
 version = "0.4.0"
 description = "MCP Agent Implementation for Sequential Thinking"
-readme = "docs/guides/README.md"
+readme = "README.md"
 requires-python = ">=3.10"
 authors = [
     { name = "Frad LEE", email = "fradser@gmail.com" },

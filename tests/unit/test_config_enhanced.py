@@ -3,7 +3,7 @@
 import pytest
 from unittest.mock import MagicMock
 
-from config import (
+from src.mcp_server_mas_sequential_thinking.config import (
     get_model_config,
     check_required_api_keys,
     DeepSeekStrategy,

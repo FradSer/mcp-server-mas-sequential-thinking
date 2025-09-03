@@ -2,8 +2,8 @@
 
 import pytest
 
-from main import _create_validated_thought_data
-from models import ThoughtData
+from src.mcp_server_mas_sequential_thinking.main import _create_validated_thought_data
+from src.mcp_server_mas_sequential_thinking.models import ThoughtData
 
 
 class TestCreateValidatedThoughtData:

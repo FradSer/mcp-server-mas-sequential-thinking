@@ -3,7 +3,7 @@
 import pytest
 from unittest.mock import patch, MagicMock
 
-from team import create_team, COORDINATOR_INSTRUCTIONS
+from src.mcp_server_mas_sequential_thinking.team import create_team, COORDINATOR_INSTRUCTIONS
 from agno.team.team import Team
 from tests.helpers.mocks import MockModelConfig
 
@@ -73,8 +73,8 @@ class TestCoordinatorInstructions:
 class TestTeamCreation:
     """Test team creation functionality."""
 
-    @patch("team.get_model_config")
-    @patch("team.create_all_agents")
+    @patch("src.mcp_server_mas_sequential_thinking.team.get_model_config")
+    @patch("src.mcp_server_mas_sequential_thinking.team.create_all_agents")
     def test_create_team_basic(self, mock_create_agents, mock_get_config):
         """Test basic team creation."""
         # Setup mocks
@@ -106,8 +106,8 @@ class TestTeamCreation:
         assert team.description == "Coordinator for sequential thinking specialist team"
         assert team.instructions == COORDINATOR_INSTRUCTIONS
 
-    @patch("team.get_model_config")
-    @patch("team.create_all_agents")
+    @patch("src.mcp_server_mas_sequential_thinking.team.get_model_config")
+    @patch("src.mcp_server_mas_sequential_thinking.team.create_all_agents")
     def test_team_model_configuration(self, mock_create_agents, mock_get_config):
         """Test team model configuration."""
         # Setup mocks
@@ -127,8 +127,8 @@ class TestTeamCreation:
         mock_model_class.assert_called_with(id="custom-team-model")
         assert team.model is not None
 
-    @patch("team.get_model_config")
-    @patch("team.create_all_agents")
+    @patch("src.mcp_server_mas_sequential_thinking.team.get_model_config")
+    @patch("src.mcp_server_mas_sequential_thinking.team.create_all_agents")
     def test_agent_model_configuration(self, mock_create_agents, mock_get_config):
         """Test agent model configuration."""
         # Setup mocks
@@ -150,8 +150,8 @@ class TestTeamCreation:
         mock_model_class.assert_any_call(id="agent-model")
         mock_create_agents.assert_called_once()
 
-    @patch("team.get_model_config")
-    @patch("team.create_all_agents")
+    @patch("src.mcp_server_mas_sequential_thinking.team.get_model_config")
+    @patch("src.mcp_server_mas_sequential_thinking.team.create_all_agents")
     def test_team_success_criteria(self, mock_create_agents, mock_get_config):
         """Test team success criteria configuration."""
         # Setup mocks
@@ -169,8 +169,8 @@ class TestTeamCreation:
         assert "synthesize" in criteria_text.lower()
         assert "recommend" in criteria_text.lower()
 
-    @patch("team.get_model_config")
-    @patch("team.create_all_agents")
+    @patch("src.mcp_server_mas_sequential_thinking.team.get_model_config")
+    @patch("src.mcp_server_mas_sequential_thinking.team.create_all_agents")
     def test_team_configuration_flags(self, mock_create_agents, mock_get_config):
         """Test team configuration flags."""
         # Setup mocks
@@ -187,9 +187,9 @@ class TestTeamCreation:
         assert team.markdown is True
         assert team.add_datetime_to_instructions is True
 
-    @patch("team.get_model_config")
-    @patch("team.create_all_agents")
-    @patch("team.logger")
+    @patch("src.mcp_server_mas_sequential_thinking.team.get_model_config")
+    @patch("src.mcp_server_mas_sequential_thinking.team.create_all_agents")
+    @patch("src.mcp_server_mas_sequential_thinking.team.logger")
     def test_team_creation_logging(
         self, mock_logger, mock_create_agents, mock_get_config
     ):
@@ -210,8 +210,8 @@ class TestTeamCreation:
         assert "TestModel" in log_call_args
         assert "provider" in log_call_args
 
-    @patch("team.get_model_config")
-    @patch("team.create_all_agents")
+    @patch("src.mcp_server_mas_sequential_thinking.team.get_model_config")
+    @patch("src.mcp_server_mas_sequential_thinking.team.create_all_agents")
     def test_team_member_assignment(self, mock_create_agents, mock_get_config):
         """Test that all agents are assigned as team members."""
         # Setup mocks
@@ -236,8 +236,8 @@ class TestTeamCreation:
         expected_names = ["Planner", "Researcher", "Analyzer", "Critic", "Synthesizer"]
         assert all(name in member_names for name in expected_names)
 
-    @patch("team.get_model_config")
-    @patch("team.create_all_agents")
+    @patch("src.mcp_server_mas_sequential_thinking.team.get_model_config")
+    @patch("src.mcp_server_mas_sequential_thinking.team.create_all_agents")
     def test_config_error_handling(self, mock_create_agents, mock_get_config):
         """Test handling of configuration errors."""
         # Setup mock to raise exception
@@ -247,8 +247,8 @@ class TestTeamCreation:
         with pytest.raises(Exception, match="Config error"):
             create_team()
 
-    @patch("team.get_model_config")
-    @patch("team.create_all_agents")
+    @patch("src.mcp_server_mas_sequential_thinking.team.get_model_config")
+    @patch("src.mcp_server_mas_sequential_thinking.team.create_all_agents")
     def test_agent_creation_error_handling(self, mock_create_agents, mock_get_config):
         """Test handling of agent creation errors."""
         # Setup mocks
@@ -260,8 +260,8 @@ class TestTeamCreation:
         with pytest.raises(Exception, match="Agent creation error"):
             create_team()
 
-    @patch("team.get_model_config")
-    @patch("team.create_all_agents")
+    @patch("src.mcp_server_mas_sequential_thinking.team.get_model_config")
+    @patch("src.mcp_server_mas_sequential_thinking.team.create_all_agents")
     def test_different_provider_configurations(
         self, mock_create_agents, mock_get_config
     ):

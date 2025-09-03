@@ -4,7 +4,7 @@ import pytest
 from hypothesis import given, strategies as st
 from pydantic import ValidationError
 
-from models import ThoughtData, ValidationRule, ThoughtType
+from src.mcp_server_mas_sequential_thinking.models import ThoughtData, ValidationRule, ThoughtType
 from tests.helpers.factories import ThoughtDataBuilder, ThoughtSequenceFactory
 
 
