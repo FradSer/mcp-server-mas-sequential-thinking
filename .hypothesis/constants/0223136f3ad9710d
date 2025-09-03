@@ -1,4 +1,0 @@
-# file: /Users/FradSer/.mcp-server/mcp-server-mas-sequential-thinking/config.py
-# hypothesis_version: 6.138.2
-
-['DEEPSEEK_API_KEY', 'EXA_API_KEY', 'GITHUB_TOKEN', 'GROQ_API_KEY', 'LLM_PROVIDER', 'OPENROUTER_API_KEY', 'Strategy', 'api_key', 'base_url', 'deepseek', 'deepseek-chat', 'deepseek/deepseek-r1', 'devstral:24b', 'gho_', 'ghp_', 'ghu_', 'github', 'github_pat_', 'groq', 'ollama', 'openai/gpt-5', 'openai/gpt-5-min', 'openrouter', 'qwen-2.5-32b']
