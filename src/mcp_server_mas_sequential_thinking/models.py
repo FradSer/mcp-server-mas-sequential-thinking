@@ -14,30 +14,36 @@ class ThoughtType(Enum):
 
 
 def _validate_thought_relationships(data: dict) -> None:
-    """Validate thought relationships with simplified logic."""
-    errors = []
-    
-    # Extract values once for efficiency
+    """Validate thought relationships with optimized validation logic."""
+    # Extract values once with modern dict methods
     is_revision = data.get("is_revision", False)
     revises_thought = data.get("revises_thought")
-    branch_from = data.get("branch_from")
+    branch_from = data.get("branch_from") 
     branch_id = data.get("branch_id")
     current_number = data.get("thought_number")
     
-    # Validation rules with early returns for efficiency
+    # Collect validation errors efficiently
+    errors = []
+    
+    # Relationship validation with guard clauses
     if revises_thought is not None and not is_revision:
         errors.append("revises_thought requires is_revision=True")
     
     if branch_id is not None and branch_from is None:
         errors.append("branch_id requires branch_from to be set")
     
-    # Number validations only if current_number exists
-    if current_number is not None:
-        if revises_thought is not None and revises_thought >= current_number:
-            errors.append("revises_thought must be less than current thought_number")
+    # Numeric validation with early exit
+    if current_number is None:
+        if errors:
+            raise ValueError("; ".join(errors))
+        return
         
-        if branch_from is not None and branch_from >= current_number:
-            errors.append("branch_from must be less than current thought_number")
+    # Validate numeric relationships
+    if revises_thought is not None and revises_thought >= current_number:
+        errors.append("revises_thought must be less than current thought_number")
+        
+    if branch_from is not None and branch_from >= current_number:
+        errors.append("branch_from must be less than current thought_number")
     
     if errors:
         raise ValueError("; ".join(errors))
@@ -91,12 +97,17 @@ class ThoughtData(BaseModel):
         return data
 
     def format_for_log(self) -> str:
-        """Format thought for logging with type-specific prefix."""
-        formatters = {
-            ThoughtType.REVISION: lambda: f"Revision {self.thought_number}/{self.total_thoughts} (revising #{self.revises_thought})",
-            ThoughtType.BRANCH: lambda: f"Branch {self.thought_number}/{self.total_thoughts} (from #{self.branch_from}, ID: {self.branch_id})",
-            ThoughtType.STANDARD: lambda: f"Thought {self.thought_number}/{self.total_thoughts}",
-        }
+        """Format thought for logging with optimized type-specific formatting."""
+        # Use match statement for modern Python pattern matching
+        match self.thought_type:
+            case ThoughtType.REVISION:
+                prefix = f"Revision {self.thought_number}/{self.total_thoughts} (revising #{self.revises_thought})"
+            case ThoughtType.BRANCH:
+                prefix = f"Branch {self.thought_number}/{self.total_thoughts} (from #{self.branch_from}, ID: {self.branch_id})"
+            case _:  # ThoughtType.STANDARD
+                prefix = f"Thought {self.thought_number}/{self.total_thoughts}"
 
-        prefix = formatters[self.thought_type]()
-        return f"{prefix}\n  Content: {self.thought}\n  Next: {self.next_needed}, More: {self.needs_more}"
+        # Use multiline string formatting for better readability
+        return (f"{prefix}\n"
+                f"  Content: {self.thought}\n"  
+                f"  Next: {self.next_needed}, More: {self.needs_more}")

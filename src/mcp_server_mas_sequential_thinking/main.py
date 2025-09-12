@@ -1,6 +1,7 @@
 """Refactored MCP Sequential Thinking Server with separated concerns and reduced complexity."""
 
 import sys
+from html import escape
 from typing import AsyncIterator
 
 from mcp.server.fastmcp import FastMCP
@@ -46,12 +47,31 @@ async def app_lifespan(app) -> AsyncIterator[None]:
 mcp = FastMCP(lifespan=app_lifespan)
 
 
+def sanitize_and_validate_input(text: str, max_length: int, field_name: str) -> str:
+    """Sanitize and validate input with efficient error handling and modern idioms."""
+    # Early validation with guard clause
+    if not text or not text.strip():
+        raise ValueError(f"{field_name} cannot be empty")
+    
+    # Sanitize once with chained operations
+    sanitized_text = escape(text.strip())
+    
+    # Length validation with descriptive error
+    if len(sanitized_text) > max_length:
+        raise ValueError(f"{field_name} exceeds maximum length of {max_length} characters")
+    
+    return sanitized_text
+
+
 @mcp.prompt("sequential-thinking")
 def sequential_thinking_prompt(problem: str, context: str = "") -> list[dict]:
     """Enhanced starter prompt for sequential thinking with better formatting."""
-    # Sanitize inputs
-    problem = problem.strip()[:500]  # Limit problem length
-    context = context.strip()[:300] if context else ""
+    # Sanitize and validate inputs
+    try:
+        problem = sanitize_and_validate_input(problem, 500, "Problem statement")
+        context = sanitize_and_validate_input(context, 300, "Context") if context else ""
+    except ValueError as e:
+        raise ValueError(f"Input validation failed: {e}")
 
     user_prompt = f"""Initiate sequential thinking for: {problem}
 {f'Context: {context}' if context else ''}"""

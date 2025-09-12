@@ -8,23 +8,50 @@ from .models import ThoughtData
 
 @dataclass
 class SessionMemory:
-    """Manages thought history and branches for a session with optimized lookups."""
+    """Manages thought history and branches with optimized lookups and DoS protection."""
 
     team: Team
     thought_history: List[ThoughtData] = field(default_factory=list)
     branches: Dict[str, List[ThoughtData]] = field(default_factory=dict)
-    # Optimization: Cache for faster thought lookups by number
-    _thought_cache: Dict[int, ThoughtData] = field(default_factory=dict, init=False)
+    # High-performance cache for O(1) thought lookups by number
+    _thought_cache: Dict[int, ThoughtData] = field(default_factory=dict, init=False, repr=False)
+
+    # DoS protection constants as class attributes
+    MAX_THOUGHTS_PER_SESSION: int = 1000
+    MAX_BRANCHES_PER_SESSION: int = 50
+    MAX_THOUGHTS_PER_BRANCH: int = 100
 
     def add_thought(self, thought: ThoughtData) -> None:
-        """Add a thought to history and manage branches with optimization."""
+        """Add thought with efficient DoS protection and optimized branch management."""
+        # Early DoS protection checks with descriptive errors
+        self._validate_session_limits(thought)
+        
+        # Update data structures atomically
         self.thought_history.append(thought)
-        # Update cache for faster lookups
         self._thought_cache[thought.thought_number] = thought
 
-        # Handle branching with optimized logic
+        # Handle branching with optimized setdefault pattern
         if thought.branch_from is not None and thought.branch_id is not None:
             self.branches.setdefault(thought.branch_id, []).append(thought)
+    
+    def _validate_session_limits(self, thought: ThoughtData) -> None:
+        """Validate session limits with early exit optimization."""
+        # Primary session limit check
+        if len(self.thought_history) >= self.MAX_THOUGHTS_PER_SESSION:
+            raise ValueError(f"Session exceeds maximum {self.MAX_THOUGHTS_PER_SESSION} thoughts")
+        
+        # Branch-specific validations only if needed
+        if not thought.branch_id:
+            return
+            
+        # Check total branch limit
+        if len(self.branches) >= self.MAX_BRANCHES_PER_SESSION:
+            raise ValueError(f"Session exceeds maximum {self.MAX_BRANCHES_PER_SESSION} branches")
+        
+        # Check individual branch limit
+        if (thought.branch_id in self.branches and 
+            len(self.branches[thought.branch_id]) >= self.MAX_THOUGHTS_PER_BRANCH):
+            raise ValueError(f"Branch '{thought.branch_id}' exceeds maximum {self.MAX_THOUGHTS_PER_BRANCH} thoughts")
 
     def find_thought_content(self, thought_number: int) -> str:
         """Find the content of a specific thought by number using optimized cache lookup."""

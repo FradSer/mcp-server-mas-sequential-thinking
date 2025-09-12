@@ -3,7 +3,7 @@
 import pytest
 from unittest.mock import patch, MagicMock
 
-from src.mcp_server_mas_sequential_thinking.team import create_team, COORDINATOR_INSTRUCTIONS
+from src.mcp_server_mas_sequential_thinking.team import create_team, _STANDARD_INSTRUCTIONS, _ENHANCED_INSTRUCTIONS
 from agno.team.team import Team
 from tests.helpers.mocks import MockModelConfig
 
@@ -13,26 +13,31 @@ class TestCoordinatorInstructions:
 
     def test_coordinator_instructions_exist(self):
         """Test that coordinator instructions are defined."""
-        assert isinstance(COORDINATOR_INSTRUCTIONS, list)
-        assert len(COORDINATOR_INSTRUCTIONS) > 0
+        assert isinstance(_STANDARD_INSTRUCTIONS, list)
+        assert len(_STANDARD_INSTRUCTIONS) > 0
+        assert isinstance(_ENHANCED_INSTRUCTIONS, list)
+        assert len(_ENHANCED_INSTRUCTIONS) > 0
 
     def test_coordinator_instructions_content(self):
         """Test coordinator instruction content."""
-        instructions_text = " ".join(COORDINATOR_INSTRUCTIONS)
+        standard_text = " ".join(_STANDARD_INSTRUCTIONS)
+        enhanced_text = " ".join(_ENHANCED_INSTRUCTIONS)
 
         # Check for key coordination concepts
-        assert "coordinate" in instructions_text.lower()
-        assert "specialists" in instructions_text.lower()
-        assert "Planner" in instructions_text
-        assert "Researcher" in instructions_text
-        assert "Analyzer" in instructions_text
-        assert "Critic" in instructions_text
-        assert "Synthesizer" in instructions_text
+        assert "coordinate" in standard_text.lower()
+        assert "specialists" in standard_text.lower()
+        assert "coordinate" in enhanced_text.lower()
+        assert "specialists" in enhanced_text.lower()
+        assert "Planner" in standard_text
+        assert "Researcher" in standard_text  
+        assert "Analyzer" in standard_text
+        assert "Critic" in standard_text
+        assert "Synthesizer" in standard_text
 
     def test_coordinator_process_flow(self):
         """Test that coordinator instructions include process flow."""
         process_instruction = None
-        for instruction in COORDINATOR_INSTRUCTIONS:
+        for instruction in _STANDARD_INSTRUCTIONS:
             if "Process:" in instruction:
                 process_instruction = instruction
                 break
@@ -47,7 +52,7 @@ class TestCoordinatorInstructions:
     def test_recommendation_format(self):
         """Test that coordinator instructions include recommendation format."""
         recommendation_instruction = None
-        for instruction in COORDINATOR_INSTRUCTIONS:
+        for instruction in _STANDARD_INSTRUCTIONS:
             if "RECOMMENDATION" in instruction:
                 recommendation_instruction = instruction
                 break
@@ -61,7 +66,7 @@ class TestCoordinatorInstructions:
     def test_efficiency_emphasis(self):
         """Test that coordinator instructions emphasize efficiency."""
         efficiency_instruction = None
-        for instruction in COORDINATOR_INSTRUCTIONS:
+        for instruction in _STANDARD_INSTRUCTIONS:
             if "efficiency" in instruction.lower():
                 efficiency_instruction = instruction
                 break
@@ -74,8 +79,8 @@ class TestTeamCreation:
     """Test team creation functionality."""
 
     @patch("src.mcp_server_mas_sequential_thinking.team.get_model_config")
-    @patch("src.mcp_server_mas_sequential_thinking.team.create_all_agents")
-    def test_create_team_basic(self, mock_create_agents, mock_get_config):
+    @patch("src.mcp_server_mas_sequential_thinking.team.UnifiedAgentFactory")
+    def test_create_team_basic(self, mock_agent_factory, mock_get_config):
         """Test basic team creation."""
         # Setup mocks
         mock_model_class = MagicMock()
@@ -86,14 +91,17 @@ class TestTeamCreation:
         )
         mock_get_config.return_value = mock_config
 
+        # Mock factory instance and its methods
+        mock_factory_instance = MagicMock()
         mock_agents = {
             "planner": MagicMock(),
-            "researcher": MagicMock(),
+            "researcher": MagicMock(), 
             "analyzer": MagicMock(),
             "critic": MagicMock(),
             "synthesizer": MagicMock(),
         }
-        mock_create_agents.return_value = mock_agents
+        mock_factory_instance.create_team_agents.return_value = mock_agents
+        mock_agent_factory.return_value = mock_factory_instance
 
         # Create team
         team = create_team()
@@ -107,11 +115,11 @@ class TestTeamCreation:
         assert team.determine_input_for_members is True
         assert len(team.members) == 5
         assert team.description == "Coordinator for sequential thinking specialist team"
-        assert team.instructions == COORDINATOR_INSTRUCTIONS
+        assert team.instructions == _STANDARD_INSTRUCTIONS
 
     @patch("src.mcp_server_mas_sequential_thinking.team.get_model_config")
-    @patch("src.mcp_server_mas_sequential_thinking.team.create_all_agents")
-    def test_team_model_configuration(self, mock_create_agents, mock_get_config):
+    @patch("src.mcp_server_mas_sequential_thinking.team.UnifiedAgentFactory")
+    def test_team_model_configuration(self, mock_agent_factory, mock_get_config):
         """Test team model configuration."""
         # Setup mocks
         mock_model_class = MagicMock()
@@ -121,7 +129,7 @@ class TestTeamCreation:
             agent_model_id="custom-agent-model",
         )
         mock_get_config.return_value = mock_config
-        mock_create_agents.return_value = {"planner": MagicMock()}
+        mock_agent_factory.return_value = {"planner": MagicMock()}
 
         # Create team
         team = create_team()
@@ -131,8 +139,8 @@ class TestTeamCreation:
         assert team.model is not None
 
     @patch("src.mcp_server_mas_sequential_thinking.team.get_model_config")
-    @patch("src.mcp_server_mas_sequential_thinking.team.create_all_agents")
-    def test_agent_model_configuration(self, mock_create_agents, mock_get_config):
+    @patch("src.mcp_server_mas_sequential_thinking.team.UnifiedAgentFactory")
+    def test_agent_model_configuration(self, mock_agent_factory, mock_get_config):
         """Test agent model configuration."""
         # Setup mocks
         mock_model_class = MagicMock()
@@ -142,7 +150,7 @@ class TestTeamCreation:
             agent_model_id="agent-model",
         )
         mock_get_config.return_value = mock_config
-        mock_create_agents.return_value = {"planner": MagicMock()}
+        mock_agent_factory.return_value = {"planner": MagicMock()}
 
         # Create team
         create_team()
@@ -151,16 +159,16 @@ class TestTeamCreation:
         assert mock_model_class.call_count == 2  # Called for both team and agent models
         mock_model_class.assert_any_call(id="team-model")
         mock_model_class.assert_any_call(id="agent-model")
-        mock_create_agents.assert_called_once()
+        mock_agent_factory.assert_called_once()
 
     @patch("src.mcp_server_mas_sequential_thinking.team.get_model_config")
-    @patch("src.mcp_server_mas_sequential_thinking.team.create_all_agents")
-    def test_team_success_criteria(self, mock_create_agents, mock_get_config):
+    @patch("src.mcp_server_mas_sequential_thinking.team.UnifiedAgentFactory")
+    def test_team_success_criteria(self, mock_agent_factory, mock_get_config):
         """Test team success criteria configuration."""
         # Setup mocks
         mock_config = MockModelConfig()
         mock_get_config.return_value = mock_config
-        mock_create_agents.return_value = {"planner": MagicMock()}
+        mock_agent_factory.return_value = {"planner": MagicMock()}
 
         # Create team
         team = create_team()
@@ -173,13 +181,13 @@ class TestTeamCreation:
         assert "recommend" in criteria_text.lower()
 
     @patch("src.mcp_server_mas_sequential_thinking.team.get_model_config")
-    @patch("src.mcp_server_mas_sequential_thinking.team.create_all_agents")
-    def test_team_configuration_flags(self, mock_create_agents, mock_get_config):
+    @patch("src.mcp_server_mas_sequential_thinking.team.UnifiedAgentFactory")
+    def test_team_configuration_flags(self, mock_agent_factory, mock_get_config):
         """Test team configuration flags."""
         # Setup mocks
         mock_config = MockModelConfig()
         mock_get_config.return_value = mock_config
-        mock_create_agents.return_value = {"planner": MagicMock()}
+        mock_agent_factory.return_value = {"planner": MagicMock()}
 
         # Create team
         team = create_team()
@@ -191,10 +199,10 @@ class TestTeamCreation:
         # v2: add_datetime_to_instructions removed - teams handle datetime internally
 
     @patch("src.mcp_server_mas_sequential_thinking.team.get_model_config")
-    @patch("src.mcp_server_mas_sequential_thinking.team.create_all_agents")
+    @patch("src.mcp_server_mas_sequential_thinking.team.UnifiedAgentFactory")
     @patch("src.mcp_server_mas_sequential_thinking.team.logger")
     def test_team_creation_logging(
-        self, mock_logger, mock_create_agents, mock_get_config
+        self, mock_logger, mock_agent_factory, mock_get_config
     ):
         """Test team creation logging."""
         # Setup mocks
@@ -202,7 +210,7 @@ class TestTeamCreation:
         mock_model_class.__name__ = "TestModel"
         mock_config = MockModelConfig(provider_class=mock_model_class)
         mock_get_config.return_value = mock_config
-        mock_create_agents.return_value = {"planner": MagicMock()}
+        mock_agent_factory.return_value = {"planner": MagicMock()}
 
         # Create team
         create_team()
@@ -214,8 +222,8 @@ class TestTeamCreation:
         assert "provider" in log_call_args
 
     @patch("src.mcp_server_mas_sequential_thinking.team.get_model_config")
-    @patch("src.mcp_server_mas_sequential_thinking.team.create_all_agents")
-    def test_team_member_assignment(self, mock_create_agents, mock_get_config):
+    @patch("src.mcp_server_mas_sequential_thinking.team.UnifiedAgentFactory")
+    def test_team_member_assignment(self, mock_agent_factory, mock_get_config):
         """Test that all agents are assigned as team members."""
         # Setup mocks
         mock_config = MockModelConfig()
@@ -228,7 +236,7 @@ class TestTeamCreation:
             "critic": MagicMock(name="Critic"),
             "synthesizer": MagicMock(name="Synthesizer"),
         }
-        mock_create_agents.return_value = mock_agents
+        mock_agent_factory.return_value = mock_agents
 
         # Create team
         team = create_team()
@@ -240,8 +248,8 @@ class TestTeamCreation:
         assert all(name in member_names for name in expected_names)
 
     @patch("src.mcp_server_mas_sequential_thinking.team.get_model_config")
-    @patch("src.mcp_server_mas_sequential_thinking.team.create_all_agents")
-    def test_config_error_handling(self, mock_create_agents, mock_get_config):
+    @patch("src.mcp_server_mas_sequential_thinking.team.UnifiedAgentFactory")
+    def test_config_error_handling(self, mock_agent_factory, mock_get_config):
         """Test handling of configuration errors."""
         # Setup mock to raise exception
         mock_get_config.side_effect = Exception("Config error")
@@ -251,22 +259,22 @@ class TestTeamCreation:
             create_team()
 
     @patch("src.mcp_server_mas_sequential_thinking.team.get_model_config")
-    @patch("src.mcp_server_mas_sequential_thinking.team.create_all_agents")
-    def test_agent_creation_error_handling(self, mock_create_agents, mock_get_config):
+    @patch("src.mcp_server_mas_sequential_thinking.team.UnifiedAgentFactory")
+    def test_agent_creation_error_handling(self, mock_agent_factory, mock_get_config):
         """Test handling of agent creation errors."""
         # Setup mocks
         mock_config = MockModelConfig()
         mock_get_config.return_value = mock_config
-        mock_create_agents.side_effect = Exception("Agent creation error")
+        mock_agent_factory.side_effect = Exception("Agent creation error")
 
         # Should propagate the exception
         with pytest.raises(Exception, match="Agent creation error"):
             create_team()
 
     @patch("src.mcp_server_mas_sequential_thinking.team.get_model_config")
-    @patch("src.mcp_server_mas_sequential_thinking.team.create_all_agents")
+    @patch("src.mcp_server_mas_sequential_thinking.team.UnifiedAgentFactory")
     def test_different_provider_configurations(
-        self, mock_create_agents, mock_get_config
+        self, mock_agent_factory, mock_get_config
     ):
         """Test team creation with different provider configurations."""
         providers = [
@@ -285,7 +293,7 @@ class TestTeamCreation:
                 agent_model_id=agent_model,
             )
             mock_get_config.return_value = mock_config
-            mock_create_agents.return_value = {"planner": MagicMock()}
+            mock_agent_factory.return_value = {"planner": MagicMock()}
 
             # Create team
             team = create_team()
