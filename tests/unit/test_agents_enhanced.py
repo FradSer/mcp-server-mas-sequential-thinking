@@ -4,7 +4,7 @@ import pytest
 from unittest.mock import MagicMock
 
 from src.mcp_server_mas_sequential_thinking.agents import AgentFactory, AgentCapability, create_agent, create_all_agents
-from agno.tools.thinking import ThinkingTools
+from agno.tools.reasoning import ReasoningTools
 from agno.tools.exa import ExaTools
 
 
@@ -16,13 +16,13 @@ class TestAgentCapability:
         capability = AgentCapability(
             role="Test Role",
             description="Test description",
-            tools=[ThinkingTools],
+            tools=[ReasoningTools],
             role_description="Test role description",
         )
 
         assert capability.role == "Test Role"
         assert capability.description == "Test description"
-        assert capability.tools == [ThinkingTools]
+        assert capability.tools == [ReasoningTools]
         assert capability.role_description == "Test role description"
 
     def test_get_instructions(self):
@@ -30,7 +30,7 @@ class TestAgentCapability:
         capability = AgentCapability(
             role="Test Role",
             description="Test description",
-            tools=[ThinkingTools],
+            tools=[ReasoningTools],
             role_description="Test role description",
         )
 
@@ -47,14 +47,14 @@ class TestAgentCapability:
         capability = AgentCapability(
             role="Test Role",
             description="Test description",
-            tools=[ThinkingTools, ExaTools],
+            tools=[ReasoningTools, ExaTools],
             role_description="Test role description",
         )
 
         tools = capability.create_tools()
 
         assert len(tools) == 2
-        assert isinstance(tools[0], ThinkingTools)
+        assert isinstance(tools[0], ReasoningTools)
         assert isinstance(tools[1], ExaTools)
 
     def test_capability_immutability(self):
@@ -62,7 +62,7 @@ class TestAgentCapability:
         capability = AgentCapability(
             role="Test Role",
             description="Test description",
-            tools=[ThinkingTools],
+            tools=[ReasoningTools],
             role_description="Test role description",
         )
 
@@ -102,14 +102,14 @@ class TestAgentFactory:
     def test_researcher_has_research_tools(self):
         """Test that researcher has both thinking and research tools."""
         capability = AgentFactory.CAPABILITIES["researcher"]
-        assert ThinkingTools in capability.tools
+        assert ReasoningTools in capability.tools
         assert ExaTools in capability.tools
 
     def test_other_agents_have_thinking_tools(self):
         """Test that non-researcher agents have thinking tools."""
         for agent_type in ["planner", "analyzer", "critic", "synthesizer"]:
             capability = AgentFactory.CAPABILITIES[agent_type]
-            assert ThinkingTools in capability.tools
+            assert ReasoningTools in capability.tools
 
     def test_create_agent_valid_type(self):
         """Test creating agents with valid types."""
@@ -177,7 +177,7 @@ class TestAgentFactory:
 
         assert len(researcher.tools) == 2
         tool_types = [type(tool) for tool in researcher.tools]
-        assert ThinkingTools in tool_types
+        assert ReasoningTools in tool_types
         assert ExaTools in tool_types
 
     def test_agent_configuration_consistency(self):
@@ -252,7 +252,7 @@ class TestAgentSpecializations:
         assert "Strategic Planner" in capability.role
         assert "strategic plans" in capability.description
         assert "roadmaps" in capability.role_description
-        assert ThinkingTools in capability.tools
+        assert ReasoningTools in capability.tools
 
     def test_researcher_specialization(self):
         """Test researcher agent configuration."""
@@ -261,7 +261,7 @@ class TestAgentSpecializations:
         assert "Information Gatherer" in capability.role
         assert "Gathers and validates" in capability.description
         assert "research tools" in capability.role_description
-        assert ThinkingTools in capability.tools
+        assert ReasoningTools in capability.tools
         assert ExaTools in capability.tools
 
     def test_analyzer_specialization(self):
@@ -271,7 +271,7 @@ class TestAgentSpecializations:
         assert "Core Analyst" in capability.role
         assert "analysis" in capability.description
         assert "patterns" in capability.role_description
-        assert ThinkingTools in capability.tools
+        assert ReasoningTools in capability.tools
 
     def test_critic_specialization(self):
         """Test critic agent configuration."""
@@ -280,7 +280,7 @@ class TestAgentSpecializations:
         assert "Quality Controller" in capability.role
         assert "evaluates" in capability.description
         assert "assumptions" in capability.role_description
-        assert ThinkingTools in capability.tools
+        assert ReasoningTools in capability.tools
 
     def test_synthesizer_specialization(self):
         """Test synthesizer agent configuration."""
@@ -289,7 +289,7 @@ class TestAgentSpecializations:
         assert "Integration Specialist" in capability.role
         assert "Integrates" in capability.description
         assert "synthesize" in capability.role_description
-        assert ThinkingTools in capability.tools
+        assert ReasoningTools in capability.tools
 
     def test_agent_instruction_consistency(self):
         """Test that all agents have consistent instruction structure."""

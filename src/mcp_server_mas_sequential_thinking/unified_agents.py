@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from typing import Dict, List, Type, Optional, Any
 from agno.agent import Agent
 from agno.models.base import Model
-from agno.tools.thinking import ThinkingTools
+from agno.tools.reasoning import ReasoningTools
 from agno.tools.exa import ExaTools
 
 
@@ -85,7 +85,6 @@ class StandardAgentBuilder(AgentBuilder):
             "tools": self.capability.create_tools(),
             "instructions": instructions,
             "model": model,
-            "add_datetime_to_instructions": True,
             "markdown": True,
             **kwargs,
         }
@@ -93,7 +92,7 @@ class StandardAgentBuilder(AgentBuilder):
         # Add enhancement features if enabled
         if enhanced_mode:
             if self.capability.memory_enabled:
-                agent_kwargs["enable_memory"] = True
+                agent_kwargs["enable_user_memories"] = True
             if self.capability.structured_outputs:
                 agent_kwargs["structured_outputs"] = True
 
@@ -108,7 +107,7 @@ class UnifiedAgentFactory:
         "planner": AgentCapability(
             role="Strategic Planner",
             description="Develops strategic plans and roadmaps based on delegated sub-tasks",
-            tools=[ThinkingTools],
+            tools=[ReasoningTools],
             role_description="Develop strategic plans, roadmaps, and process designs for planning-related sub-tasks",
             reasoning_level=2,
             memory_enabled=True,
@@ -117,7 +116,7 @@ class UnifiedAgentFactory:
         "researcher": AgentCapability(
             role="Information Gatherer",
             description="Gathers and validates information based on delegated research sub-tasks",
-            tools=[ThinkingTools, ExaTools],
+            tools=[ReasoningTools, ExaTools],
             role_description="Find, gather, and validate information using research tools for information-related sub-tasks",
             reasoning_level=1,
             memory_enabled=False,
@@ -126,7 +125,7 @@ class UnifiedAgentFactory:
         "analyzer": AgentCapability(
             role="Core Analyst",
             description="Performs analysis based on delegated analytical sub-tasks",
-            tools=[ThinkingTools],
+            tools=[ReasoningTools],
             role_description="Analyze patterns, evaluate logic, and generate insights for analytical sub-tasks",
             reasoning_level=2,
             memory_enabled=False,
@@ -135,7 +134,7 @@ class UnifiedAgentFactory:
         "critic": AgentCapability(
             role="Quality Controller",
             description="Critically evaluates ideas or assumptions based on delegated critique sub-tasks",
-            tools=[ThinkingTools],
+            tools=[ReasoningTools],
             role_description="Evaluate assumptions, identify flaws, and provide constructive critique for evaluation sub-tasks",
             reasoning_level=3,
             memory_enabled=False,
@@ -144,7 +143,7 @@ class UnifiedAgentFactory:
         "synthesizer": AgentCapability(
             role="Integration Specialist",
             description="Integrates information or forms conclusions based on delegated synthesis sub-tasks",
-            tools=[ThinkingTools],
+            tools=[ReasoningTools],
             role_description="Integrate information, synthesize ideas, and form conclusions for synthesis sub-tasks",
             reasoning_level=2,
             memory_enabled=True,
@@ -157,7 +156,7 @@ class UnifiedAgentFactory:
         "reasoning_planner": AgentCapability(
             role="Strategic Reasoning Planner",
             description="Advanced strategic planning with multi-step reasoning",
-            tools=[ThinkingTools],
+            tools=[ReasoningTools],
             role_description="Develop complex strategic plans using advanced reasoning patterns",
             reasoning_level=3,
             memory_enabled=True,
@@ -166,7 +165,7 @@ class UnifiedAgentFactory:
         "research_analyst": AgentCapability(
             role="Research & Analysis Specialist",
             description="Combined research and analysis with memory",
-            tools=[ThinkingTools, ExaTools],
+            tools=[ReasoningTools, ExaTools],
             role_description="Conduct research and perform analysis with context memory",
             reasoning_level=2,
             memory_enabled=True,
@@ -175,7 +174,7 @@ class UnifiedAgentFactory:
         "critical_thinker": AgentCapability(
             role="Critical Reasoning Specialist",
             description="Advanced critical thinking with structured outputs",
-            tools=[ThinkingTools],
+            tools=[ReasoningTools],
             role_description="Apply critical thinking with logical reasoning chains",
             reasoning_level=3,
             memory_enabled=False,
@@ -184,7 +183,7 @@ class UnifiedAgentFactory:
         "creative_synthesizer": AgentCapability(
             role="Creative Synthesis Specialist",
             description="Creative synthesis with multi-modal reasoning",
-            tools=[ThinkingTools],
+            tools=[ReasoningTools],
             role_description="Synthesize ideas creatively using advanced reasoning",
             reasoning_level=2,
             memory_enabled=True,

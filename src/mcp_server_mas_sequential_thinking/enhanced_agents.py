@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from typing import Dict, List, Type, Optional
 from agno.agent import Agent
 from agno.models.base import Model
-from agno.tools.thinking import ThinkingTools
+from agno.tools.reasoning import ReasoningTools
 from agno.tools.exa import ExaTools
 
 
@@ -53,7 +53,7 @@ class EnhancedAgentFactory:
         "reasoning_planner": EnhancedAgentCapability(
             role="Strategic Reasoning Planner",
             description="Advanced strategic planning with multi-step reasoning",
-            tools=[ThinkingTools],
+            tools=[ReasoningTools],
             role_description="Develop complex strategic plans using advanced reasoning patterns",
             reasoning_level=3,
             memory_enabled=True,
@@ -62,7 +62,7 @@ class EnhancedAgentFactory:
         "research_analyst": EnhancedAgentCapability(
             role="Research & Analysis Specialist",
             description="Combined research and analysis with memory",
-            tools=[ThinkingTools, ExaTools],
+            tools=[ReasoningTools, ExaTools],
             role_description="Conduct research and perform analysis with context memory",
             reasoning_level=2,
             memory_enabled=True,
@@ -71,7 +71,7 @@ class EnhancedAgentFactory:
         "critical_thinker": EnhancedAgentCapability(
             role="Critical Reasoning Specialist",
             description="Advanced critical thinking with structured outputs",
-            tools=[ThinkingTools],
+            tools=[ReasoningTools],
             role_description="Apply critical thinking with logical reasoning chains",
             reasoning_level=3,
             memory_enabled=False,
@@ -80,7 +80,7 @@ class EnhancedAgentFactory:
         "creative_synthesizer": EnhancedAgentCapability(
             role="Creative Synthesis Specialist",
             description="Creative synthesis with multi-modal reasoning",
-            tools=[ThinkingTools],
+            tools=[ReasoningTools],
             role_description="Synthesize ideas creatively using advanced reasoning",
             reasoning_level=2,
             memory_enabled=True,
@@ -121,7 +121,6 @@ class EnhancedAgentFactory:
             "tools": capability.create_tools(),
             "instructions": instructions,
             "model": model,
-            "add_datetime_to_instructions": True,
             "markdown": True,
             **kwargs,
         }
@@ -129,7 +128,7 @@ class EnhancedAgentFactory:
         # Add new Agno features if supported
         if memory_enabled:
             # Enable memory features (requires proper memory storage setup)
-            agent_kwargs["enable_memory"] = True
+            agent_kwargs["enable_user_memories"] = True
             
         if capability.structured_outputs:
             # Enable structured outputs

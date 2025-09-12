@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from typing import Dict, List, Type
 from agno.agent import Agent
 from agno.models.base import Model
-from agno.tools.thinking import ThinkingTools
+from agno.tools.reasoning import ReasoningTools
 from agno.tools.exa import ExaTools
 
 
@@ -39,31 +39,31 @@ class AgentFactory:
         "planner": AgentCapability(
             role="Strategic Planner",
             description="Develops strategic plans and roadmaps based on delegated sub-tasks",
-            tools=[ThinkingTools],
+            tools=[ReasoningTools],
             role_description="Develop strategic plans, roadmaps, and process designs for planning-related sub-tasks",
         ),
         "researcher": AgentCapability(
             role="Information Gatherer",
             description="Gathers and validates information based on delegated research sub-tasks",
-            tools=[ThinkingTools, ExaTools],
+            tools=[ReasoningTools, ExaTools],
             role_description="Find, gather, and validate information using research tools for information-related sub-tasks",
         ),
         "analyzer": AgentCapability(
             role="Core Analyst",
             description="Performs analysis based on delegated analytical sub-tasks",
-            tools=[ThinkingTools],
+            tools=[ReasoningTools],
             role_description="Analyze patterns, evaluate logic, and generate insights for analytical sub-tasks",
         ),
         "critic": AgentCapability(
             role="Quality Controller",
             description="Critically evaluates ideas or assumptions based on delegated critique sub-tasks",
-            tools=[ThinkingTools],
+            tools=[ReasoningTools],
             role_description="Evaluate assumptions, identify flaws, and provide constructive critique for evaluation sub-tasks",
         ),
         "synthesizer": AgentCapability(
             role="Integration Specialist",
             description="Integrates information or forms conclusions based on delegated synthesis sub-tasks",
-            tools=[ThinkingTools],
+            tools=[ReasoningTools],
             role_description="Integrate information, synthesize ideas, and form conclusions for synthesis sub-tasks",
         ),
     }
@@ -90,7 +90,6 @@ class AgentFactory:
             tools=capability.create_tools(),
             instructions=instructions,
             model=model,
-            add_datetime_to_instructions=True,
             markdown=True,
             **kwargs,
         )

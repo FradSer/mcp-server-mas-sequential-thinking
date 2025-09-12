@@ -6,16 +6,19 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ### Dependencies & Environment
 - Use `uv` for dependency management (preferred over pip)
-- Install dependencies: `uv pip install -e .` or `uv pip install -r requirements.txt`
-- Install dev dependencies: `uv pip install -e ".[dev]"`
+- Install dependencies: `uv pip install -e .` (uses pyproject.toml dependencies)
+- Install dev dependencies: `uv pip install -e ".[dev]"` (pytest, black, isort, mypy)
 - Upgrade agno: `uv pip install --upgrade agno`
 - Test Python imports: `uv run python -c "import agno; print('Agno imported successfully')"`
+- Project requires Python 3.10+ and uses modern packaging (PEP 621)
 
 ### Code Quality
 - Linting: `ruff check . --fix`
 - Formatting: `black .`
 - Type checking: `mypy .`
-- Testing: `pytest`
+- Testing: `pytest` (runs from tests/ directory with async support)
+- Run single test: `pytest tests/unit/test_models.py::test_thought_data_validation -v`
+- Run with coverage: `pytest --cov=src --cov-report=html`
 
 ### Running the Server
 - Direct execution: `uv run python src/mcp_server_mas_sequential_thinking/main.py`
@@ -33,22 +36,31 @@ This is a Multi-Agent System (MAS) for sequential thinking built with the Agno f
 - `tests/` directory with comprehensive unit and integration tests
 - `docs/` directory for documentation organization
 
-**Main Entry Point:** `src/mcp_server_mas_sequential_thinking/main.py` contains all core logic:
-- FastMCP server setup
-- ThoughtData Pydantic model for input validation
-- Multi-agent team creation and coordination
-- Sequential thinking tool implementation
+**Main Entry Point:** `src/mcp_server_mas_sequential_thinking/main.py` serves as the FastMCP application entry point with refactored architecture:
+- Server lifespan management and FastMCP setup
+- Core logic delegated to specialized modules:
+  - `server_core.py`: Server state, configuration, and thought processing
+  - `models.py`: Pydantic models for data validation (ThoughtData)  
+  - `team.py` / `unified_team.py`: Multi-agent team implementations
+  - `agents.py`: Individual agent definitions and roles
 
 **Agent Architecture:**
 - **Team Coordinator:** Uses Agno's `Team` object in `coordinate` mode
 - **Specialist Agents:** Planner, Researcher, Analyzer, Critic, Synthesizer
 - **Agent Flow:** Coordinator receives thoughts → delegates to specialists → synthesizes responses
 
-### Key Functions
+### Key Components
 
-**`create_sequential_thinking_team()`:** Instantiates the multi-agent team with specialized roles
-**`sequentialthinking` tool:** Core MCP tool that processes ThoughtData objects
-**`get_model_config()`:** Configures LLM providers (DeepSeek, Groq, OpenRouter)
+**Core Functions:**
+- `create_sequential_thinking_team()`: Instantiates multi-agent team with specialized roles
+- `sequentialthinking` tool (in main.py): Core MCP tool that processes ThoughtData objects  
+- `get_model_config()` (in config.py): Configures LLM providers
+
+**Architecture Modules:**
+- `ThoughtProcessor` (server_core.py): Central processing logic with async team coordination
+- `ServerState` & `ServerConfig`: State management and configuration containers
+- `SessionMemory` (session.py): In-memory state tracking with branch support
+- Multiple team implementations: `team.py`, `unified_team.py` for different coordination strategies
 
 ### Configuration
 
@@ -81,16 +93,19 @@ Environment variables control behavior:
 ### Testing Architecture
 
 **Test Structure:**
-- Comprehensive test coverage with unit tests in `tests/unit/`
-- Integration tests at `tests/` root level
+- Unit tests in `tests/unit/` with comprehensive coverage
+- Integration tests at `tests/` root level  
+- Async test configuration in `tests/pytest.ini` with coverage reporting
 - Well-organized fixtures in `tests/conftest.py`
-- Factory pattern for creating mock test data in `tests/helpers/`
+- Factory pattern for mock data in `tests/helpers/factories.py`
+- Mock utilities in `tests/helpers/mocks.py`
 
 **Key Testing Patterns:**
-- Async test configuration with proper event loop management
+- Async test configuration (`asyncio_mode = auto`) with proper event loop management
 - Comprehensive mocking of external dependencies (Agno teams, API calls)
-- Validation testing for Pydantic models and error handling
-- Test-driven development approach evident in validation tests
+- Pydantic model validation testing with error handling scenarios
+- Test-driven development approach with enhanced validation coverage
+- Performance and integration test markers for categorized test runs
 
 ## Important Notes
 

@@ -9,7 +9,7 @@ authors = [
     { name = "Alain Ivars", email = "alainivars@gmail.com" },
 ]
 dependencies = [
-    "agno>=0.2.4",
+    "agno>=2.0.0",
     "asyncio",
     "exa-py",
     "python-dotenv",

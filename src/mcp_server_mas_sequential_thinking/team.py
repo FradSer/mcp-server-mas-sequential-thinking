@@ -57,7 +57,6 @@ def create_team(enhanced: bool = None) -> Team:
     # Create and configure team
     team = Team(
         name=team_name,
-        mode="coordinate",
         members=list(agents.values()),
         model=team_model,
         description=description,
@@ -72,10 +71,13 @@ def create_team(enhanced: bool = None) -> Team:
                 "Generate structured outputs",
             ] if enhanced else [])
         ],
+        # v2 attributes replacing deprecated mode="coordinate"
+        respond_directly=False,  # Team leader processes responses from members
+        delegate_task_to_all_members=False,  # Delegate one by one
+        determine_input_for_members=True,  # Team leader synthesizes input
         enable_agentic_context=enhanced,  # Enhanced context for enhanced mode
         share_member_interactions=enhanced,  # Share interactions in enhanced mode
         markdown=True,
-        add_datetime_to_instructions=True,
     )
 
     logger.info(f"Team created with {config.provider_class.__name__} provider (enhanced={enhanced})")
@@ -101,7 +103,6 @@ def create_hybrid_team_instance() -> Team:
     # Create and configure hybrid team
     team = Team(
         name="HybridSequentialThinkingTeam",
-        mode="coordinate",
         members=list(agents.values()),
         model=team_model,
         description="Hybrid coordinator with mixed standard and enhanced capabilities",
@@ -112,10 +113,13 @@ def create_hybrid_team_instance() -> Team:
             "Synthesize responses from diverse agent capabilities",
             "Adapt delegation strategy to agent strengths",
         ],
+        # v2 attributes replacing deprecated mode="coordinate"
+        respond_directly=False,  # Team leader processes responses from members
+        delegate_task_to_all_members=False,  # Delegate one by one
+        determine_input_for_members=True,  # Team leader synthesizes input
         enable_agentic_context=True,
         share_member_interactions=True,
         markdown=True,
-        add_datetime_to_instructions=True,
     )
 
     logger.info(f"Hybrid team created with {config.provider_class.__name__} provider")

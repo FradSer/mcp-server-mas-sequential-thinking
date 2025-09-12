@@ -23,11 +23,11 @@ class TestCoordinatorInstructions:
         # Check for key coordination concepts
         assert "coordinate" in instructions_text.lower()
         assert "specialists" in instructions_text.lower()
-        assert "planner" in instructions_text
-        assert "researcher" in instructions_text
-        assert "analyzer" in instructions_text
-        assert "critic" in instructions_text
-        assert "synthesizer" in instructions_text
+        assert "Planner" in instructions_text
+        assert "Researcher" in instructions_text
+        assert "Analyzer" in instructions_text
+        assert "Critic" in instructions_text
+        assert "Synthesizer" in instructions_text
 
     def test_coordinator_process_flow(self):
         """Test that coordinator instructions include process flow."""
@@ -98,10 +98,13 @@ class TestTeamCreation:
         # Create team
         team = create_team()
 
-        # Verify team configuration
+        # Verify team configuration (v2 compatible)
         assert isinstance(team, Team)
         assert team.name == "SequentialThinkingTeam"
-        assert team.mode == "coordinate"
+        # v2: mode is removed, check new attributes instead
+        assert team.respond_directly is False
+        assert team.delegate_task_to_all_members is False
+        assert team.determine_input_for_members is True
         assert len(team.members) == 5
         assert team.description == "Coordinator for sequential thinking specialist team"
         assert team.instructions == COORDINATOR_INSTRUCTIONS
@@ -185,7 +188,7 @@ class TestTeamCreation:
         assert team.enable_agentic_context is False
         assert team.share_member_interactions is False
         assert team.markdown is True
-        assert team.add_datetime_to_instructions is True
+        # v2: add_datetime_to_instructions removed - teams handle datetime internally
 
     @patch("src.mcp_server_mas_sequential_thinking.team.get_model_config")
     @patch("src.mcp_server_mas_sequential_thinking.team.create_all_agents")

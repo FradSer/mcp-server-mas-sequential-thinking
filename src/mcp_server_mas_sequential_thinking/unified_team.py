@@ -44,19 +44,21 @@ class TeamBuilder(ABC):
         # Create agents using factory
         agents = agent_factory.create_team_agents(agent_model, team_config.team_type)
         
-        # Create team with unified configuration
+        # Create team with unified configuration (v2 compatible)
         team = Team(
             name=team_config.name,
-            mode="coordinate",
             members=list(agents.values()),
             model=team_model,
             description=team_config.description,
             instructions=team_config.instructions,
             success_criteria=team_config.success_criteria,
+            # v2 attributes replacing deprecated mode="coordinate"
+            respond_directly=False,  # Team leader processes responses from members
+            delegate_task_to_all_members=False,  # Delegate one by one
+            determine_input_for_members=True,  # Team leader synthesizes input
             enable_agentic_context=team_config.enable_advanced_features,
             share_member_interactions=team_config.enable_advanced_features,
             markdown=True,
-            add_datetime_to_instructions=True,
         )
         
         logger.info(f"Team '{team_config.name}' created with {config.provider_class.__name__} provider")
