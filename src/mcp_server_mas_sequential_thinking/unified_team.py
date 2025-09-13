@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 @dataclass(frozen=True)
 class TeamConfiguration:
     """Team configuration with all necessary settings."""
-    
+
     name: str
     description: str
     instructions: List[str]
@@ -27,23 +27,25 @@ class TeamConfiguration:
 
 class TeamBuilder(ABC):
     """Abstract builder for creating teams with different configurations."""
-    
+
     @abstractmethod
     def get_configuration(self) -> TeamConfiguration:
         """Return team configuration."""
         pass
-    
-    def build_team(self, config: ModelConfig, agent_factory: UnifiedAgentFactory) -> Team:
+
+    def build_team(
+        self, config: ModelConfig, agent_factory: UnifiedAgentFactory
+    ) -> Team:
         """Build team with specified configuration."""
         team_config = self.get_configuration()
-        
+
         # Create model instances
         team_model = config.provider_class(id=config.team_model_id)
         agent_model = config.provider_class(id=config.agent_model_id)
-        
+
         # Create agents using factory
         agents = agent_factory.create_team_agents(agent_model, team_config.team_type)
-        
+
         # Create team with unified configuration (v2 compatible)
         team = Team(
             name=team_config.name,
@@ -51,23 +53,24 @@ class TeamBuilder(ABC):
             model=team_model,
             description=team_config.description,
             instructions=team_config.instructions,
-            success_criteria=team_config.success_criteria,
             # v2 attributes replacing deprecated mode="coordinate"
             respond_directly=False,  # Team leader processes responses from members
             delegate_task_to_all_members=False,  # Delegate one by one
             determine_input_for_members=True,  # Team leader synthesizes input
-            enable_agentic_context=team_config.enable_advanced_features,
+            enable_agentic_state=team_config.enable_advanced_features,
             share_member_interactions=team_config.enable_advanced_features,
             markdown=True,
         )
-        
-        logger.info(f"Team '{team_config.name}' created with {config.provider_class.__name__} provider")
+
+        logger.info(
+            f"Team '{team_config.name}' created with {config.provider_class.__name__} provider"
+        )
         return team
 
 
 class StandardTeamBuilder(TeamBuilder):
     """Builder for standard sequential thinking team."""
-    
+
     def get_configuration(self) -> TeamConfiguration:
         return TeamConfiguration(
             name="SequentialThinkingTeam",
@@ -90,7 +93,7 @@ class StandardTeamBuilder(TeamBuilder):
 
 class EnhancedTeamBuilder(TeamBuilder):
     """Builder for enhanced team with Agno 1.8+ features."""
-    
+
     def get_configuration(self) -> TeamConfiguration:
         return TeamConfiguration(
             name="EnhancedSequentialThinkingTeam",
@@ -118,10 +121,10 @@ class EnhancedTeamBuilder(TeamBuilder):
 
 class HybridTeamBuilder(TeamBuilder):
     """Builder for hybrid team mixing standard and enhanced agents."""
-    
+
     def get_configuration(self) -> TeamConfiguration:
         return TeamConfiguration(
-            name="HybridSequentialThinkingTeam", 
+            name="HybridSequentialThinkingTeam",
             description="Hybrid coordinator with mixed standard and enhanced capabilities",
             team_type="hybrid",
             instructions=[
@@ -134,7 +137,7 @@ class HybridTeamBuilder(TeamBuilder):
             ],
             success_criteria=[
                 "Efficiently utilize both standard and enhanced specialists",
-                "Balance speed and accuracy based on task complexity", 
+                "Balance speed and accuracy based on task complexity",
                 "Synthesize responses from diverse agent capabilities",
                 "Adapt delegation strategy to agent strengths",
             ],
@@ -144,7 +147,7 @@ class HybridTeamBuilder(TeamBuilder):
 
 class EnhancedSpecializedTeamBuilder(TeamBuilder):
     """Builder for team with enhanced specialized agents only."""
-    
+
     def get_configuration(self) -> TeamConfiguration:
         return TeamConfiguration(
             name="EnhancedSpecializedThinkingTeam",
@@ -169,28 +172,32 @@ class EnhancedSpecializedTeamBuilder(TeamBuilder):
 
 class UnifiedTeamFactory:
     """Unified factory for creating all team types with eliminated conditional complexity."""
-    
+
     def __init__(self):
         self._builders = {
             "standard": StandardTeamBuilder(),
-            "enhanced": EnhancedTeamBuilder(), 
+            "enhanced": EnhancedTeamBuilder(),
             "hybrid": HybridTeamBuilder(),
             "enhanced_specialized": EnhancedSpecializedTeamBuilder(),
         }
         self._agent_factory = UnifiedAgentFactory()
-    
-    def create_team(self, team_type: str = "standard", config: Optional[ModelConfig] = None) -> Team:
+
+    def create_team(
+        self, team_type: str = "standard", config: Optional[ModelConfig] = None
+    ) -> Team:
         """Create team using unified factory with simplified logic."""
         if team_type not in self._builders:
-            available_types = ', '.join(sorted(self._builders.keys()))
-            raise ValueError(f"Unknown team type '{team_type}'. Available types: {available_types}")
-        
+            available_types = ", ".join(sorted(self._builders.keys()))
+            raise ValueError(
+                f"Unknown team type '{team_type}'. Available types: {available_types}"
+            )
+
         if config is None:
             config = get_model_config()
-        
+
         builder = self._builders[team_type]
         return builder.build_team(config, self._agent_factory)
-    
+
     def get_available_team_types(self) -> List[str]:
         """Get list of available team types."""
         return list(self._builders.keys())
@@ -199,6 +206,7 @@ class UnifiedTeamFactory:
 # Singleton instance
 _team_factory = UnifiedTeamFactory()
 
+
 # Convenience functions for backward compatibility and external use
 def create_team(config: Optional[ModelConfig] = None) -> Team:
     """Create standard team (backward compatible)."""
@@ -206,7 +214,7 @@ def create_team(config: Optional[ModelConfig] = None) -> Team:
 
 
 def create_enhanced_team(config: Optional[ModelConfig] = None) -> Team:
-    """Create enhanced team (backward compatible).""" 
+    """Create enhanced team (backward compatible)."""
     return _team_factory.create_team("enhanced", config)
 
 

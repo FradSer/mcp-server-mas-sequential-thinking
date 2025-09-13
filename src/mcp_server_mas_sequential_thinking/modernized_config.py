@@ -32,12 +32,14 @@ class GitHubOpenAI(OpenAIChat):
 
         # Length validation for classic tokens
         if token.startswith("ghp_") and len(token) != 40:
-            raise ValueError("Invalid GitHub classic PAT length. Expected 40 characters.")
+            raise ValueError(
+                "Invalid GitHub classic PAT length. Expected 40 characters."
+            )
 
     def __init__(self, **kwargs):
         # Set GitHub Models configuration
         kwargs.setdefault("base_url", "https://models.github.ai/inference")
-        
+
         if "api_key" not in kwargs:
             kwargs["api_key"] = os.environ.get("GITHUB_TOKEN")
 
@@ -54,7 +56,7 @@ class GitHubOpenAI(OpenAIChat):
 @dataclass(frozen=True)
 class ModelConfig:
     """Immutable configuration for model provider and settings."""
-    
+
     provider_class: Type[Model]
     team_model_id: str
     agent_model_id: str
@@ -63,7 +65,7 @@ class ModelConfig:
     def create_team_model(self) -> Model:
         """Create team model instance with configuration."""
         return self.provider_class(id=self.team_model_id)
-    
+
     def create_agent_model(self) -> Model:
         """Create agent model instance with configuration."""
         return self.provider_class(id=self.agent_model_id)
@@ -72,11 +74,11 @@ class ModelConfig:
 @runtime_checkable
 class ConfigurationStrategy(Protocol):
     """Protocol defining configuration strategy interface."""
-    
+
     def get_config(self) -> ModelConfig:
         """Return model configuration for this strategy."""
         ...
-    
+
     def get_required_environment_variables(self) -> Dict[str, bool]:
         """Return required environment variables and whether they're optional."""
         ...
@@ -84,7 +86,7 @@ class ConfigurationStrategy(Protocol):
 
 class BaseProviderStrategy(ABC):
     """Abstract base strategy with common functionality."""
-    
+
     @property
     @abstractmethod
     def provider_class(self) -> Type[Model]:
@@ -137,25 +139,26 @@ class BaseProviderStrategy(ABC):
             agent_model_id=agent_model,
             api_key=api_key,
         )
-    
+
     def get_required_environment_variables(self) -> Dict[str, bool]:
         """Return required environment variables."""
         env_vars = {}
-        
+
         if self.api_key_name:
             env_vars[self.api_key_name] = False  # Required
-            
+
         # Common optional environment variables
         prefix = self.__class__.__name__.replace("Strategy", "").upper()
         env_vars[f"{prefix}_TEAM_MODEL_ID"] = True  # Optional
         env_vars[f"{prefix}_AGENT_MODEL_ID"] = True  # Optional
-        
+
         return env_vars
 
 
 # Concrete strategy implementations
 class DeepSeekStrategy(BaseProviderStrategy):
     """DeepSeek provider strategy."""
+
     provider_class = DeepSeek
     default_team_model = "deepseek-chat"
     default_agent_model = "deepseek-chat"
@@ -164,6 +167,7 @@ class DeepSeekStrategy(BaseProviderStrategy):
 
 class GroqStrategy(BaseProviderStrategy):
     """Groq provider strategy."""
+
     provider_class = Groq
     default_team_model = "deepseek-r1-distill-llama-70b"
     default_agent_model = "qwen-2.5-32b"
@@ -172,6 +176,7 @@ class GroqStrategy(BaseProviderStrategy):
 
 class OpenRouterStrategy(BaseProviderStrategy):
     """OpenRouter provider strategy."""
+
     provider_class = OpenRouter
     default_team_model = "deepseek/deepseek-chat-v3-0324"
     default_agent_model = "deepseek/deepseek-r1"
@@ -180,6 +185,7 @@ class OpenRouterStrategy(BaseProviderStrategy):
 
 class OllamaStrategy(BaseProviderStrategy):
     """Ollama provider strategy (no API key required)."""
+
     provider_class = Ollama
     default_team_model = "devstral:24b"
     default_agent_model = "devstral:24b"
@@ -188,7 +194,7 @@ class OllamaStrategy(BaseProviderStrategy):
 
 class GitHubStrategy(BaseProviderStrategy):
     """GitHub Models provider strategy."""
-    
+
     @property
     def provider_class(self) -> Type[Model]:
         return GitHubOpenAI
@@ -208,7 +214,7 @@ class GitHubStrategy(BaseProviderStrategy):
 
 class ConfigurationManager:
     """Manages configuration strategies with dependency injection."""
-    
+
     def __init__(self):
         self._strategies = {
             "deepseek": DeepSeekStrategy(),
@@ -218,45 +224,51 @@ class ConfigurationManager:
             "github": GitHubStrategy(),
         }
         self._default_strategy = "deepseek"
-    
+
     def register_strategy(self, name: str, strategy: ConfigurationStrategy) -> None:
         """Register a new configuration strategy."""
         self._strategies[name] = strategy
-    
-    def get_strategy(self, provider_name: Optional[str] = None) -> ConfigurationStrategy:
+
+    def get_strategy(
+        self, provider_name: Optional[str] = None
+    ) -> ConfigurationStrategy:
         """Get strategy for specified provider."""
         if provider_name is None:
             provider_name = os.environ.get("LLM_PROVIDER", self._default_strategy)
-        
+
         provider_name = provider_name.lower()
-        
+
         if provider_name not in self._strategies:
             available = list(self._strategies.keys())
-            raise ValueError(f"Unknown provider: {provider_name}. Available: {available}")
-        
+            raise ValueError(
+                f"Unknown provider: {provider_name}. Available: {available}"
+            )
+
         return self._strategies[provider_name]
-    
+
     def get_model_config(self, provider_name: Optional[str] = None) -> ModelConfig:
         """Get model configuration using dependency injection."""
         strategy = self.get_strategy(provider_name)
         return strategy.get_config()
-    
-    def validate_environment(self, provider_name: Optional[str] = None) -> Dict[str, str]:
+
+    def validate_environment(
+        self, provider_name: Optional[str] = None
+    ) -> Dict[str, str]:
         """Validate environment variables and return missing required ones."""
         strategy = self.get_strategy(provider_name)
         required_vars = strategy.get_required_environment_variables()
-        
+
         missing = {}
         for var_name, is_optional in required_vars.items():
             if not is_optional and not os.environ.get(var_name):
                 missing[var_name] = "Required but not set"
-        
+
         # Always check EXA API key for research functionality
         if not os.environ.get("EXA_API_KEY"):
             missing["EXA_API_KEY"] = "Required for research tools"
-        
+
         return missing
-    
+
     def get_available_providers(self) -> list[str]:
         """Get list of available provider names."""
         return list(self._strategies.keys())
@@ -264,6 +276,7 @@ class ConfigurationManager:
 
 # Singleton instance for dependency injection
 _config_manager = ConfigurationManager()
+
 
 # Public API functions
 def get_model_config(provider_name: Optional[str] = None) -> ModelConfig:
