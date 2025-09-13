@@ -4,6 +4,9 @@ from typing import Optional, List
 from pydantic import BaseModel, Field, model_validator
 from enum import Enum
 
+from .constants import ValidationLimits, FieldLengthLimits
+from .types import ThoughtNumber, BranchId
+
 
 class ThoughtType(Enum):
     """Types of thoughts in the sequential thinking process."""
@@ -18,49 +21,57 @@ def _validate_thought_relationships(data: dict) -> None:
     # Extract values once with modern dict methods
     is_revision = data.get("is_revision", False)
     revises_thought = data.get("revises_thought")
-    branch_from = data.get("branch_from") 
+    branch_from = data.get("branch_from")
     branch_id = data.get("branch_id")
     current_number = data.get("thought_number")
-    
+
     # Collect validation errors efficiently
     errors = []
-    
+
     # Relationship validation with guard clauses
     if revises_thought is not None and not is_revision:
         errors.append("revises_thought requires is_revision=True")
-    
+
     if branch_id is not None and branch_from is None:
         errors.append("branch_id requires branch_from to be set")
-    
+
     # Numeric validation with early exit
     if current_number is None:
         if errors:
             raise ValueError("; ".join(errors))
         return
-        
+
     # Validate numeric relationships
     if revises_thought is not None and revises_thought >= current_number:
         errors.append("revises_thought must be less than current thought_number")
-        
+
     if branch_from is not None and branch_from >= current_number:
         errors.append("branch_from must be less than current thought_number")
-    
+
     if errors:
         raise ValueError("; ".join(errors))
 
 
 class ThoughtData(BaseModel):
     """Streamlined thought data model with consolidated validation."""
-    
+
     model_config = {"validate_assignment": True, "frozen": True}
 
     # Core fields
-    thought: str = Field(..., min_length=1, description="Content of the thought")
-    thought_number: int = Field(
-        ..., ge=1, description="Sequence number starting from 1"
+    thought: str = Field(
+        ...,
+        min_length=FieldLengthLimits.MIN_STRING_LENGTH,
+        description="Content of the thought",
+    )
+    thought_number: ThoughtNumber = Field(
+        ...,
+        ge=ValidationLimits.MIN_THOUGHT_NUMBER,
+        description="Sequence number starting from 1",
     )
     total_thoughts: int = Field(
-        ..., ge=5, description="Estimated total thoughts (minimum 5)"
+        ...,
+        ge=ValidationLimits.MIN_TOTAL_THOUGHTS,
+        description="Estimated total thoughts (minimum 5)",
     )
     next_needed: bool = Field(..., description="Whether another thought is needed")
 
@@ -68,13 +79,17 @@ class ThoughtData(BaseModel):
     is_revision: bool = Field(
         False, description="Whether this revises a previous thought"
     )
-    revises_thought: Optional[int] = Field(
-        None, ge=1, description="Thought number being revised"
+    revises_thought: Optional[ThoughtNumber] = Field(
+        None,
+        ge=ValidationLimits.MIN_THOUGHT_NUMBER,
+        description="Thought number being revised",
     )
-    branch_from: Optional[int] = Field(
-        None, ge=1, description="Thought number to branch from"
+    branch_from: Optional[ThoughtNumber] = Field(
+        None,
+        ge=ValidationLimits.MIN_THOUGHT_NUMBER,
+        description="Thought number to branch from",
     )
-    branch_id: Optional[str] = Field(None, description="Unique branch identifier")
+    branch_id: Optional[BranchId] = Field(None, description="Unique branch identifier")
     needs_more: bool = Field(
         False, description="Whether more thoughts are needed beyond estimate"
     )
@@ -108,6 +123,8 @@ class ThoughtData(BaseModel):
                 prefix = f"Thought {self.thought_number}/{self.total_thoughts}"
 
         # Use multiline string formatting for better readability
-        return (f"{prefix}\n"
-                f"  Content: {self.thought}\n"  
-                f"  Next: {self.next_needed}, More: {self.needs_more}")
+        return (
+            f"{prefix}\n"
+            f"  Content: {self.thought}\n"
+            f"  Next: {self.next_needed}, More: {self.needs_more}"
+        )

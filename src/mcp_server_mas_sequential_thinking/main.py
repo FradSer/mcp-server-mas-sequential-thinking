@@ -3,6 +3,7 @@
 import sys
 from html import escape
 from typing import AsyncIterator
+from contextlib import asynccontextmanager
 
 from mcp.server.fastmcp import FastMCP
 from pydantic import ValidationError
@@ -11,14 +12,15 @@ from dotenv import load_dotenv
 # Import refactored modules
 from .models import ThoughtData
 from .server_core import (
-    create_server_lifespan, 
+    create_server_lifespan,
     create_validated_thought_data,
-    ProcessingError,
     ServerConfig,
     ServerState,
     ThoughtProcessor,
 )
+from .types import ThoughtProcessingError, ValidationError as CustomValidationError
 from .utils import setup_logging
+from .constants import ValidationLimits
 
 # Initialize environment and logging
 load_dotenv()
@@ -28,17 +30,18 @@ logger = setup_logging()
 _server_state: ServerState | None = None
 
 
+@asynccontextmanager
 async def app_lifespan(app) -> AsyncIterator[None]:
     """Simplified application lifespan using refactored server core."""
     global _server_state
-    
+
     logger.info("Starting Sequential Thinking Server")
-    
+
     async with create_server_lifespan() as server_state:
         _server_state = server_state
         logger.info("Server ready for requests")
         yield
-    
+
     _server_state = None
     logger.info("Server stopped")
 
@@ -52,14 +55,16 @@ def sanitize_and_validate_input(text: str, max_length: int, field_name: str) -> 
     # Early validation with guard clause
     if not text or not text.strip():
         raise ValueError(f"{field_name} cannot be empty")
-    
+
     # Sanitize once with chained operations
     sanitized_text = escape(text.strip())
-    
+
     # Length validation with descriptive error
     if len(sanitized_text) > max_length:
-        raise ValueError(f"{field_name} exceeds maximum length of {max_length} characters")
-    
+        raise ValueError(
+            f"{field_name} exceeds maximum length of {max_length} characters"
+        )
+
     return sanitized_text
 
 
@@ -68,8 +73,16 @@ def sequential_thinking_prompt(problem: str, context: str = "") -> list[dict]:
     """Enhanced starter prompt for sequential thinking with better formatting."""
     # Sanitize and validate inputs
     try:
-        problem = sanitize_and_validate_input(problem, 500, "Problem statement")
-        context = sanitize_and_validate_input(context, 300, "Context") if context else ""
+        problem = sanitize_and_validate_input(
+            problem, ValidationLimits.MAX_PROBLEM_LENGTH, "Problem statement"
+        )
+        context = (
+            sanitize_and_validate_input(
+                context, ValidationLimits.MAX_CONTEXT_LENGTH, "Context"
+            )
+            if context
+            else ""
+        )
     except ValueError as e:
         raise ValueError(f"Input validation failed: {e}")
 
@@ -147,7 +160,7 @@ async def sequentialthinking(
     """
     if _server_state is None:
         return "Server Error: Server not initialized"
-    
+
     try:
         # Create and validate thought data using refactored function
         thought_data = create_validated_thought_data(
@@ -174,9 +187,11 @@ async def sequentialthinking(
         logger.error(error_msg)
         return f"Validation Error: {e}"
 
-    except ProcessingError as e:
+    except ThoughtProcessingError as e:
         error_msg = f"Processing failed for thought #{thought_number}: {e}"
         logger.error(error_msg)
+        if hasattr(e, "metadata") and e.metadata:
+            logger.error(f"Error metadata: {e.metadata}")
         return f"Processing Error: {e}"
 
     except Exception as e:
