@@ -3,7 +3,7 @@
 import pytest
 from unittest.mock import MagicMock
 
-from src.mcp_server_mas_sequential_thinking.config import (
+from src.mcp_server_mas_sequential_thinking.modernized_config import (
     get_model_config,
     check_required_api_keys,
     DeepSeekStrategy,
@@ -12,7 +12,7 @@ from src.mcp_server_mas_sequential_thinking.config import (
     OpenRouterStrategy,
     OllamaStrategy,
     ModelConfig,
-    STRATEGIES,
+    ConfigurationManager,
     GitHubOpenAI,
 )
 from tests.helpers.mocks import MockEnvironment

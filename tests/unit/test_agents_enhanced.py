@@ -3,7 +3,12 @@
 import pytest
 from unittest.mock import MagicMock
 
-from src.mcp_server_mas_sequential_thinking.agents import AgentFactory, AgentCapability, create_agent, create_all_agents
+from src.mcp_server_mas_sequential_thinking.unified_agents import (
+    UnifiedAgentFactory,
+    AgentCapability,
+    create_agent,
+    create_all_agents,
+)
 from agno.tools.reasoning import ReasoningTools
 from agno.tools.exa import ExaTools
 

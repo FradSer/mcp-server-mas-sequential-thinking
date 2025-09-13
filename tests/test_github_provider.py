@@ -8,7 +8,11 @@ import os
 import pytest
 from unittest.mock import patch, MagicMock
 
-from src.mcp_server_mas_sequential_thinking.config import ModelConfig, ProviderStrategy, GitHubStrategy
+from src.mcp_server_mas_sequential_thinking.modernized_config import (
+    ModelConfig,
+    BaseProviderStrategy,
+    GitHubStrategy,
+)
 
 
 class TestGitHubStrategyDefaults:

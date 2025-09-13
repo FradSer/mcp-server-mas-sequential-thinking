@@ -3,7 +3,11 @@
 import pytest
 from unittest.mock import patch, MagicMock
 
-from src.mcp_server_mas_sequential_thinking.team import create_team, _STANDARD_INSTRUCTIONS, _ENHANCED_INSTRUCTIONS
+from src.mcp_server_mas_sequential_thinking.unified_team import (
+    create_team,
+    StandardTeamBuilder,
+    EnhancedTeamBuilder,
+)
 from agno.team.team import Team
 from tests.helpers.mocks import MockModelConfig
 
@@ -29,7 +33,7 @@ class TestCoordinatorInstructions:
         assert "coordinate" in enhanced_text.lower()
         assert "specialists" in enhanced_text.lower()
         assert "Planner" in standard_text
-        assert "Researcher" in standard_text  
+        assert "Researcher" in standard_text
         assert "Analyzer" in standard_text
         assert "Critic" in standard_text
         assert "Synthesizer" in standard_text
@@ -95,7 +99,7 @@ class TestTeamCreation:
         mock_factory_instance = MagicMock()
         mock_agents = {
             "planner": MagicMock(),
-            "researcher": MagicMock(), 
+            "researcher": MagicMock(),
             "analyzer": MagicMock(),
             "critic": MagicMock(),
             "synthesizer": MagicMock(),
