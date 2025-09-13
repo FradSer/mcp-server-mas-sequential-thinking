@@ -14,6 +14,9 @@ from src.mcp_server_mas_sequential_thinking.modernized_config import (
     GitHubStrategy,
 )
 
+# Import ProviderStrategy for compatibility
+ProviderStrategy = BaseProviderStrategy
+
 
 class TestGitHubStrategyDefaults:
     """Test default configurations of GitHubStrategy."""
