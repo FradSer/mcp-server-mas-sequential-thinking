@@ -179,3 +179,20 @@ class TechnicalTerms:
         "abstraction",
         "encapsulation",
     ]
+
+
+class DefaultSettings:
+    """Default application settings."""
+
+    DEFAULT_PROVIDER = "deepseek"
+    DEFAULT_COMPLEXITY_THRESHOLD = 30.0
+    DEFAULT_TOKEN_BUFFER = 0.2
+    DEFAULT_SESSION_TIMEOUT = 3600
+
+
+class ProcessingStrategy(Enum):
+    """Processing strategy enumeration."""
+
+    SINGLE_AGENT = "single_agent"
+    MULTI_AGENT = "multi_agent"
+    ADAPTIVE = "adaptive"
