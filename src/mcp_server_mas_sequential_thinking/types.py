@@ -5,6 +5,16 @@ from agno.models.base import Model
 from agno.agent import Agent
 from agno.team.team import Team
 
+# Type aliases for better semantic meaning
+ThoughtNumber = int
+BranchId = str
+ProviderName = str
+TeamType = str
+AgentType = str
+ConfigDict = Dict[str, Any]
+InstructionsList = List[str]
+SuccessCriteriaList = List[str]
+
 
 class ProcessingMetadata(TypedDict, total=False):
     """Type-safe processing metadata structure."""
@@ -48,14 +58,25 @@ class ComplexityMetrics(TypedDict):
 
 
 class ModelProvider(Protocol):
-    """Protocol for model providers with type safety."""
+    """Protocol for model provider implementations."""
 
-    def create_team_model(self) -> Model:
-        """Create a model for team coordination."""
+    id: str
+    cost_per_token: float
+
+
+class AgentFactory(Protocol):
+    """Protocol for agent factory implementations."""
+
+    def create_team_agents(self, model: Model, team_type: str) -> Dict[str, Agent]:
+        """Create team agents with specified model and team type."""
         ...
 
-    def create_agent_model(self) -> Model:
-        """Create a model for individual agents."""
+
+class TeamBuilder(Protocol):
+    """Protocol for team builder implementations."""
+
+    def build_team(self, config: Any, agent_factory: Any) -> Team:
+        """Build a team with specified configuration and agent factory."""
         ...
 
 
@@ -82,34 +103,6 @@ class ThoughtProcessor(Protocol):
 
     async def process_thought(self, thought_data: Any) -> str:
         """Process a thought and return the result."""
-        ...
-
-
-class TeamFactory(Protocol):
-    """Protocol for team creation with type safety."""
-
-    def create_team(self, team_type: str, config: Optional[Any] = None) -> Team:
-        """Create a team of the specified type."""
-        ...
-
-    def get_available_team_types(self) -> List[str]:
-        """Get list of available team types."""
-        ...
-
-
-class AgentFactory(Protocol):
-    """Protocol for agent creation with type safety."""
-
-    def create_agent(
-        self, agent_type: str, model: Model, enhanced_mode: bool = False, **kwargs: Any
-    ) -> Agent:
-        """Create an agent of the specified type."""
-        ...
-
-    def create_team_agents(
-        self, model: Model, team_type: str = "standard"
-    ) -> Dict[str, Agent]:
-        """Create a complete set of team agents."""
         ...
 
 
@@ -141,75 +134,55 @@ class ConfigurationProvider(Protocol):
         ...
 
 
-# Custom exceptions for better error handling
+# Custom Exception Classes
+class ValidationError(ValueError):
+    """Exception raised when data validation fails."""
+    pass
+
+
+class ConfigurationError(Exception):
+    """Exception raised when configuration is invalid."""
+    pass
+
+
 class ThoughtProcessingError(Exception):
-    """Base exception for thought processing errors."""
+    """Exception raised when thought processing fails."""
 
     def __init__(self, message: str, metadata: Optional[ProcessingMetadata] = None):
         super().__init__(message)
         self.metadata = metadata or {}
 
 
+class TeamCreationError(Exception):
+    """Exception raised when team creation fails."""
+    pass
+
+
 class RoutingDecisionError(ThoughtProcessingError):
     """Error in adaptive routing decision making."""
-
     pass
 
 
 class CostOptimizationError(ThoughtProcessingError):
     """Error in cost optimization logic."""
-
     pass
 
 
 class PersistentStorageError(ThoughtProcessingError):
     """Error in persistent memory storage."""
-
-    pass
-
-
-class ValidationError(ThoughtProcessingError):
-    """Error in input validation."""
-
-    pass
-
-
-class ConfigurationError(Exception):
-    """Error in configuration setup."""
-
     pass
 
 
 class ModelConfigurationError(ConfigurationError):
     """Error in model configuration."""
-
     pass
 
 
 class ProviderError(Exception):
     """Error related to LLM providers."""
-
-    pass
-
-
-class TeamCreationError(Exception):
-    """Error in team creation."""
-
     pass
 
 
 class AgentCreationError(Exception):
     """Error in agent creation."""
-
     pass
-
-
-# Type aliases for commonly used types
-ThoughtNumber = int
-BranchId = str
-ProviderName = str
-TeamType = str
-AgentType = str
-ConfigDict = Dict[str, Any]
-InstructionsList = List[str]
-SuccessCriteriaList = List[str]
