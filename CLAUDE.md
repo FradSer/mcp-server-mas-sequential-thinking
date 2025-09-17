@@ -13,17 +13,19 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - Project requires Python 3.10+ and uses modern packaging (PEP 621)
 
 ### Code Quality
-- Linting: `ruff check . --fix`
-- Formatting: `black .`
-- Type checking: `mypy .`
-- Testing: `pytest` (runs from tests/ directory with async support)
+- Linting: `ruff check . --fix` (requires ruff to be installed)
+- Formatting: `black .` (requires black to be installed)
+- Type checking: `mypy .` (requires mypy to be installed)
+- Testing: `pytest` (configured in tests/pytest.ini with async support)
 - Run single test: `pytest tests/unit/test_models.py::test_thought_data_validation -v`
-- Run with coverage: `pytest --cov=src --cov-report=html`
+- Run with coverage: `pytest --cov=. --cov-report=html`
+- Install dev dependencies: `uv pip install -e ".[dev]"` or use dependency groups: `uv pip install --group dev`
 
 ### Running the Server
 - Direct execution: `uv run python src/mcp_server_mas_sequential_thinking/main.py`
-- Using uv: `uv run mcp-server-mas-sequential-thinking`  
+- Using uv: `uv run mcp-server-mas-sequential-thinking`
 - Package execution: `uvx mcp-server-mas-sequential-thinking`
+- Testing with MCP Inspector: `npx @modelcontextprotocol/inspector uv run python src/mcp_server_mas_sequential_thinking/main.py`
 
 ## Project Architecture
 
@@ -126,6 +128,7 @@ This project has been migrated to Agno v2.0 with the following key changes:
   - `delegate_task_to_all_members=False` - Sequential task delegation  
   - `determine_input_for_members=True` - Team leader synthesizes inputs
 - **Tool modules**: Migrated from `ThinkingTools` to `ReasoningTools` (`agno.tools.reasoning`)
+- **Minimum version requirement**: Updated to `agno>=2.0.5` due to BaseRunOutputEvent import fixes
 - **Memory management**: Updated `enable_memory` to `enable_user_memories` parameter
 
 ### Performance Improvements
