@@ -404,23 +404,30 @@ class QualityAssuranceManager:
         if abs(planned_specialists - actual_specialists) > 1:
             score -= 0.2
 
-        # Check timeout compliance
-        planned_timeout = plan.timeout_seconds
-        actual_time = execution_log.get("processing_time", 0)
-        if actual_time > planned_timeout * 1.2:
-            score -= 0.1
+        # REMOVED: Timeout compliance check - unlimited processing time allowed
 
         return max(0.0, score)
 
     def _calculate_efficiency(self, plan: CoordinationPlan, processing_time: float) -> float:
-        """Calculate processing efficiency."""
-        expected_time = plan.timeout_seconds * 0.6  # Expect to use ~60% of timeout
+        """Calculate processing efficiency based on complexity and actual time."""
+        # Use complexity-based efficiency calculation without timeout constraints
+        complexity_multipliers = {
+            "simple": 30.0,      # Expected ~30s for simple thoughts
+            "moderate": 90.0,    # Expected ~90s for moderate thoughts
+            "complex": 180.0,    # Expected ~3min for complex thoughts
+            "highly_complex": 300.0  # Expected ~5min for highly complex thoughts
+        }
+
+        expected_time = complexity_multipliers.get(
+            plan.complexity_level.value, 120.0
+        )
+
         if processing_time <= expected_time:
             return 1.0
-        elif processing_time <= plan.timeout_seconds:
-            return 1.0 - (processing_time - expected_time) / (plan.timeout_seconds - expected_time) * 0.5
+        elif processing_time <= expected_time * 2:  # Up to 2x expected time still efficient
+            return 1.0 - (processing_time - expected_time) / expected_time * 0.5
         else:
-            return 0.0
+            return 0.5  # Still processing, but less efficient for very long thoughts
 
     def get_performance_trends(self) -> Dict[str, float]:
         """Get performance trends over recent evaluations."""
