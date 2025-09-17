@@ -7,23 +7,40 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.5.0] - 2025-08-20
+## [0.5.0] - 2025-09-17
 
 ### Added
-- Support for GitHub Models provider via GitHub API
-- Enhanced code quality with Test-Driven Development (TDD) approach
-- Validation for GitHubOpenAI base URL configuration
-- Improved test coverage for provider configurations
+- Comprehensive TDD test coverage for refactoring and quality improvement
+- Default settings and processing strategy enum for enhanced configuration
+- Adaptive architecture with cost optimization capabilities
+- Comprehensive test infrastructure and unit tests
+- Magic number extraction to constants for better maintainability
 
 ### Changed
-- Restructured main.py with modular architecture for better maintainability
-- Updated GitHub Models default model names in documentation
-- Enhanced provider configuration validation
-- Improved total_thoughts minimum value validation
+- **BREAKING**: Migration to Agno v2.0 with architectural updates (~10,000x faster agent creation, ~50x less memory usage)
+- Upgraded Agno to version 2.0.5 with enhanced agent features
+- Reorganized types module and cleaned duplicates for better structure
+- Modernized codebase with enhanced type safety and annotations
+- Adopted src layout for Python project structure following best practices
+- Optimized code structure and performance across modules
+
+### Fixed
+- Resolved mypy type checking errors across all modules
+- Comprehensive security and quality improvements
+- Updated minimum Agno version to 2.0.5 for compatibility
+
+### Documentation
+- Updated CLAUDE.md with Agno v2.0 migration details and corrected commands
+- Enhanced guidance for src layout and development requirements
+- Improved test documentation and GitHub provider information
+
+## [0.4.1] - 2025-08-06
 
 ### Fixed
 - app_lifespan function signature for FastMCP compatibility
-- Provider configuration validation issues
+
+### Changed
+- Restructured main.py with modular architecture for better maintainability
 
 ## [0.4.0] - 2025-08-06
 
@@ -105,7 +122,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Distributed intelligence across specialized agents
 
 [Unreleased]: https://github.com/FradSer/mcp-server-mas-sequential-thinking/compare/v0.5.0...HEAD
-[0.5.0]: https://github.com/FradSer/mcp-server-mas-sequential-thinking/compare/v0.4.0...v0.5.0
+[0.5.0]: https://github.com/FradSer/mcp-server-mas-sequential-thinking/compare/v0.4.1...v0.5.0
+[0.4.1]: https://github.com/FradSer/mcp-server-mas-sequential-thinking/compare/v0.4.0...v0.4.1
 [0.4.0]: https://github.com/FradSer/mcp-server-mas-sequential-thinking/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/FradSer/mcp-server-mas-sequential-thinking/compare/v0.2.3...v0.3.0
 [0.2.3]: https://github.com/FradSer/mcp-server-mas-sequential-thinking/compare/v0.2.2...v0.2.3
