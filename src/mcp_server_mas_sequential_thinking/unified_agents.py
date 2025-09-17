@@ -125,10 +125,17 @@ class StandardAgentBuilder(AgentBuilder):
         if enhanced_mode:
             if self.capability.memory_enabled:
                 agent_kwargs["enable_user_memories"] = True
-            if self.capability.structured_outputs:
+            # HOTFIX: Disable structured outputs for Deepseek due to instability
+            if self.capability.structured_outputs and not self._is_deepseek_model(model):
                 agent_kwargs["structured_outputs"] = True
 
         return Agent(**agent_kwargs)
+
+    def _is_deepseek_model(self, model: Model) -> bool:
+        """Check if model is a Deepseek model (hotfix for structured outputs issue)."""
+        model_class_name = model.__class__.__name__.lower()
+        model_id = getattr(model, 'id', '').lower()
+        return 'deepseek' in model_class_name or 'deepseek' in model_id
 
 
 class UnifiedAgentFactory:
