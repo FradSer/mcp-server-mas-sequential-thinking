@@ -67,6 +67,8 @@ class DefaultTimeouts:
     """Default timeout values in seconds."""
 
     PROCESSING_TIMEOUT = 30.0
+    DEEPSEEK_PROCESSING_TIMEOUT = 120.0  # Longer timeout for Deepseek
+    MULTI_AGENT_TIMEOUT_MULTIPLIER = 2.0  # Multiply timeout for multi-agent
     SESSION_CLEANUP_DAYS = 30
     RECENT_SESSION_KEEP_COUNT = 100
 
