@@ -254,18 +254,19 @@ class ThoughtProcessor:
         # HOTFIX: Add performance monitoring
         start_time = time.time()
 
-        # Log with structured data
-        logger.info(
-            "Processing thought",
-            extra={
-                "thought_type": thought_data.thought_type.value,
-                "thought_number": thought_data.thought_number,
-                "total_thoughts": thought_data.total_thoughts,
-                "is_revision": thought_data.is_revision,
-                "branch_id": thought_data.branch_id,
-            },
-        )
-        logger.debug(thought_data.format_for_log())
+        # ENHANCED LOGGING: Complete thought data
+        logger.info(f"🧩 THOUGHT DATA:")
+        logger.info(f"  Thought #{thought_data.thought_number}/{thought_data.total_thoughts}")
+        logger.info(f"  Type: {thought_data.thought_type.value}")
+        logger.info(f"  Content: {thought_data.thought}")
+        logger.info(f"  Next needed: {thought_data.next_needed}")
+        logger.info(f"  Needs more: {thought_data.needs_more}")
+        if thought_data.is_revision:
+            logger.info(f"  Is revision: True (revises thought #{thought_data.revises_thought})")
+        if thought_data.branch_from:
+            logger.info(f"  Branch from: #{thought_data.branch_from} (ID: {thought_data.branch_id})")
+        logger.info(f"  Raw data: {thought_data.format_for_log()}")
+        logger.info(f"  {'='*50}")
 
         # Add to session
         self._session.add_thought(thought_data)
@@ -293,12 +294,25 @@ class ThoughtProcessor:
         logger.info(f"📝 CONTEXT BUILDING:")
         if thought_data.is_revision and thought_data.revises_thought:
             logger.info(f"  Type: Revision of thought #{thought_data.revises_thought}")
+            try:
+                original = self._session.find_thought_content(thought_data.revises_thought)
+                logger.info(f"  Original thought: {original}")
+            except:
+                logger.info(f"  Original thought: [not found]")
         elif thought_data.branch_from and thought_data.branch_id:
             logger.info(f"  Type: Branch '{thought_data.branch_id}' from thought #{thought_data.branch_from}")
+            try:
+                origin = self._session.find_thought_content(thought_data.branch_from)
+                logger.info(f"  Branch origin: {origin}")
+            except:
+                logger.info(f"  Branch origin: [not found]")
         else:
             logger.info(f"  Type: Sequential thought #{thought_data.thought_number}")
         logger.info(f"  Session thoughts: {len(self._session.thought_history)} total")
-        logger.debug(f"  Built prompt length: {len(input_prompt)} chars")
+        logger.info(f"  Input thought: {thought_data.thought}")
+        logger.info(f"  Built prompt length: {len(input_prompt)} chars")
+        logger.info(f"  Built prompt:\n{input_prompt}")
+        logger.info(f"  {'='*50}")
 
         # Process based on routing decision with timing
         processing_start = time.time()
@@ -364,7 +378,8 @@ class ThoughtProcessor:
                 logger.info(f"  Leader: {team.model.__class__.__name__} (model: {getattr(team.model, 'id', 'unknown')})")
                 logger.info(f"  Members: {', '.join([m.name for m in team.members])}")
                 logger.info(f"  Input length: {len(input_prompt)} chars")
-                logger.debug(f"  Full input: {input_prompt[:300]}{'...' if len(input_prompt) > 300 else ''}")
+                logger.info(f"  Full input:\n{input_prompt}")
+                logger.info(f"  {'='*50}")
 
                 start_time = time.time()
                 response = await asyncio.wait_for(
@@ -379,7 +394,8 @@ class ThoughtProcessor:
                 logger.info(f"✅ MULTI-AGENT TEAM RESPONSE:")
                 logger.info(f"  Processing time: {processing_time:.3f}s (timeout: {timeout:.1f}s)")
                 logger.info(f"  Output length: {len(response_content)} chars")
-                logger.debug(f"  Response preview: {response_content[:300]}{'...' if len(response_content) > 300 else ''}")
+                logger.info(f"  Full response:\n{response_content}")
+                logger.info(f"  {'='*50}")
 
                 # Success! Log the successful attempt
                 if retry_count > 0:
@@ -456,7 +472,8 @@ Provide a focused response with clear guidance for the next step."""
             logger.info(f"  Agent: {simple_agent.name} ({simple_agent.role})")
             logger.info(f"  Model: {getattr(single_model, 'id', 'unknown')} ({single_model.__class__.__name__})")
             logger.info(f"  Input length: {len(simplified_prompt)} chars")
-            logger.debug(f"  Full input: {simplified_prompt[:300]}{'...' if len(simplified_prompt) > 300 else ''}")
+            logger.info(f"  Full input:\n{simplified_prompt}")
+            logger.info(f"  {'='*50}")
 
             # HOTFIX: Add adaptive timeout protection for single agent
             # Single agent gets simpler complexity level for faster timeout
@@ -476,7 +493,8 @@ Provide a focused response with clear guidance for the next step."""
             logger.info(f"✅ SINGLE-AGENT RESPONSE:")
             logger.info(f"  Processing time: {processing_time:.3f}s (timeout: {timeout:.1f}s)")
             logger.info(f"  Output length: {len(response_content)} chars")
-            logger.debug(f"  Response preview: {response_content[:300]}{'...' if len(response_content) > 300 else ''}")
+            logger.info(f"  Full response:\n{response_content}")
+            logger.info(f"  {'='*50}")
 
             logger.info(f"Single-agent processing completed (saved ~{routing_decision.estimated_cost:.4f}$ vs multi-agent)")
             return response_content
