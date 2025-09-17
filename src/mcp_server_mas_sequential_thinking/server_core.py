@@ -389,9 +389,25 @@ class ThoughtProcessor:
     async def _execute_single_agent_processing(self, input_prompt: str, routing_decision) -> str:
         """Execute single-agent processing for simple thoughts (hotfix optimization)."""
         try:
-            # Use team leader as single agent for simple processing
+            # HOTFIX: Create a simple agent instead of calling model directly
+            from agno.agent import Agent
             model_config = get_model_config()
             single_model = model_config.create_team_model()
+
+            # Create a lightweight agent for single processing
+            simple_agent = Agent(
+                name="SimpleProcessor",
+                role="Simple Thought Processor",
+                description="Processes simple thoughts efficiently without multi-agent overhead",
+                model=single_model,
+                instructions=[
+                    "You are processing a simple thought efficiently.",
+                    "Provide a focused, clear response.",
+                    "Include guidance for the next step.",
+                    "Be concise but helpful."
+                ],
+                markdown=True
+            )
 
             # Create a simple response without multi-agent overhead
             simplified_prompt = f"""Process this thought efficiently:
@@ -406,7 +422,7 @@ Provide a focused response with clear guidance for the next step."""
             timeout = self._get_adaptive_timeout(single_agent_complexity, 0) * 0.5  # 50% of base
 
             response = await asyncio.wait_for(
-                single_model.apredict(simplified_prompt),
+                simple_agent.arun(simplified_prompt),
                 timeout=timeout
             )
 
