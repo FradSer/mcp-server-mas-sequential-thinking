@@ -275,14 +275,30 @@ class ThoughtProcessor:
         routing_decision = self._router.route_thought(thought_data)
         routing_time = time.time() - routing_start
 
-        logger.info(
-            f"Routing decision: {routing_decision.strategy.value} "
-            f"(complexity: {routing_decision.complexity_score:.1f}, "
-            f"routing_time: {routing_time:.3f}s)"
-        )
+        # ENHANCED LOGGING: Detailed routing analysis
+        logger.info(f"🧠 ROUTING ANALYSIS:")
+        logger.info(f"  Strategy: {routing_decision.strategy.value}")
+        logger.info(f"  Complexity: {routing_decision.complexity_level.value} (score: {routing_decision.complexity_score:.1f}/100)")
+        logger.info(f"  Estimated tokens: {routing_decision.estimated_token_usage[0]}-{routing_decision.estimated_token_usage[1]}")
+        logger.info(f"  Estimated cost: ${routing_decision.estimated_cost:.6f}")
+        logger.info(f"  Routing time: {routing_time:.3f}s")
+        if routing_decision.specialist_recommendations:
+            logger.info(f"  Recommended specialists: {', '.join(routing_decision.specialist_recommendations)}")
+        logger.debug(f"  Reasoning: {routing_decision.reasoning}")
 
         # Build context-aware input
         input_prompt = self._build_context_prompt(thought_data)
+
+        # ENHANCED LOGGING: Context building details
+        logger.info(f"📝 CONTEXT BUILDING:")
+        if thought_data.is_revision and thought_data.revises_thought:
+            logger.info(f"  Type: Revision of thought #{thought_data.revises_thought}")
+        elif thought_data.branch_from and thought_data.branch_id:
+            logger.info(f"  Type: Branch '{thought_data.branch_id}' from thought #{thought_data.branch_from}")
+        else:
+            logger.info(f"  Type: Sequential thought #{thought_data.thought_number}")
+        logger.info(f"  Session thoughts: {len(self._session.thoughts)} total")
+        logger.debug(f"  Built prompt length: {len(input_prompt)} chars")
 
         # Process based on routing decision with timing
         processing_start = time.time()
@@ -341,16 +357,35 @@ class ThoughtProcessor:
                     f"timeout={timeout:.1f}s, complexity={complexity_level.value}"
                 )
 
+                # ENHANCED LOGGING: Log multi-agent team call details
+                team = self._session.team
+                logger.info(f"🏢 MULTI-AGENT TEAM CALL:")
+                logger.info(f"  Team: {team.name} ({len(team.members)} agents)")
+                logger.info(f"  Leader: {team.model.__class__.__name__} (model: {getattr(team.model, 'id', 'unknown')})")
+                logger.info(f"  Members: {', '.join([m.name for m in team.members])}")
+                logger.info(f"  Input length: {len(input_prompt)} chars")
+                logger.debug(f"  Full input: {input_prompt[:300]}{'...' if len(input_prompt) > 300 else ''}")
+
+                start_time = time.time()
                 response = await asyncio.wait_for(
                     self._session.team.arun(input_prompt),
                     timeout=timeout
                 )
+                processing_time = time.time() - start_time
+
+                response_content = getattr(response, "content", "") or str(response)
+
+                # ENHANCED LOGGING: Log multi-agent team response details
+                logger.info(f"✅ MULTI-AGENT TEAM RESPONSE:")
+                logger.info(f"  Processing time: {processing_time:.3f}s (timeout: {timeout:.1f}s)")
+                logger.info(f"  Output length: {len(response_content)} chars")
+                logger.debug(f"  Response preview: {response_content[:300]}{'...' if len(response_content) > 300 else ''}")
 
                 # Success! Log the successful attempt
                 if retry_count > 0:
                     logger.info(f"Processing succeeded on retry {retry_count}")
 
-                return getattr(response, "content", "") or str(response)
+                return response_content
 
             except asyncio.TimeoutError as e:
                 last_exception = e
@@ -416,18 +451,35 @@ class ThoughtProcessor:
 
 Provide a focused response with clear guidance for the next step."""
 
+            # ENHANCED LOGGING: Log single agent call details
+            logger.info(f"🤖 SINGLE-AGENT CALL:")
+            logger.info(f"  Agent: {simple_agent.name} ({simple_agent.role})")
+            logger.info(f"  Model: {getattr(single_model, 'id', 'unknown')} ({single_model.__class__.__name__})")
+            logger.info(f"  Input length: {len(simplified_prompt)} chars")
+            logger.debug(f"  Full input: {simplified_prompt[:300]}{'...' if len(simplified_prompt) > 300 else ''}")
+
             # HOTFIX: Add adaptive timeout protection for single agent
             # Single agent gets simpler complexity level for faster timeout
             single_agent_complexity = ComplexityLevel.SIMPLE
             timeout = self._get_adaptive_timeout(single_agent_complexity, 0) * 0.5  # 50% of base
 
+            start_time = time.time()
             response = await asyncio.wait_for(
                 simple_agent.arun(simplified_prompt),
                 timeout=timeout
             )
+            processing_time = time.time() - start_time
+
+            response_content = getattr(response, "content", "") or str(response)
+
+            # ENHANCED LOGGING: Log single agent response details
+            logger.info(f"✅ SINGLE-AGENT RESPONSE:")
+            logger.info(f"  Processing time: {processing_time:.3f}s (timeout: {timeout:.1f}s)")
+            logger.info(f"  Output length: {len(response_content)} chars")
+            logger.debug(f"  Response preview: {response_content[:300]}{'...' if len(response_content) > 300 else ''}")
 
             logger.info(f"Single-agent processing completed (saved ~{routing_decision.estimated_cost:.4f}$ vs multi-agent)")
-            return getattr(response, "content", "") or str(response)
+            return response_content
 
         except asyncio.TimeoutError:
             logger.warning(f"Single-agent processing timed out after {timeout:.1f}s, falling back to team with adaptive timeout")
