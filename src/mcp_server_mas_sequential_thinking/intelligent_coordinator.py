@@ -157,7 +157,7 @@ Create a comprehensive coordination plan with this JSON structure:
         "synthesis_approach": "<how to combine specialist outputs>"
     }},
     "execution_parameters": {{
-        "timeout_seconds": <recommended timeout>,
+        "unlimited_processing": true,
         "expected_interactions": <number of specialist interactions>,
         "success_criteria": ["<criterion1>", "<criterion2>", ...]
     }},
@@ -228,7 +228,7 @@ Focus on ELIMINATING REDUNDANCY by making all routing and planning decisions in 
                 specialist_roles=team_info["specialist_roles"],
                 task_breakdown=coordination_info["task_breakdown"],
                 coordination_strategy=coordination_info["coordination_strategy"],
-                timeout_seconds=float(execution_info["timeout_seconds"]),
+                timeout_seconds=0.0,  # Timeout ignored - unlimited processing time
                 expected_interactions=int(execution_info["expected_interactions"]),
                 team_size=len(team_info["specialist_roles"]),  # Added team_size
                 reasoning=reasoning,
@@ -252,21 +252,21 @@ Focus on ELIMINATING REDUNDANCY by making all routing and planning decisions in 
             specialists = ["researcher", "analyzer", "synthesizer"]
             complexity = ComplexityLevel.MODERATE
             score = 40.0
-            timeout = 120.0
+            timeout = 0.0  # Timeout ignored - unlimited processing time
         elif len(text) > 200 or any(word in text for word in ["哲学", "理论", "framework", "methodology"]):
             strategy = ProcessingStrategy.MULTI_AGENT
             execution_mode = ExecutionMode.FULL_TEAM
             specialists = ["researcher", "analyzer", "critic", "synthesizer"]
             complexity = ComplexityLevel.COMPLEX
             score = 65.0
-            timeout = 180.0
+            timeout = 0.0  # Timeout ignored - unlimited processing time
         else:
             strategy = ProcessingStrategy.SINGLE_AGENT
             execution_mode = ExecutionMode.SINGLE_AGENT
             specialists = ["general"]
             complexity = ComplexityLevel.SIMPLE
             score = 25.0
-            timeout = 60.0
+            timeout = 0.0  # Timeout ignored - unlimited processing time
 
         return CoordinationPlan(
             strategy=strategy,
