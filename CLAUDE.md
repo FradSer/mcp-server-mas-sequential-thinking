@@ -29,7 +29,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Architecture
 
-This is a Multi-Agent System (MAS) for sequential thinking built with the Agno framework and served via MCP. The project follows modern Python packaging standards with **src layout** structure.
+This is a Multi-Agent System (MAS) for sequential thinking built with the Agno framework and served via MCP. The project features **AI-powered intelligent routing** and follows modern Python packaging standards with **src layout** structure.
 
 ### Core Components
 
@@ -72,6 +72,7 @@ Environment variables control behavior:
 - `{PROVIDER}_API_KEY`: API keys for each provider (e.g., `DEEPSEEK_API_KEY`, `GITHUB_TOKEN`)
 - `{PROVIDER}_{TEAM|AGENT}_MODEL_ID`: Model selection for coordinator vs specialists
 - `EXA_API_KEY`: For research capabilities
+- `AI_CONFIDENCE_THRESHOLD`: Minimum confidence for AI routing decisions (default: 0.7)
 
 **GitHub Models Support:**
 - Enhanced GitHub token validation with format checking
@@ -82,10 +83,14 @@ Environment variables control behavior:
 
 1. External LLM calls `sequentialthinking` tool with ThoughtData
 2. Tool validates input via Pydantic model
-3. Coordinator analyzes thought and delegates to relevant specialists
-4. Specialists process sub-tasks using their tools (ThinkingTools, ExaTools)
-5. Coordinator synthesizes responses and returns guidance
-6. Process continues with revisions/branches as needed
+3. **AI-Powered Routing:** Intelligent complexity analysis determines optimal strategy:
+   - `single_agent`: Simple thoughts processed by single agent
+   - `hybrid`: Moderate complexity with selective specialist collaboration
+   - `multi_agent`: Complex thoughts requiring full team coordination
+4. Coordinator analyzes thought and delegates to relevant specialists
+5. Specialists process sub-tasks using their tools (ReasoningTools, ExaTools)
+6. Coordinator synthesizes responses and returns guidance
+7. Process continues with revisions/branches as needed
 
 ### Memory & State
 

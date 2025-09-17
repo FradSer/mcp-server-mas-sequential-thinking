@@ -6,7 +6,7 @@ import uuid
 from datetime import datetime
 from typing import Optional, Dict, Any
 
-from .adaptive_routing import AdaptiveRouter, RoutingDecision, ProcessingStrategy
+from .ai_routing import create_ai_router, HybridComplexityAnalyzer, RoutingDecision, ProcessingStrategy
 from .cost_optimization import CostOptimizer, get_cost_optimizer_from_env
 from .persistent_memory import PersistentMemoryManager, get_database_url_from_env
 from .models import ThoughtData
@@ -37,7 +37,7 @@ class AdaptiveThoughtProcessor:
         )
 
         # Initialize components
-        self.adaptive_router: Optional[AdaptiveRouter] = None
+        self.adaptive_router: Optional[HybridComplexityAnalyzer] = None
         self.cost_optimizer: Optional[CostOptimizer] = None
         self.memory_manager: Optional[PersistentMemoryManager] = None
         self.thought_processor: Optional[ThoughtProcessor] = None
@@ -61,8 +61,8 @@ class AdaptiveThoughtProcessor:
                 daily_limit = float(os.getenv("DAILY_BUDGET_LIMIT", "0")) or None
                 budget_limit = daily_limit
 
-            self.adaptive_router = AdaptiveRouter(budget_limit=budget_limit)
-            logger.info("Adaptive routing initialized")
+            self.adaptive_router = create_ai_router(use_ai=True, ai_confidence_threshold=0.7)
+            logger.info("AI-powered adaptive routing initialized")
 
         # Initialize cost optimization
         if self.enable_cost_optimization:
@@ -98,9 +98,7 @@ class AdaptiveThoughtProcessor:
                 if self.cost_optimizer:
                     budget_remaining = self._get_remaining_budget()
 
-                routing_decision = self.adaptive_router.route_thought(
-                    thought_data, provider or "", budget_remaining
-                )
+                routing_decision = self.adaptive_router.analyze(thought_data)
 
                 logger.info(f"Adaptive routing: {routing_decision.reasoning}")
 

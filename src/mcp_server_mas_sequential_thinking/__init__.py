@@ -58,10 +58,10 @@ Performance Benefits:
 
 __version__ = "0.6.0-adaptive"
 
-# Export adaptive architecture components
-from .adaptive_routing import (
-    AdaptiveRouter,
-    route_thought_adaptive,
+# Export AI-powered routing components
+from .ai_routing import (
+    create_ai_router,
+    HybridComplexityAnalyzer,
     ComplexityLevel,
     ProcessingStrategy,
 )

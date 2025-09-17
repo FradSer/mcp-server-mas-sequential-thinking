@@ -19,7 +19,7 @@ from .session import SessionMemory
 from .unified_team import create_team_by_type
 from .utils import setup_logging
 from .constants import DefaultValues, DefaultTimeouts
-from .adaptive_routing import AdaptiveRouter, ComplexityLevel, ProcessingStrategy
+from .ai_routing import create_ai_router, HybridComplexityAnalyzer, ComplexityLevel, ProcessingStrategy
 from .circuit_breaker import get_circuit_breaker, CircuitBreakerConfig
 from .types import (
     ProcessingMetadata,
@@ -215,8 +215,15 @@ class ThoughtProcessor:
 
     def __init__(self, session: SessionMemory) -> None:
         self._session = session
-        # HOTFIX: Add adaptive router for complexity-based processing
-        self._router = AdaptiveRouter()
+        # AI-POWERED ROUTING: Always use AI-powered routing for better accuracy
+        ai_confidence_threshold = float(os.environ.get("AI_CONFIDENCE_THRESHOLD", "0.7"))
+
+        logger.info("Initializing AI-powered hybrid routing system")
+        self._router = create_ai_router(
+            use_ai=True,
+            ai_confidence_threshold=ai_confidence_threshold
+        )
+
         # HOTFIX: Add circuit breaker for failure protection
         provider = os.environ.get("LLM_PROVIDER", "deepseek").lower()
         self._circuit_breaker = get_circuit_breaker(
@@ -271,9 +278,9 @@ class ThoughtProcessor:
         # Add to session
         self._session.add_thought(thought_data)
 
-        # HOTFIX: Use adaptive routing to determine processing strategy
+        # AI-POWERED ROUTING: Use AI routing to determine processing strategy
         routing_start = time.time()
-        routing_decision = self._router.route_thought(thought_data)
+        routing_decision = self._router.analyze(thought_data)
         routing_time = time.time() - routing_start
 
         # ENHANCED LOGGING: Detailed routing analysis
