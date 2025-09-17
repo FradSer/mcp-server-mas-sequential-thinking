@@ -38,6 +38,7 @@ class CoordinationPlan:
     # Execution parameters
     timeout_seconds: float
     expected_interactions: int
+    team_size: int  # Added missing team_size attribute
 
     # Reasoning and metadata
     reasoning: str
@@ -229,6 +230,7 @@ Focus on ELIMINATING REDUNDANCY by making all routing and planning decisions in 
                 coordination_strategy=coordination_info["coordination_strategy"],
                 timeout_seconds=float(execution_info["timeout_seconds"]),
                 expected_interactions=int(execution_info["expected_interactions"]),
+                team_size=len(team_info["specialist_roles"]),  # Added team_size
                 reasoning=reasoning,
                 confidence=float(data["confidence"]),
                 original_thought=thought_data.thought
@@ -276,6 +278,7 @@ Focus on ELIMINATING REDUNDANCY by making all routing and planning decisions in 
             coordination_strategy="direct" if len(specialists) == 1 else "sequential",
             timeout_seconds=timeout,
             expected_interactions=len(specialists),
+            team_size=len(specialists),  # Added team_size
             reasoning="Fallback coordination analysis due to AI parsing failure",
             confidence=0.6,
             original_thought=thought_data.thought
