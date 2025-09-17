@@ -20,6 +20,7 @@ from .unified_team import create_team_by_type
 from .utils import setup_logging
 from .constants import DefaultValues, DefaultTimeouts
 from .intelligent_coordinator import create_intelligent_coordinator, IntelligentCoordinator, CoordinationPlan
+from .quality_assurance import create_quality_assurance_manager, QualityAssuranceManager
 from .ai_routing import ComplexityLevel, ProcessingStrategy  # Keep types for compatibility
 from .circuit_breaker import get_circuit_breaker, CircuitBreakerConfig
 from .types import (
@@ -212,7 +213,7 @@ class ServerState:
 class ThoughtProcessor:
     """Handles thought processing with optimized performance and error handling."""
 
-    __slots__ = ("_session", "_coordinator", "_circuit_breaker")  # Memory optimization
+    __slots__ = ("_session", "_coordinator", "_quality_manager", "_circuit_breaker")  # Memory optimization
 
     def __init__(self, session: SessionMemory) -> None:
         self._session = session
@@ -222,12 +223,30 @@ class ThoughtProcessor:
         self._coordinator = create_intelligent_coordinator()
         logger.info("✅ Intelligent Coordinator ready - unified decision making activated")
 
+        # QUALITY ASSURANCE: Comprehensive evaluation and feedback system
+        logger.info("Initializing Quality Assurance Manager (evaluation + continuous improvement)")
+        self._quality_manager = create_quality_assurance_manager()
+        logger.info("✅ Quality Assurance ready - evaluation pipeline activated")
+
         # HOTFIX: Add circuit breaker for failure protection
         provider = os.environ.get("LLM_PROVIDER", "deepseek").lower()
         self._circuit_breaker = get_circuit_breaker(
             f"{provider}_processing",
             CircuitBreakerConfig(failure_threshold=3, timeout_seconds=30)
         )
+
+    def _extract_response_content(self, response) -> str:
+        """Extract clean content from Agno RunOutput objects."""
+        if hasattr(response, 'content') and response.content:
+            return str(response.content)
+        elif hasattr(response, 'messages') and response.messages:
+            # Extract from last assistant message
+            for msg in reversed(response.messages):
+                if hasattr(msg, 'role') and msg.role == 'assistant' and hasattr(msg, 'content'):
+                    return str(msg.content)
+            return str(response)
+        else:
+            return str(response)
 
     async def process_thought(self, thought_data: ThoughtData) -> str:
         """Process a thought through the team with comprehensive error handling."""
@@ -289,7 +308,7 @@ class ThoughtProcessor:
         logger.info(f"  Specialists: {coordination_plan.specialist_roles}")
         logger.info(f"  Team size: {coordination_plan.team_size}")
         logger.info(f"  Coordination: {coordination_plan.coordination_strategy}")
-        logger.info(f"  Timeout: {coordination_plan.timeout_seconds:.1f}s")
+        logger.info(f"  Processing mode: Unlimited time allowed")
         logger.info(f"  Coordination time: {coordination_time:.3f}s")
         logger.info(f"  Confidence: {coordination_plan.confidence:.2f}")
         logger.debug(f"  Reasoning: {coordination_plan.reasoning}")
@@ -347,6 +366,46 @@ class ThoughtProcessor:
 
         # Format and return response
         final_response = self._format_response(response, thought_data)
+
+        # QUALITY ASSURANCE: Comprehensive evaluation and feedback
+        quality_eval_enabled = os.environ.get("ENABLE_QUALITY_EVAL", "true").lower() == "true"
+
+        if quality_eval_enabled:
+            try:
+                # Build execution log for evaluation
+                execution_log = {
+                    "execution_mode": coordination_plan.execution_mode.value,
+                    "agents_used": coordination_plan.specialist_roles,
+                    "processing_time": processing_time,
+                    "strategy": coordination_plan.strategy.value,
+                    "unlimited_processing": True,
+                    "actual_specialists": len(coordination_plan.specialist_roles)
+                }
+
+                # Run comprehensive quality evaluation
+                logger.info("🔍 Running quality evaluation...")
+                quality_metrics = await self._quality_manager.evaluate_full_pipeline(
+                    thought_data, coordination_plan, execution_log, final_response, processing_time
+                )
+
+                # Log quality results
+                logger.info(f"📊 QUALITY METRICS:")
+                logger.info(f"  Overall Score: {quality_metrics.overall_score:.2f}")
+                logger.info(f"  Coordination Accuracy: {quality_metrics.coordination_accuracy:.2f}")
+                logger.info(f"  Execution Consistency: {quality_metrics.execution_consistency:.2f}")
+                logger.info(f"  Response Quality: {quality_metrics.response_quality:.2f}")
+                logger.info(f"  Efficiency: {quality_metrics.efficiency_score:.2f}")
+
+                if quality_metrics.improvement_suggestions:
+                    logger.info(f"  Suggestions: {'; '.join(quality_metrics.improvement_suggestions[:2])}")
+
+                # Performance trending
+                trends = self._quality_manager.get_performance_trends()
+                if trends:
+                    logger.info(f"  Trend: {trends.get('trend_direction', 'unknown')} (avg: {trends.get('avg_overall_score', 0):.2f})")
+
+            except Exception as e:
+                logger.warning(f"Quality evaluation failed: {e}")
 
         # ENHANCED LOGGING: Final processing summary
         logger.info(f"🎯 PROCESSING COMPLETE:")
@@ -416,13 +475,16 @@ class ThoughtProcessor:
         response = await simple_agent.arun(input_prompt)
         processing_time = time.time() - start_time
 
+        # HOTFIX: Properly extract content from Agno RunOutput
+        response_content = self._extract_response_content(response)
+
         logger.info(f"✅ SINGLE-AGENT RESPONSE:")
         logger.info(f"  Processing time: {processing_time:.3f}s")
-        logger.info(f"  Output length: {len(str(response))} chars")
-        logger.info(f"  Full response:\n{response}")
+        logger.info(f"  Output length: {len(response_content)} chars")
+        logger.info(f"  Full response:\n{response_content}")
         logger.info(f"  {'='*50}")
 
-        return str(response)
+        return response_content
 
     async def _execute_selective_team(self, input_prompt: str, plan: CoordinationPlan) -> str:
         """Execute selective team processing (hybrid approach)."""
@@ -432,34 +494,29 @@ class ThoughtProcessor:
         logger.info(f"  Coordination strategy: {plan.coordination_strategy}")
 
         # TODO: Implement actual selective team creation
-        # For now, use existing team with timeout from plan
-        return await self._execute_full_team_with_timeout(input_prompt, plan)
+        # For now, use existing team without timeout
+        return await self._execute_full_team_unlimited(input_prompt, plan)
 
-    async def _execute_full_team_with_timeout(self, input_prompt: str, plan: CoordinationPlan) -> str:
-        """Execute full team processing with coordination plan timeout."""
-        return await self._execute_team_processing_with_retries_and_timeout(
-            input_prompt, plan.complexity_level, plan.timeout_seconds
+    async def _execute_full_team_unlimited(self, input_prompt: str, plan: CoordinationPlan) -> str:
+        """Execute full team processing without timeout restrictions."""
+        return await self._execute_team_processing_with_retries(
+            input_prompt, plan.complexity_level
         )
 
     async def _execute_team_processing(self, input_prompt: str) -> str:
-        """Execute team processing with error handling and timeout protection."""
+        """Execute team processing without timeout restrictions."""
         try:
-            # HOTFIX: Add provider-specific timeout protection
-            timeout = self._get_provider_timeout()
-            response = await asyncio.wait_for(
-                self._session.team.arun(input_prompt),
-                timeout=timeout
-            )
-            return getattr(response, "content", "") or str(response)
-        except asyncio.TimeoutError:
-            raise ThoughtProcessingError(f"Team processing timed out after {timeout}s")
+            # REMOVED: All timeout restrictions for unlimited processing time
+            response = await self._session.team.arun(input_prompt)
+            # HOTFIX: Properly extract content from Agno RunOutput
+            return self._extract_response_content(response)
         except Exception as e:
             raise ThoughtProcessingError(f"Team coordination failed: {e}") from e
 
-    async def _execute_team_processing_with_retries_and_timeout(
-        self, input_prompt: str, complexity_level: ComplexityLevel, timeout: float
+    async def _execute_team_processing_with_retries(
+        self, input_prompt: str, complexity_level: ComplexityLevel
     ) -> str:
-        """Execute team processing with specified timeout (for coordination plan)."""
+        """Execute team processing without timeout restrictions (for coordination plan)."""
         max_retries = DefaultTimeouts.MAX_RETRY_ATTEMPTS
         last_exception = None
 
@@ -467,7 +524,7 @@ class ThoughtProcessor:
             try:
                 logger.info(
                     f"Processing attempt {retry_count + 1}/{max_retries + 1}: "
-                    f"timeout={timeout:.1f}s, complexity={complexity_level.value}"
+                    f"complexity={complexity_level.value}"
                 )
 
                 # ENHANCED LOGGING: Log multi-agent team call details
@@ -481,38 +538,20 @@ class ThoughtProcessor:
                 logger.info(f"  {'='*50}")
 
                 start_time = time.time()
-                response = await asyncio.wait_for(
-                    self._session.team.arun(input_prompt),
-                    timeout=timeout
-                )
+                # REMOVED: All timeout restrictions for unlimited processing time
+                response = await self._session.team.arun(input_prompt)
                 processing_time = time.time() - start_time
 
+                # HOTFIX: Properly extract content from Agno RunOutput
+                response_content = self._extract_response_content(response)
+
                 logger.info(f"✅ MULTI-AGENT RESPONSE:")
-                logger.info(f"  Processing time: {processing_time:.3f}s (timeout: {timeout:.1f}s)")
-                logger.info(f"  Output length: {len(str(response))} chars")
-                logger.info(f"  Full response:\n{response}")
+                logger.info(f"  Processing time: {processing_time:.3f}s")
+                logger.info(f"  Output length: {len(response_content)} chars")
+                logger.info(f"  Full response:\n{response_content}")
                 logger.info(f"  {'='*50}")
 
-                return getattr(response, "content", "") or str(response)
-
-            except asyncio.TimeoutError as e:
-                last_exception = e
-                if retry_count < max_retries:
-                    # Increase timeout for retry with exponential backoff
-                    new_timeout = timeout * (DefaultTimeouts.RETRY_EXPONENTIAL_BASE ** (retry_count + 1))
-                    logger.warning(f"Timeout on attempt {retry_count + 1} ({timeout:.1f}s). Retrying with longer timeout ({new_timeout:.1f}s)...")
-                    timeout = new_timeout
-                else:
-                    logger.error(f"Final timeout after {max_retries + 1} attempts")
-                    # HOTFIX: Try single-agent fallback on final timeout
-                    logger.info("Attempting single-agent fallback...")
-                    try:
-                        return await self._execute_single_agent_simple(input_prompt)
-                    except Exception as fallback_error:
-                        logger.error(f"Single-agent fallback also failed: {fallback_error}")
-                        raise ThoughtProcessingError(
-                            f"Team processing failed after {max_retries + 1} attempts and fallback failed"
-                        ) from e
+                return response_content
 
             except Exception as e:
                 last_exception = e
@@ -528,84 +567,8 @@ class ThoughtProcessor:
         # This should never be reached, but just in case
         raise ThoughtProcessingError("Unexpected error in retry logic") from last_exception
 
-        for retry_count in range(max_retries + 1):
-            try:
-                # Calculate adaptive timeout for this attempt
-                timeout = self._get_adaptive_timeout(complexity_level, retry_count)
-
-                logger.info(
-                    f"Processing attempt {retry_count + 1}/{max_retries + 1}: "
-                    f"timeout={timeout:.1f}s, complexity={complexity_level.value}"
-                )
-
-                # ENHANCED LOGGING: Log multi-agent team call details
-                team = self._session.team
-                logger.info(f"🏢 MULTI-AGENT TEAM CALL:")
-                logger.info(f"  Team: {team.name} ({len(team.members)} agents)")
-                logger.info(f"  Leader: {team.model.__class__.__name__} (model: {getattr(team.model, 'id', 'unknown')})")
-                logger.info(f"  Members: {', '.join([m.name for m in team.members])}")
-                logger.info(f"  Input length: {len(input_prompt)} chars")
-                logger.info(f"  Full input:\n{input_prompt}")
-                logger.info(f"  {'='*50}")
-
-                start_time = time.time()
-                response = await asyncio.wait_for(
-                    self._session.team.arun(input_prompt),
-                    timeout=timeout
-                )
-                processing_time = time.time() - start_time
-
-                response_content = getattr(response, "content", "") or str(response)
-
-                # ENHANCED LOGGING: Log multi-agent team response details
-                logger.info(f"✅ MULTI-AGENT TEAM RESPONSE:")
-                logger.info(f"  Processing time: {processing_time:.3f}s (timeout: {timeout:.1f}s)")
-                logger.info(f"  Output length: {len(response_content)} chars")
-                logger.info(f"  Full response:\n{response_content}")
-                logger.info(f"  {'='*50}")
-
-                # Success! Log the successful attempt
-                if retry_count > 0:
-                    logger.info(f"Processing succeeded on retry {retry_count}")
-
-                return response_content
-
-            except asyncio.TimeoutError as e:
-                last_exception = e
-                if retry_count < max_retries:
-                    # Log timeout and prepare for retry
-                    next_timeout = self._get_adaptive_timeout(complexity_level, retry_count + 1)
-                    logger.warning(
-                        f"Timeout on attempt {retry_count + 1} ({timeout:.1f}s). "
-                        f"Retrying with longer timeout ({next_timeout:.1f}s)..."
-                    )
-                    continue
-                else:
-                    # Final timeout - calculate total time spent
-                    total_time = sum(
-                        self._get_adaptive_timeout(complexity_level, i)
-                        for i in range(max_retries + 1)
-                    )
-                    provider = os.environ.get("LLM_PROVIDER", "unknown")
-
-                    raise ThoughtProcessingError(
-                        f"Processing failed after {max_retries + 1} attempts "
-                        f"(total time: {total_time:.1f}s). "
-                        f"This {complexity_level.value} thought exceeded the maximum "
-                        f"processing time for {provider}. Consider breaking it into "
-                        f"smaller, simpler thoughts or try again later."
-                    )
-
-            except Exception as e:
-                # Non-timeout errors don't retry
-                last_exception = e
-                raise ThoughtProcessingError(f"Team coordination failed: {e}") from e
-
-        # This should never be reached, but just in case
-        raise ThoughtProcessingError(f"Unexpected error after retries") from last_exception
-
     async def _execute_single_agent_processing(self, input_prompt: str, routing_decision) -> str:
-        """Execute single-agent processing for simple thoughts (hotfix optimization)."""
+        """Execute single-agent processing for simple thoughts without timeout restrictions."""
         try:
             # HOTFIX: Create a simple agent instead of calling model directly
             from agno.agent import Agent
@@ -642,23 +605,17 @@ Provide a focused response with clear guidance for the next step."""
             logger.info(f"  Full input:\n{simplified_prompt}")
             logger.info(f"  {'='*50}")
 
-            # HOTFIX: Add adaptive timeout protection for single agent
-            # Single agent gets simpler complexity level for faster timeout
-            single_agent_complexity = ComplexityLevel.SIMPLE
-            timeout = self._get_adaptive_timeout(single_agent_complexity, 0) * 0.5  # 50% of base
-
             start_time = time.time()
-            response = await asyncio.wait_for(
-                simple_agent.arun(simplified_prompt),
-                timeout=timeout
-            )
+            # REMOVED: All timeout restrictions for unlimited processing time
+            response = await simple_agent.arun(simplified_prompt)
             processing_time = time.time() - start_time
 
-            response_content = getattr(response, "content", "") or str(response)
+            # HOTFIX: Properly extract content from Agno RunOutput
+            response_content = self._extract_response_content(response)
 
             # ENHANCED LOGGING: Log single agent response details
             logger.info(f"✅ SINGLE-AGENT RESPONSE:")
-            logger.info(f"  Processing time: {processing_time:.3f}s (timeout: {timeout:.1f}s)")
+            logger.info(f"  Processing time: {processing_time:.3f}s")
             logger.info(f"  Output length: {len(response_content)} chars")
             logger.info(f"  Full response:\n{response_content}")
             logger.info(f"  {'='*50}")
@@ -666,60 +623,10 @@ Provide a focused response with clear guidance for the next step."""
             logger.info(f"Single-agent processing completed (saved ~{routing_decision.estimated_cost:.4f}$ vs multi-agent)")
             return response_content
 
-        except asyncio.TimeoutError:
-            logger.warning(f"Single-agent processing timed out after {timeout:.1f}s, falling back to team with adaptive timeout")
-            # HOTFIX: Use adaptive timeout for fallback instead of fixed 120s
-            return await self._execute_team_processing_with_retries(input_prompt, ComplexityLevel.MODERATE)
         except Exception as e:
             logger.warning(f"Single-agent processing failed, falling back to team: {e}")
-            # HOTFIX: Use adaptive timeout for fallback instead of fixed 120s
-            return await self._execute_team_processing_with_retries(input_prompt, ComplexityLevel.MODERATE)
-
-    def _get_adaptive_timeout(self, complexity_level: ComplexityLevel, retry_count: int = 0) -> float:
-        """Get adaptive timeout based on complexity and retry attempts."""
-        provider = os.environ.get("LLM_PROVIDER", "").lower()
-
-        # Base timeout by provider
-        base_timeouts = {
-            "deepseek": DefaultTimeouts.ADAPTIVE_BASE_DEEPSEEK,
-            "groq": DefaultTimeouts.ADAPTIVE_BASE_GROQ,
-            "openai": DefaultTimeouts.ADAPTIVE_BASE_OPENAI,
-            "default": DefaultTimeouts.ADAPTIVE_BASE_DEFAULT
-        }
-        base_timeout = base_timeouts.get(provider, base_timeouts["default"])
-
-        # Complexity multipliers
-        complexity_multipliers = {
-            ComplexityLevel.SIMPLE: DefaultTimeouts.COMPLEXITY_SIMPLE_MULTIPLIER,
-            ComplexityLevel.MODERATE: DefaultTimeouts.COMPLEXITY_MODERATE_MULTIPLIER,
-            ComplexityLevel.COMPLEX: DefaultTimeouts.COMPLEXITY_COMPLEX_MULTIPLIER,
-            ComplexityLevel.HIGHLY_COMPLEX: DefaultTimeouts.COMPLEXITY_HIGHLY_COMPLEX_MULTIPLIER
-        }
-        complexity_multiplier = complexity_multipliers.get(complexity_level, DefaultTimeouts.COMPLEXITY_COMPLEX_MULTIPLIER)
-
-        # Exponential backoff for retries
-        retry_multiplier = DefaultTimeouts.RETRY_EXPONENTIAL_BASE ** retry_count
-
-        # Calculate adaptive timeout
-        adaptive_timeout = base_timeout * complexity_multiplier * retry_multiplier
-
-        # Safety ceiling - never exceed maximum
-        max_timeouts = {
-            "deepseek": DefaultTimeouts.MAX_TIMEOUT_DEEPSEEK,
-            "default": DefaultTimeouts.MAX_TIMEOUT_DEFAULT
-        }
-        max_timeout = max_timeouts.get(provider, max_timeouts["default"])
-
-        return min(adaptive_timeout, max_timeout)
-
-    def _get_provider_timeout(self) -> float:
-        """Get provider-specific timeout (legacy method for backward compatibility)."""
-        provider = os.environ.get("LLM_PROVIDER", "").lower()
-
-        if provider == "deepseek":
-            return DefaultTimeouts.DEEPSEEK_PROCESSING_TIMEOUT
-        else:
-            return DefaultTimeouts.PROCESSING_TIMEOUT
+            # HOTFIX: Use unlimited processing for fallback
+            return await self._execute_team_processing(input_prompt)
 
     def _build_context_prompt(self, thought_data: ThoughtData) -> str:
         """Build context-aware input prompt with optimized string construction."""
