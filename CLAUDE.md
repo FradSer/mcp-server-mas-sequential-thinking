@@ -21,6 +21,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - Run with coverage: `pytest --cov=. --cov-report=html`
 - Install dev dependencies: `uv pip install -e ".[dev]"` or use dependency groups: `uv pip install --group dev`
 
+### Log Monitoring
+- Real-time log monitoring: `tail -f ~/.sequential_thinking/logs/sequential_thinking.log`
+- View recent logs: `tail -n 50 ~/.sequential_thinking/logs/sequential_thinking.log`
+- Search for errors: `grep "ERROR\|WARNING" ~/.sequential_thinking/logs/sequential_thinking.log`
+
 ### Running the Server
 - Direct execution: `uv run python src/mcp_server_mas_sequential_thinking/main.py`
 - Using uv: `uv run mcp-server-mas-sequential-thinking`
@@ -64,6 +69,9 @@ This is a Multi-Agent System (MAS) for sequential thinking built with the Agno f
 - `ServerState` & `ServerConfig`: State management and configuration containers
 - `SessionMemory` (session.py): In-memory state tracking with branch support
 - Multiple team implementations: `team.py`, `unified_team.py` for different coordination strategies
+- `ai_routing.py`: AI-powered complexity analysis and routing decisions
+- `route_execution.py`: Route execution validation and consistency checking
+- `adaptive_routing.py`: Adaptive routing strategy selection and optimization
 
 ### Configuration
 
@@ -87,6 +95,8 @@ Environment variables control behavior:
    - `single_agent`: Simple thoughts processed by single agent
    - `hybrid`: Moderate complexity with selective specialist collaboration
    - `multi_agent`: Complex thoughts requiring full team coordination
+   - **Route Execution Validation**: Ensures routing decisions are consistent and validated
+   - **Adaptive Optimization**: Learns from routing performance to improve future decisions
 4. Coordinator analyzes thought and delegates to relevant specialists
 5. Specialists process sub-tasks using their tools (ReasoningTools, ExaTools)
 6. Coordinator synthesizes responses and returns guidance

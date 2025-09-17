@@ -19,7 +19,8 @@ from .session import SessionMemory
 from .unified_team import create_team_by_type
 from .utils import setup_logging
 from .constants import DefaultValues, DefaultTimeouts
-from .ai_routing import create_ai_router, HybridComplexityAnalyzer, ComplexityLevel, ProcessingStrategy
+from .intelligent_coordinator import create_intelligent_coordinator, IntelligentCoordinator, CoordinationPlan
+from .ai_routing import ComplexityLevel, ProcessingStrategy  # Keep types for compatibility
 from .circuit_breaker import get_circuit_breaker, CircuitBreakerConfig
 from .types import (
     ProcessingMetadata,
@@ -211,18 +212,15 @@ class ServerState:
 class ThoughtProcessor:
     """Handles thought processing with optimized performance and error handling."""
 
-    __slots__ = ("_session", "_router", "_circuit_breaker")  # Memory optimization
+    __slots__ = ("_session", "_coordinator", "_circuit_breaker")  # Memory optimization
 
     def __init__(self, session: SessionMemory) -> None:
         self._session = session
-        # AI-POWERED ROUTING: Always use AI-powered routing for better accuracy
-        ai_confidence_threshold = float(os.environ.get("AI_CONFIDENCE_THRESHOLD", "0.7"))
 
-        logger.info("Initializing AI-powered hybrid routing system")
-        self._router = create_ai_router(
-            use_ai=True,
-            ai_confidence_threshold=ai_confidence_threshold
-        )
+        # INTELLIGENT COORDINATION: Unified routing and planning system
+        logger.info("Initializing Intelligent Coordinator (eliminates router+planner duplication)")
+        self._coordinator = create_intelligent_coordinator()
+        logger.info("✅ Intelligent Coordinator ready - unified decision making activated")
 
         # HOTFIX: Add circuit breaker for failure protection
         provider = os.environ.get("LLM_PROVIDER", "deepseek").lower()
@@ -278,21 +276,23 @@ class ThoughtProcessor:
         # Add to session
         self._session.add_thought(thought_data)
 
-        # AI-POWERED ROUTING: Use AI routing to determine processing strategy
-        routing_start = time.time()
-        routing_decision = self._router.analyze(thought_data)
-        routing_time = time.time() - routing_start
+        # INTELLIGENT COORDINATION: Create comprehensive coordination plan
+        coordination_start = time.time()
+        coordination_plan = await self._coordinator.create_coordination_plan(thought_data)
+        coordination_time = time.time() - coordination_start
 
-        # ENHANCED LOGGING: Detailed routing analysis
-        logger.info(f"🧠 ROUTING ANALYSIS:")
-        logger.info(f"  Strategy: {routing_decision.strategy.value}")
-        logger.info(f"  Complexity: {routing_decision.complexity_level.value} (score: {routing_decision.complexity_score:.1f}/100)")
-        logger.info(f"  Estimated tokens: {routing_decision.estimated_token_usage[0]}-{routing_decision.estimated_token_usage[1]}")
-        logger.info(f"  Estimated cost: ${routing_decision.estimated_cost:.6f}")
-        logger.info(f"  Routing time: {routing_time:.3f}s")
-        if routing_decision.specialist_recommendations:
-            logger.info(f"  Recommended specialists: {', '.join(routing_decision.specialist_recommendations)}")
-        logger.debug(f"  Reasoning: {routing_decision.reasoning}")
+        # ENHANCED LOGGING: Detailed coordination analysis
+        logger.info(f"🎯 COORDINATION PLAN:")
+        logger.info(f"  Strategy: {coordination_plan.strategy.value}")
+        logger.info(f"  Complexity: {coordination_plan.complexity_level.value} (score: {coordination_plan.complexity_score:.1f}/100)")
+        logger.info(f"  Execution mode: {coordination_plan.execution_mode.value}")
+        logger.info(f"  Specialists: {coordination_plan.specialist_roles}")
+        logger.info(f"  Team size: {coordination_plan.team_size}")
+        logger.info(f"  Coordination: {coordination_plan.coordination_strategy}")
+        logger.info(f"  Timeout: {coordination_plan.timeout_seconds:.1f}s")
+        logger.info(f"  Coordination time: {coordination_time:.3f}s")
+        logger.info(f"  Confidence: {coordination_plan.confidence:.2f}")
+        logger.debug(f"  Reasoning: {coordination_plan.reasoning}")
 
         # Build context-aware input
         input_prompt = self._build_context_prompt(thought_data)
@@ -321,26 +321,28 @@ class ThoughtProcessor:
         logger.info(f"  Built prompt:\n{input_prompt}")
         logger.info(f"  {'='*50}")
 
-        # Process based on routing decision with timing
+        # UNIFIED EXECUTION: Direct execution based on coordination plan
         processing_start = time.time()
-        if routing_decision.strategy == ProcessingStrategy.SINGLE_AGENT:
-            response = await self._execute_single_agent_processing(input_prompt, routing_decision)
-            strategy_used = "single_agent"
-        else:
-            response = await self._execute_team_processing_with_retries(
-                input_prompt, routing_decision.complexity_level
-            )
-            strategy_used = "multi_agent"
 
+        logger.info(f"📋 EXECUTING COORDINATION PLAN:")
+        logger.info(f"  Mode: {coordination_plan.execution_mode.value}")
+        logger.info(f"  Task breakdown: {coordination_plan.task_breakdown}")
+        logger.info(f"  Expected interactions: {coordination_plan.expected_interactions}")
+
+        # Execute based on coordination plan (no redundant validation needed)
+        response = await self._execute_coordination_plan(input_prompt, coordination_plan)
         processing_time = time.time() - processing_start
+
         total_time = time.time() - start_time
 
-        # Log performance metrics
+        # Log performance metrics with coordination status
         logger.info(
             f"Thought #{thought_data.thought_number} completed: "
-            f"strategy={strategy_used}, "
+            f"strategy={coordination_plan.execution_mode.value}, "
+            f"specialists={len(coordination_plan.specialist_roles)}, "
             f"processing_time={processing_time:.3f}s, "
-            f"total_time={total_time:.3f}s"
+            f"total_time={total_time:.3f}s, "
+            f"confidence={coordination_plan.confidence:.2f}"
         )
 
         # Format and return response
@@ -349,13 +351,95 @@ class ThoughtProcessor:
         # ENHANCED LOGGING: Final processing summary
         logger.info(f"🎯 PROCESSING COMPLETE:")
         logger.info(f"  Thought #{thought_data.thought_number} processed successfully")
-        logger.info(f"  Strategy used: {strategy_used}")
+        logger.info(f"  Strategy used: {coordination_plan.execution_mode.value}")
         logger.info(f"  Processing time: {processing_time:.3f}s")
         logger.info(f"  Total time: {total_time:.3f}s")
         logger.info(f"  Response length: {len(final_response)} chars")
         logger.info(f"  {'='*50}")
 
         return final_response
+
+    async def _execute_coordination_plan(self, input_prompt: str, plan: CoordinationPlan) -> str:
+        """Execute thought processing based on coordination plan (unified approach)."""
+        from .route_execution import ExecutionMode
+
+        logger.info(f"🎯 Executing {plan.execution_mode.value} with {plan.specialist_roles}")
+
+        try:
+            if plan.execution_mode == ExecutionMode.SINGLE_AGENT:
+                return await self._execute_single_agent_simple(input_prompt)
+
+            elif plan.execution_mode == ExecutionMode.SELECTIVE_TEAM:
+                return await self._execute_selective_team(input_prompt, plan)
+
+            elif plan.execution_mode == ExecutionMode.FULL_TEAM:
+                return await self._execute_full_team_with_timeout(input_prompt, plan)
+
+            else:
+                raise ValueError(f"Unknown execution mode: {plan.execution_mode}")
+
+        except Exception as e:
+            logger.error(f"Coordination plan execution failed: {e}")
+            # Fallback to single agent for reliability
+            logger.info("Falling back to single-agent processing")
+            return await self._execute_single_agent_simple(input_prompt)
+
+    async def _execute_single_agent_simple(self, input_prompt: str) -> str:
+        """Execute simple single-agent processing."""
+        from agno.agent import Agent
+
+        model_config = get_model_config()
+        single_model = model_config.create_team_model()
+
+        simple_agent = Agent(
+            name="SimpleProcessor",
+            role="Simple Thought Processor",
+            description="Processes thoughts efficiently without multi-agent overhead",
+            model=single_model,
+            instructions=[
+                "You are processing a thought efficiently.",
+                "Provide a focused, clear response.",
+                "Include guidance for the next step.",
+                "Be concise but helpful."
+            ],
+            markdown=False
+        )
+
+        logger.info(f"🤖 SINGLE-AGENT CALL:")
+        logger.info(f"  Agent: {simple_agent.name} ({simple_agent.role})")
+        logger.info(f"  Model: {getattr(single_model, 'id', 'unknown')} ({single_model.__class__.__name__})")
+        logger.info(f"  Input length: {len(input_prompt)} chars")
+        logger.info(f"  Full input:\n{input_prompt}")
+        logger.info(f"  {'='*50}")
+
+        start_time = time.time()
+        response = await simple_agent.arun(input_prompt)
+        processing_time = time.time() - start_time
+
+        logger.info(f"✅ SINGLE-AGENT RESPONSE:")
+        logger.info(f"  Processing time: {processing_time:.3f}s")
+        logger.info(f"  Output length: {len(str(response))} chars")
+        logger.info(f"  Full response:\n{response}")
+        logger.info(f"  {'='*50}")
+
+        return str(response)
+
+    async def _execute_selective_team(self, input_prompt: str, plan: CoordinationPlan) -> str:
+        """Execute selective team processing (hybrid approach)."""
+        # For now, delegate to full team but log as selective
+        logger.info(f"🏢 SELECTIVE TEAM CALL:")
+        logger.info(f"  Required specialists: {plan.specialist_roles}")
+        logger.info(f"  Coordination strategy: {plan.coordination_strategy}")
+
+        # TODO: Implement actual selective team creation
+        # For now, use existing team with timeout from plan
+        return await self._execute_full_team_with_timeout(input_prompt, plan)
+
+    async def _execute_full_team_with_timeout(self, input_prompt: str, plan: CoordinationPlan) -> str:
+        """Execute full team processing with coordination plan timeout."""
+        return await self._execute_team_processing_with_retries_and_timeout(
+            input_prompt, plan.complexity_level, plan.timeout_seconds
+        )
 
     async def _execute_team_processing(self, input_prompt: str) -> str:
         """Execute team processing with error handling and timeout protection."""
@@ -372,12 +456,77 @@ class ThoughtProcessor:
         except Exception as e:
             raise ThoughtProcessingError(f"Team coordination failed: {e}") from e
 
-    async def _execute_team_processing_with_retries(
-        self, input_prompt: str, complexity_level: ComplexityLevel
+    async def _execute_team_processing_with_retries_and_timeout(
+        self, input_prompt: str, complexity_level: ComplexityLevel, timeout: float
     ) -> str:
-        """Execute team processing with adaptive timeout and intelligent retries."""
-        max_retries = DefaultTimeouts.MAX_RETRY_ATTEMPTS  # Allow up to 3 total attempts
+        """Execute team processing with specified timeout (for coordination plan)."""
+        max_retries = DefaultTimeouts.MAX_RETRY_ATTEMPTS
         last_exception = None
+
+        for retry_count in range(max_retries + 1):
+            try:
+                logger.info(
+                    f"Processing attempt {retry_count + 1}/{max_retries + 1}: "
+                    f"timeout={timeout:.1f}s, complexity={complexity_level.value}"
+                )
+
+                # ENHANCED LOGGING: Log multi-agent team call details
+                team = self._session.team
+                logger.info(f"🏢 MULTI-AGENT TEAM CALL:")
+                logger.info(f"  Team: {team.name} ({len(team.members)} agents)")
+                logger.info(f"  Leader: {team.model.__class__.__name__} (model: {getattr(team.model, 'id', 'unknown')})")
+                logger.info(f"  Members: {', '.join([m.name for m in team.members])}")
+                logger.info(f"  Input length: {len(input_prompt)} chars")
+                logger.info(f"  Full input:\n{input_prompt}")
+                logger.info(f"  {'='*50}")
+
+                start_time = time.time()
+                response = await asyncio.wait_for(
+                    self._session.team.arun(input_prompt),
+                    timeout=timeout
+                )
+                processing_time = time.time() - start_time
+
+                logger.info(f"✅ MULTI-AGENT RESPONSE:")
+                logger.info(f"  Processing time: {processing_time:.3f}s (timeout: {timeout:.1f}s)")
+                logger.info(f"  Output length: {len(str(response))} chars")
+                logger.info(f"  Full response:\n{response}")
+                logger.info(f"  {'='*50}")
+
+                return getattr(response, "content", "") or str(response)
+
+            except asyncio.TimeoutError as e:
+                last_exception = e
+                if retry_count < max_retries:
+                    # Increase timeout for retry with exponential backoff
+                    new_timeout = timeout * (DefaultTimeouts.RETRY_EXPONENTIAL_BASE ** (retry_count + 1))
+                    logger.warning(f"Timeout on attempt {retry_count + 1} ({timeout:.1f}s). Retrying with longer timeout ({new_timeout:.1f}s)...")
+                    timeout = new_timeout
+                else:
+                    logger.error(f"Final timeout after {max_retries + 1} attempts")
+                    # HOTFIX: Try single-agent fallback on final timeout
+                    logger.info("Attempting single-agent fallback...")
+                    try:
+                        return await self._execute_single_agent_simple(input_prompt)
+                    except Exception as fallback_error:
+                        logger.error(f"Single-agent fallback also failed: {fallback_error}")
+                        raise ThoughtProcessingError(
+                            f"Team processing failed after {max_retries + 1} attempts and fallback failed"
+                        ) from e
+
+            except Exception as e:
+                last_exception = e
+                logger.error(f"Processing error on attempt {retry_count + 1}: {e}")
+
+                if retry_count < max_retries:
+                    logger.info(f"Retrying... ({retry_count + 1}/{max_retries})")
+                    await asyncio.sleep(1)  # Brief pause before retry
+                else:
+                    logger.error(f"All retry attempts exhausted")
+                    raise ThoughtProcessingError(f"Team processing failed after {max_retries + 1} attempts: {e}") from e
+
+        # This should never be reached, but just in case
+        raise ThoughtProcessingError("Unexpected error in retry logic") from last_exception
 
         for retry_count in range(max_retries + 1):
             try:
