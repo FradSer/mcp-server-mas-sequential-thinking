@@ -297,7 +297,7 @@ class ThoughtProcessor:
             logger.info(f"  Type: Branch '{thought_data.branch_id}' from thought #{thought_data.branch_from}")
         else:
             logger.info(f"  Type: Sequential thought #{thought_data.thought_number}")
-        logger.info(f"  Session thoughts: {len(self._session.thoughts)} total")
+        logger.info(f"  Session thoughts: {len(self._session.thought_history)} total")
         logger.debug(f"  Built prompt length: {len(input_prompt)} chars")
 
         # Process based on routing decision with timing
