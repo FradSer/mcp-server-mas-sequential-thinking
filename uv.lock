@@ -4,7 +4,7 @@ requires-python = ">=3.10"
 
 [[package]]
 name = "agno"
-version = "2.0.3"
+version = "2.0.5"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "docstring-parser" },
@@ -20,9 +20,9 @@ dependencies = [
     { name = "typer" },
     { name = "typing-extensions" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/cf/38/82263452a74c6176c2a37d1a6ac7c3ccff3526ebd128df76632a70d6817b/agno-2.0.3.tar.gz", hash = "sha256:d669da6647fb1e57fb05438504093847d7e2b747b48446d5fd90996f48795c29", size = 845490, upload-time = "2025-09-10T21:03:01.771Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/da/30/53264fe9543fcb1d8b860ca3a3b705da5032e73f93818273d3169c3edc1b/agno-2.0.5.tar.gz", hash = "sha256:37d72fb98eb97c3abdb15be186f795b39f8ff668d97d9f9382e5971329e075d1", size = 855430, upload-time = "2025-09-17T02:45:10.348Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/43/9a/145d8ea9e6df799ef21b59aba44de9e6ff161444a5793eb3d8615110cccb/agno-2.0.3-py3-none-any.whl", hash = "sha256:d47d67b0816f01d71c4dbc91b620aa68552319fb16cc27d1bc1c1bf84a058ac8", size = 1066823, upload-time = "2025-09-10T21:02:59.515Z" },
+    { url = "https://files.pythonhosted.org/packages/96/f7/c216f0a218ef99958b77194613250131834f08d3a48b7a33bde6c638c5be/agno-2.0.5-py3-none-any.whl", hash = "sha256:9050bdb63feca2f421c0e3e73172ac269e82ed462e54b7318868a65107a89bd3", size = 1077050, upload-time = "2025-09-17T02:45:08.153Z" },
 ]
 
 [[package]]
@@ -543,7 +543,7 @@ wheels = [
 
 [[package]]
 name = "mcp-server-mas-sequential-thinking"
-version = "0.4.0"
+version = "0.5.0"
 source = { editable = "." }
 dependencies = [
     { name = "agno" },
@@ -573,7 +573,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "agno", specifier = ">=2.0.0" },
+    { name = "agno", specifier = ">=2.0.5" },
     { name = "asyncio" },
     { name = "black", marker = "extra == 'dev'" },
     { name = "exa-py" },
