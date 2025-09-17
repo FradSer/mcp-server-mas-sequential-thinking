@@ -9,8 +9,8 @@ import tempfile
 from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock
 
-from models import ThoughtData
-from session import SessionMemory
+from src.mcp_server_mas_sequential_thinking.models import ThoughtData
+from src.mcp_server_mas_sequential_thinking.session import SessionMemory
 
 
 @pytest.fixture(scope="session")

@@ -2,8 +2,10 @@
 
 import pytest
 
-from main import _create_validated_thought_data
-from models import ThoughtData
+from src.mcp_server_mas_sequential_thinking.server_core import (
+    create_validated_thought_data,
+)
+from src.mcp_server_mas_sequential_thinking.models import ThoughtData
 
 
 class TestCreateValidatedThoughtData:
@@ -11,7 +13,7 @@ class TestCreateValidatedThoughtData:
 
     def test_valid_thought_data_creation(self):
         """Test that valid data creates ThoughtData successfully."""
-        result = _create_validated_thought_data(
+        result = create_validated_thought_data(
             thought="Test thought",
             thought_number=1,
             total_thoughts=5,
@@ -30,7 +32,7 @@ class TestCreateValidatedThoughtData:
 
     def test_thought_whitespace_stripping(self):
         """Test that thought whitespace is properly stripped."""
-        result = _create_validated_thought_data(
+        result = create_validated_thought_data(
             thought="  Test thought with whitespace  ",
             thought_number=1,
             total_thoughts=5,
@@ -46,7 +48,7 @@ class TestCreateValidatedThoughtData:
 
     def test_branch_id_whitespace_stripping(self):
         """Test that branch_id whitespace is properly stripped."""
-        result = _create_validated_thought_data(
+        result = create_validated_thought_data(
             thought="Test thought",
             thought_number=2,
             total_thoughts=5,
@@ -62,7 +64,7 @@ class TestCreateValidatedThoughtData:
 
     def test_none_branch_id_preserved(self):
         """Test that None branch_id is preserved."""
-        result = _create_validated_thought_data(
+        result = create_validated_thought_data(
             thought="Test thought",
             thought_number=1,
             total_thoughts=5,
@@ -79,7 +81,7 @@ class TestCreateValidatedThoughtData:
     def test_invalid_thought_number_raises_validation_error(self):
         """Test that invalid thought_number raises ValueError."""
         with pytest.raises(ValueError, match="Invalid thought data"):
-            _create_validated_thought_data(
+            create_validated_thought_data(
                 thought="Test thought",
                 thought_number=0,  # Invalid: must be >= 1
                 total_thoughts=5,
@@ -94,7 +96,7 @@ class TestCreateValidatedThoughtData:
     def test_invalid_total_thoughts_raises_validation_error(self):
         """Test that invalid total_thoughts raises ValueError."""
         with pytest.raises(ValueError, match="Invalid thought data"):
-            _create_validated_thought_data(
+            create_validated_thought_data(
                 thought="Test thought",
                 thought_number=1,
                 total_thoughts=4,  # Invalid: must be >= 5
@@ -109,7 +111,7 @@ class TestCreateValidatedThoughtData:
     def test_empty_thought_after_strip_raises_validation_error(self):
         """Test that empty thought after stripping raises ValueError."""
         with pytest.raises(ValueError, match="Invalid thought data"):
-            _create_validated_thought_data(
+            create_validated_thought_data(
                 thought="   ",  # Empty after strip
                 thought_number=1,
                 total_thoughts=5,
@@ -124,7 +126,7 @@ class TestCreateValidatedThoughtData:
     def test_malformed_data_raises_validation_error(self):
         """Test that malformed data raises ValueError with descriptive message."""
         with pytest.raises(ValueError, match="Invalid thought data"):
-            _create_validated_thought_data(
+            create_validated_thought_data(
                 thought="Test thought",
                 thought_number="not_a_number",  # Invalid type
                 total_thoughts=5,

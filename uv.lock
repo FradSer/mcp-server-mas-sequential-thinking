@@ -4,25 +4,25 @@ requires-python = ">=3.10"
 
 [[package]]
 name = "agno"
-version = "1.7.7"
+version = "2.0.5"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "docstring-parser" },
     { name = "gitpython" },
     { name = "httpx" },
+    { name = "packaging" },
     { name = "pydantic" },
     { name = "pydantic-settings" },
     { name = "python-dotenv" },
     { name = "python-multipart" },
     { name = "pyyaml" },
     { name = "rich" },
-    { name = "tomli" },
     { name = "typer" },
     { name = "typing-extensions" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/f4/60/4972a71185158dd0103868b663ec57b538564815e0a70bc5fb327d256f81/agno-1.7.7.tar.gz", hash = "sha256:f0344ae284d971bf5689e6b6eb769f57b7b7548039b40321025c3eafc69698e3", size = 728105, upload-time = "2025-07-31T20:50:45.657Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/da/30/53264fe9543fcb1d8b860ca3a3b705da5032e73f93818273d3169c3edc1b/agno-2.0.5.tar.gz", hash = "sha256:37d72fb98eb97c3abdb15be186f795b39f8ff668d97d9f9382e5971329e075d1", size = 855430, upload-time = "2025-09-17T02:45:10.348Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/94/a5/f83d4eaeca94098cdb5e85d25861c68851240661fa0cbbb49ae28ab967f8/agno-1.7.7-py3-none-any.whl", hash = "sha256:aef4adaa95bb0caa6e4556b0e0938799495541bb4d59eb8d63dae26b749c4afc", size = 966708, upload-time = "2025-07-31T20:50:43.163Z" },
+    { url = "https://files.pythonhosted.org/packages/96/f7/c216f0a218ef99958b77194613250131834f08d3a48b7a33bde6c638c5be/agno-2.0.5-py3-none-any.whl", hash = "sha256:9050bdb63feca2f421c0e3e73172ac269e82ed462e54b7318868a65107a89bd3", size = 1077050, upload-time = "2025-09-17T02:45:08.153Z" },
 ]
 
 [[package]]
@@ -543,7 +543,7 @@ wheels = [
 
 [[package]]
 name = "mcp-server-mas-sequential-thinking"
-version = "0.4.0"
+version = "0.5.0"
 source = { editable = "." }
 dependencies = [
     { name = "agno" },
@@ -573,7 +573,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "agno", specifier = ">=0.2.4" },
+    { name = "agno", specifier = ">=2.0.5" },
     { name = "asyncio" },
     { name = "black", marker = "extra == 'dev'" },
     { name = "exa-py" },

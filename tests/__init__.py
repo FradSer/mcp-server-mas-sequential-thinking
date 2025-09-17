@@ -1,1 +1,1 @@
-# Tests package for GitHub Models provider
+"""Test package for mcp-server-mas-sequential-thinking."""

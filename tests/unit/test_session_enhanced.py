@@ -2,8 +2,8 @@
 
 from unittest.mock import MagicMock
 
-from session import SessionMemory
-from models import ThoughtData
+from src.mcp_server_mas_sequential_thinking.session import SessionMemory
+from src.mcp_server_mas_sequential_thinking.models import ThoughtData
 from tests.helpers.factories import ThoughtDataBuilder, ThoughtSequenceFactory
 
 

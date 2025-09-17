@@ -2,7 +2,7 @@
 
 from dataclasses import dataclass
 from typing import Optional
-from models import ThoughtData
+from src.mcp_server_mas_sequential_thinking.models import ThoughtData
 
 
 @dataclass
