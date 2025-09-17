@@ -111,16 +111,6 @@ class RouteExecutionPlan(BaseModel):
 class RouteExecutionValidator:
     """Validates and converts routing decisions to execution plans."""
 
-    # Default timeout mappings
-    TIMEOUT_MAPPING = {
-        (ProcessingStrategy.SINGLE_AGENT, ComplexityLevel.SIMPLE): 45.0,
-        (ProcessingStrategy.SINGLE_AGENT, ComplexityLevel.MODERATE): 60.0,
-        (ProcessingStrategy.HYBRID, ComplexityLevel.MODERATE): 120.0,
-        (ProcessingStrategy.HYBRID, ComplexityLevel.COMPLEX): 180.0,
-        (ProcessingStrategy.MULTI_AGENT, ComplexityLevel.COMPLEX): 240.0,
-        (ProcessingStrategy.MULTI_AGENT, ComplexityLevel.HIGHLY_COMPLEX): 300.0,
-    }
-
     # Execution mode mapping
     EXECUTION_MODE_MAPPING = {
         ProcessingStrategy.SINGLE_AGENT: ExecutionMode.SINGLE_AGENT,
@@ -140,9 +130,6 @@ class RouteExecutionValidator:
             routing_decision.specialist_recommendations
         )
 
-        # Calculate timeout
-        timeout = self._calculate_timeout(routing_decision.strategy, routing_decision.complexity_level)
-
         # Create execution plan
         plan = RouteExecutionPlan(
             strategy=routing_decision.strategy,
@@ -150,7 +137,7 @@ class RouteExecutionValidator:
             execution_mode=execution_mode,
             required_specialists=specialists,
             team_size=len(specialists),
-            timeout_seconds=timeout,
+            timeout_seconds=0.0,  # Timeout ignored - unlimited processing time
             original_decision={
                 "reasoning": routing_decision.reasoning,
                 "complexity_score": routing_decision.complexity_score,
@@ -198,30 +185,6 @@ class RouteExecutionValidator:
         else:
             raise ValueError(f"Unknown strategy: {strategy}")
 
-    def _calculate_timeout(self, strategy: ProcessingStrategy, complexity: ComplexityLevel) -> float:
-        """Calculate appropriate timeout for strategy and complexity."""
-
-        key = (strategy, complexity)
-        if key in self.TIMEOUT_MAPPING:
-            return self.TIMEOUT_MAPPING[key]
-
-        # Fallback calculation
-        base_timeout = {
-            ProcessingStrategy.SINGLE_AGENT: 60.0,
-            ProcessingStrategy.HYBRID: 150.0,
-            ProcessingStrategy.MULTI_AGENT: 240.0,
-        }[strategy]
-
-        complexity_multiplier = {
-            ComplexityLevel.SIMPLE: 0.8,
-            ComplexityLevel.MODERATE: 1.0,
-            ComplexityLevel.COMPLEX: 1.5,
-            ComplexityLevel.HIGHLY_COMPLEX: 2.0,
-        }[complexity]
-
-        return base_timeout * complexity_multiplier
-
-
 @dataclass
 class ExecutionResult:
     """Result of route execution with validation data."""
@@ -242,9 +205,7 @@ class ExecutionResult:
         if self.actual_strategy != expected_strategy:
             issues.append(f"Strategy mismatch: expected {expected_strategy}, got {self.actual_strategy}")
 
-        # Check timeout compliance
-        if self.processing_time > self.plan.timeout_seconds * 1.1:  # 10% tolerance
-            issues.append(f"Timeout exceeded: {self.processing_time:.1f}s > {self.plan.timeout_seconds:.1f}s")
+        # REMOVED: Timeout checking - unlimited processing time allowed
 
         # Check response quality
         if not self.response or len(self.response.strip()) < 10:
