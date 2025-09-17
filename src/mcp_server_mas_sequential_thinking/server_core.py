@@ -337,7 +337,18 @@ class ThoughtProcessor:
         )
 
         # Format and return response
-        return self._format_response(response, thought_data)
+        final_response = self._format_response(response, thought_data)
+
+        # ENHANCED LOGGING: Final processing summary
+        logger.info(f"🎯 PROCESSING COMPLETE:")
+        logger.info(f"  Thought #{thought_data.thought_number} processed successfully")
+        logger.info(f"  Strategy used: {strategy_used}")
+        logger.info(f"  Processing time: {processing_time:.3f}s")
+        logger.info(f"  Total time: {total_time:.3f}s")
+        logger.info(f"  Response length: {len(final_response)} chars")
+        logger.info(f"  {'='*50}")
+
+        return final_response
 
     async def _execute_team_processing(self, input_prompt: str) -> str:
         """Execute team processing with error handling and timeout protection."""
@@ -586,7 +597,19 @@ Provide a focused response with clear guidance for the next step."""
             if thought_data.next_needed
             else "\n\nThis is the final thought. Review the synthesis."
         )
-        return content + guidance
+
+        final_response = content + guidance
+
+        # ENHANCED LOGGING: Response formatting details
+        logger.info(f"📤 RESPONSE FORMATTING:")
+        logger.info(f"  Original content length: {len(content)} chars")
+        logger.info(f"  Next needed: {thought_data.next_needed}")
+        logger.info(f"  Guidance added: {guidance.strip()}")
+        logger.info(f"  Final response length: {len(final_response)} chars")
+        logger.info(f"  Final response:\n{final_response}")
+        logger.info(f"  {'='*50}")
+
+        return final_response
 
 
 @asynccontextmanager
