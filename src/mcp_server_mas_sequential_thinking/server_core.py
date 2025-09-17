@@ -1,6 +1,9 @@
 """Refactored server core with separated concerns and reduced complexity."""
 
+import asyncio
 import logging
+import os
+import time
 from abc import ABC, abstractmethod
 from contextlib import asynccontextmanager
 from dataclasses import dataclass
@@ -16,6 +19,8 @@ from .session import SessionMemory
 from .unified_team import create_team_by_type
 from .utils import setup_logging
 from .constants import DefaultValues, DefaultTimeouts
+from .adaptive_routing import AdaptiveRouter, ComplexityLevel, ProcessingStrategy
+from .circuit_breaker import get_circuit_breaker, CircuitBreakerConfig
 from .types import (
     ProcessingMetadata,
     ThoughtProcessingError,
@@ -206,16 +211,35 @@ class ServerState:
 class ThoughtProcessor:
     """Handles thought processing with optimized performance and error handling."""
 
-    __slots__ = ("_session",)  # Memory optimization
+    __slots__ = ("_session", "_router", "_circuit_breaker")  # Memory optimization
 
     def __init__(self, session: SessionMemory) -> None:
         self._session = session
+        # HOTFIX: Add adaptive router for complexity-based processing
+        self._router = AdaptiveRouter()
+        # HOTFIX: Add circuit breaker for failure protection
+        provider = os.environ.get("LLM_PROVIDER", "deepseek").lower()
+        self._circuit_breaker = get_circuit_breaker(
+            f"{provider}_processing",
+            CircuitBreakerConfig(failure_threshold=3, timeout_seconds=30)
+        )
 
     async def process_thought(self, thought_data: ThoughtData) -> str:
         """Process a thought through the team with comprehensive error handling."""
+        # HOTFIX: Check circuit breaker before processing
+        if not self._circuit_breaker.can_proceed():
+            error_msg = f"Circuit breaker is OPEN - skipping thought #{thought_data.thought_number} processing"
+            logger.warning(error_msg)
+            return f"Processing temporarily unavailable due to repeated failures. Please try again later."
+
         try:
-            return await self._process_thought_internal(thought_data)
+            result = await self._process_thought_internal(thought_data)
+            # Record success for circuit breaker
+            self._circuit_breaker.record_success()
+            return result
         except Exception as e:
+            # Record failure for circuit breaker
+            self._circuit_breaker.record_failure()
             error_msg = f"Failed to process {thought_data.thought_type.value} thought #{thought_data.thought_number}: {e}"
             logger.error(error_msg, exc_info=True)
             metadata: ProcessingMetadata = {
@@ -227,6 +251,9 @@ class ThoughtProcessor:
 
     async def _process_thought_internal(self, thought_data: ThoughtData) -> str:
         """Internal thought processing logic with structured logging."""
+        # HOTFIX: Add performance monitoring
+        start_time = time.time()
+
         # Log with structured data
         logger.info(
             "Processing thought",
@@ -243,22 +270,98 @@ class ThoughtProcessor:
         # Add to session
         self._session.add_thought(thought_data)
 
+        # HOTFIX: Use adaptive routing to determine processing strategy
+        routing_start = time.time()
+        routing_decision = self._router.route_thought(thought_data)
+        routing_time = time.time() - routing_start
+
+        logger.info(
+            f"Routing decision: {routing_decision.strategy.value} "
+            f"(complexity: {routing_decision.complexity_score:.1f}, "
+            f"routing_time: {routing_time:.3f}s)"
+        )
+
         # Build context-aware input
         input_prompt = self._build_context_prompt(thought_data)
 
-        # Process through team
-        response = await self._execute_team_processing(input_prompt)
+        # Process based on routing decision with timing
+        processing_start = time.time()
+        if routing_decision.strategy == ProcessingStrategy.SINGLE_AGENT:
+            response = await self._execute_single_agent_processing(input_prompt, routing_decision)
+            strategy_used = "single_agent"
+        else:
+            response = await self._execute_team_processing(input_prompt)
+            strategy_used = "multi_agent"
+
+        processing_time = time.time() - processing_start
+        total_time = time.time() - start_time
+
+        # Log performance metrics
+        logger.info(
+            f"Thought #{thought_data.thought_number} completed: "
+            f"strategy={strategy_used}, "
+            f"processing_time={processing_time:.3f}s, "
+            f"total_time={total_time:.3f}s"
+        )
 
         # Format and return response
         return self._format_response(response, thought_data)
 
     async def _execute_team_processing(self, input_prompt: str) -> str:
-        """Execute team processing with error handling."""
+        """Execute team processing with error handling and timeout protection."""
         try:
-            response = await self._session.team.arun(input_prompt)
+            # HOTFIX: Add provider-specific timeout protection
+            timeout = self._get_provider_timeout()
+            response = await asyncio.wait_for(
+                self._session.team.arun(input_prompt),
+                timeout=timeout
+            )
             return getattr(response, "content", "") or str(response)
+        except asyncio.TimeoutError:
+            raise ThoughtProcessingError(f"Team processing timed out after {timeout}s")
         except Exception as e:
             raise ThoughtProcessingError(f"Team coordination failed: {e}") from e
+
+    async def _execute_single_agent_processing(self, input_prompt: str, routing_decision) -> str:
+        """Execute single-agent processing for simple thoughts (hotfix optimization)."""
+        try:
+            # Use team leader as single agent for simple processing
+            model_config = get_model_config()
+            single_model = model_config.create_team_model()
+
+            # Create a simple response without multi-agent overhead
+            simplified_prompt = f"""Process this thought efficiently:
+
+{input_prompt}
+
+Provide a focused response with clear guidance for the next step."""
+
+            # HOTFIX: Add timeout protection for single agent
+            timeout = self._get_provider_timeout() // 2  # Single agent should be faster
+            response = await asyncio.wait_for(
+                single_model.apredict(simplified_prompt),
+                timeout=timeout
+            )
+
+            logger.info(f"Single-agent processing completed (saved ~{routing_decision.estimated_cost:.4f}$ vs multi-agent)")
+            return getattr(response, "content", "") or str(response)
+
+        except asyncio.TimeoutError:
+            logger.warning(f"Single-agent processing timed out after {timeout}s, falling back to team")
+            return await self._execute_team_processing(input_prompt)
+        except Exception as e:
+            logger.warning(f"Single-agent processing failed, falling back to team: {e}")
+            # Fallback to team processing if single agent fails
+            return await self._execute_team_processing(input_prompt)
+
+    def _get_provider_timeout(self) -> float:
+        """Get provider-specific timeout (hotfix for Deepseek performance)."""
+        provider = os.environ.get("LLM_PROVIDER", "").lower()
+
+        if provider == "deepseek":
+            return DefaultTimeouts.DEEPSEEK_PROCESSING_TIMEOUT
+        else:
+            return DefaultTimeouts.PROCESSING_TIMEOUT
 
     def _build_context_prompt(self, thought_data: ThoughtData) -> str:
         """Build context-aware input prompt with optimized string construction."""
