@@ -414,12 +414,13 @@ Provide a focused response with clear guidance for the next step."""
             return getattr(response, "content", "") or str(response)
 
         except asyncio.TimeoutError:
-            logger.warning(f"Single-agent processing timed out after {timeout}s, falling back to team")
-            return await self._execute_team_processing(input_prompt)
+            logger.warning(f"Single-agent processing timed out after {timeout:.1f}s, falling back to team with adaptive timeout")
+            # HOTFIX: Use adaptive timeout for fallback instead of fixed 120s
+            return await self._execute_team_processing_with_retries(input_prompt, ComplexityLevel.MODERATE)
         except Exception as e:
             logger.warning(f"Single-agent processing failed, falling back to team: {e}")
-            # Fallback to team processing if single agent fails
-            return await self._execute_team_processing(input_prompt)
+            # HOTFIX: Use adaptive timeout for fallback instead of fixed 120s
+            return await self._execute_team_processing_with_retries(input_prompt, ComplexityLevel.MODERATE)
 
     def _get_adaptive_timeout(self, complexity_level: ComplexityLevel, retry_count: int = 0) -> float:
         """Get adaptive timeout based on complexity and retry attempts."""
