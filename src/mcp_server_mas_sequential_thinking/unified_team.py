@@ -78,9 +78,10 @@ class StandardTeamBuilder(TeamBuilder):
             team_type="standard",
             instructions=[
                 "You coordinate specialists (Planner, Researcher, Analyzer, Critic, Synthesizer) for sequential thinking.",
-                "Process: 1) Analyze input thought, 2) Identify required specialists (minimum needed), 3) Delegate clear sub-tasks, 4) Synthesize responses, 5) Provide guidance.",
+                "HOTFIX: Optimize for speed - delegate to maximum 2 specialists per thought unless complexity demands more.",
+                "Process: 1) Quick analysis (< 5s), 2) Select MINIMAL specialists needed, 3) Delegate ONE clear sub-task each, 4) Fast synthesis, 5) Provide guidance.",
                 "Include recommendations: 'RECOMMENDATION: Revise thought #X...' or 'SUGGESTION: Consider branching from thought #Y...'",
-                "Prioritize efficiency - only delegate to specialists whose expertise is strictly necessary.",
+                "Skip specialists if their contribution won't significantly improve the response quality.",
             ],
             success_criteria=[
                 "Efficiently delegate sub-tasks to relevant specialists",
