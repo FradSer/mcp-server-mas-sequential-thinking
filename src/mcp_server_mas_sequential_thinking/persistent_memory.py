@@ -25,6 +25,7 @@ from sqlalchemy.pool import StaticPool
 from dataclasses import asdict
 
 from .models import ThoughtData
+from .constants import DatabaseConstants, DefaultSettings
 
 logger = logging.getLogger(__name__)
 
@@ -183,7 +184,12 @@ class PersistentMemoryManager:
             )
         else:
             # PostgreSQL/other database configuration
-            self.engine = create_engine(database_url, pool_pre_ping=True)
+            self.engine = create_engine(
+                database_url,
+                pool_pre_ping=True,
+                pool_size=DatabaseConstants.CONNECTION_POOL_SIZE,
+                max_overflow=DatabaseConstants.CONNECTION_POOL_OVERFLOW
+            )
 
         # Create tables
         Base.metadata.create_all(self.engine)
@@ -193,7 +199,7 @@ class PersistentMemoryManager:
 
         logger.info(f"Persistent memory initialized with database: {database_url}")
 
-    def create_session(self, session_id: str, provider: str = "deepseek") -> None:
+    def create_session(self, session_id: str, provider: str = DefaultSettings.DEFAULT_PROVIDER) -> None:
         """Create a new session record."""
         with self.SessionLocal() as db:
             existing = (
@@ -215,80 +221,99 @@ class PersistentMemoryManager:
     ) -> int:
         """Store a thought and return its database ID."""
         with self.SessionLocal() as db:
-            # Ensure session exists
-            session_record = (
-                db.query(SessionRecord).filter(SessionRecord.id == session_id).first()
-            )
-
-            if not session_record:
-                self.create_session(session_id)
-                session_record = (
-                    db.query(SessionRecord)
-                    .filter(SessionRecord.id == session_id)
-                    .first()
-                )
-
-            # Create thought record
-            thought_record = ThoughtRecord(
-                session_id=session_id,
-                thought_number=thought_data.thought_number,
-                thought=thought_data.thought,
-                total_thoughts=thought_data.total_thoughts,
-                next_needed=thought_data.next_needed,
-                branch_from=thought_data.branch_from,
-                branch_id=thought_data.branch_id,
-                response=response,
-            )
-
-            # Add processing metadata if provided
-            if processing_metadata:
-                if strategy := processing_metadata.get("strategy"):
-                    thought_record.processing_strategy = str(strategy)  # type: ignore[assignment]
-                if complexity_score := processing_metadata.get("complexity_score"):
-                    thought_record.complexity_score = float(complexity_score)  # type: ignore[assignment]
-                if estimated_cost := processing_metadata.get("estimated_cost"):
-                    thought_record.estimated_cost = float(estimated_cost)  # type: ignore[assignment]
-                if actual_cost := processing_metadata.get("actual_cost"):
-                    thought_record.actual_cost = float(actual_cost)  # type: ignore[assignment]
-                if token_usage := processing_metadata.get("token_usage"):
-                    thought_record.token_usage = int(token_usage)  # type: ignore[assignment]
-                if processing_time := processing_metadata.get("processing_time"):
-                    thought_record.processing_time = float(processing_time)  # type: ignore[assignment]
-                thought_record.specialist_used = processing_metadata.get("specialists", [])
-                thought_record.processed_at = datetime.utcnow()  # type: ignore[assignment]
+            session_record = self._ensure_session_exists(db, session_id)
+            thought_record = self._create_thought_record(session_id, thought_data, response, processing_metadata)
 
             db.add(thought_record)
-
-            # Update session stats
-            if session_record:
-                session_record.total_thoughts += 1  # type: ignore[assignment]
-                session_record.updated_at = datetime.utcnow()  # type: ignore[assignment]
-                if processing_metadata and processing_metadata.get("actual_cost"):
-                    session_record.total_cost += float(processing_metadata["actual_cost"])  # type: ignore[assignment]
-
-            # Handle branching
-            if thought_data.branch_id:
-                branch_record = (
-                    db.query(BranchRecord)
-                    .filter(
-                        BranchRecord.session_id == session_id,
-                        BranchRecord.branch_id == thought_data.branch_id,
-                    )
-                    .first()
-                )
-
-                if not branch_record:
-                    branch_record = BranchRecord(
-                        session_id=session_id,
-                        branch_id=thought_data.branch_id,
-                        parent_thought=thought_data.branch_from,
-                    )
-                    db.add(branch_record)
-
-                branch_record.thought_count += 1  # type: ignore[assignment]
+            self._update_session_stats(session_record, processing_metadata)
+            self._handle_branching(db, session_id, thought_data)
 
             db.commit()
             return int(thought_record.id)
+
+    def _ensure_session_exists(self, db: Session, session_id: str) -> SessionRecord:
+        """Ensure session exists in database and return it."""
+        session_record = (
+            db.query(SessionRecord).filter(SessionRecord.id == session_id).first()
+        )
+
+        if not session_record:
+            self.create_session(session_id)
+            session_record = (
+                db.query(SessionRecord)
+                .filter(SessionRecord.id == session_id)
+                .first()
+            )
+
+        return session_record
+
+    def _create_thought_record(self, session_id: str, thought_data: ThoughtData, response: Optional[str], processing_metadata: Optional[Dict]) -> ThoughtRecord:
+        """Create a thought record with metadata."""
+        thought_record = ThoughtRecord(
+            session_id=session_id,
+            thought_number=thought_data.thought_number,
+            thought=thought_data.thought,
+            total_thoughts=thought_data.total_thoughts,
+            next_needed=thought_data.next_needed,
+            branch_from=thought_data.branch_from,
+            branch_id=thought_data.branch_id,
+            response=response,
+        )
+
+        if processing_metadata:
+            self._apply_processing_metadata(thought_record, processing_metadata)
+
+        return thought_record
+
+    def _apply_processing_metadata(self, thought_record: ThoughtRecord, metadata: Dict) -> None:
+        """Apply processing metadata to thought record."""
+        if strategy := metadata.get("strategy"):
+            thought_record.processing_strategy = str(strategy)  # type: ignore[assignment]
+        if complexity_score := metadata.get("complexity_score"):
+            thought_record.complexity_score = float(complexity_score)  # type: ignore[assignment]
+        if estimated_cost := metadata.get("estimated_cost"):
+            thought_record.estimated_cost = float(estimated_cost)  # type: ignore[assignment]
+        if actual_cost := metadata.get("actual_cost"):
+            thought_record.actual_cost = float(actual_cost)  # type: ignore[assignment]
+        if token_usage := metadata.get("token_usage"):
+            thought_record.token_usage = int(token_usage)  # type: ignore[assignment]
+        if processing_time := metadata.get("processing_time"):
+            thought_record.processing_time = float(processing_time)  # type: ignore[assignment]
+
+        thought_record.specialist_used = metadata.get("specialists", [])
+        thought_record.processed_at = datetime.utcnow()  # type: ignore[assignment]
+
+    def _update_session_stats(self, session_record: SessionRecord, processing_metadata: Optional[Dict]) -> None:
+        """Update session statistics."""
+        if session_record:
+            session_record.total_thoughts += 1  # type: ignore[assignment]
+            session_record.updated_at = datetime.utcnow()  # type: ignore[assignment]
+            if processing_metadata and processing_metadata.get("actual_cost"):
+                session_record.total_cost += float(processing_metadata["actual_cost"])  # type: ignore[assignment]
+
+    def _handle_branching(self, db: Session, session_id: str, thought_data: ThoughtData) -> None:
+        """Handle branch record creation and updates."""
+        if not thought_data.branch_id:
+            return
+
+        branch_record = (
+            db.query(BranchRecord)
+            .filter(
+                BranchRecord.session_id == session_id,
+                BranchRecord.branch_id == thought_data.branch_id,
+            )
+            .first()
+        )
+
+        if not branch_record:
+            branch_record = BranchRecord(
+                session_id=session_id,
+                branch_id=thought_data.branch_id,
+                parent_thought=thought_data.branch_from,
+            )
+            db.add(branch_record)
+
+        branch_record.thought_count += 1  # type: ignore[assignment]
 
     def get_session_thoughts(
         self, session_id: str, limit: Optional[int] = None

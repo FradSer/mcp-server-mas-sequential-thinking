@@ -143,6 +143,26 @@ class DefaultValues:
     DEFAULT_TIMEOUT = 30.0
 
 
+class CircuitBreakerDefaults:
+    """Circuit breaker configuration defaults."""
+
+    FAILURE_THRESHOLD = 3
+    TIMEOUT_SECONDS = 30
+    RESET_TIMEOUT = 60
+    HALF_OPEN_MAX_CALLS = 5
+
+
+class ProcessingDefaults:
+    """Default values for thought processing."""
+
+    ERROR_COUNT_INITIAL = 1
+    RETRY_COUNT_INITIAL = 0
+    PROCESSING_TIME_INITIAL = 0.0
+    TEAM_INITIALIZER_INDEX = 1
+    SINGLE_AGENT_TIMEOUT_MULTIPLIER = 0.5
+    EXIT_CODE_ERROR = 1
+
+
 class FieldLengthLimits:
     """Field length limits for various inputs."""
 
@@ -150,6 +170,7 @@ class FieldLengthLimits:
     MAX_STANDARD_STRING = 2000
     MAX_DESCRIPTION_LENGTH = 1000
     MAX_BRANCH_ID_LENGTH = 100
+    SEPARATOR_LENGTH = 50
 
 
 class DatabaseConstants:
@@ -159,6 +180,17 @@ class DatabaseConstants:
     THOUGHT_QUERY_LIMIT = 1000
     CONNECTION_POOL_SIZE = 5
     CONNECTION_POOL_OVERFLOW = 10
+
+
+class ThoughtProcessingLimits:
+    """Limits for thought processing workflow."""
+
+    MIN_THOUGHT_SEQUENCE = 1
+    MIN_TOTAL_THOUGHTS = 5
+    MAX_TEAM_DELEGATION_COUNT = 2
+    ANALYSIS_TIME_LIMIT_SECONDS = 5
+    MIN_PROCESSING_STEPS = 1
+    MAX_PROCESSING_STEPS = 6
 
 
 class TechnicalTerms:

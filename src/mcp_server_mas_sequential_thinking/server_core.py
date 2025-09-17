@@ -18,10 +18,16 @@ from .models import ThoughtData
 from .session import SessionMemory
 from .unified_team import create_team_by_type
 from .utils import setup_logging
-from .constants import DefaultValues, DefaultTimeouts
+from .constants import (
+    DefaultValues,
+    DefaultTimeouts,
+    CircuitBreakerDefaults,
+    ProcessingDefaults,
+    FieldLengthLimits
+)
 from .intelligent_coordinator import create_intelligent_coordinator, IntelligentCoordinator, CoordinationPlan
 from .quality_assurance import create_quality_assurance_manager, QualityAssuranceManager
-from .ai_routing import ComplexityLevel, ProcessingStrategy  # Keep types for compatibility
+from .adaptive_routing import AdaptiveRouter, ComplexityLevel, ProcessingStrategy
 from .circuit_breaker import get_circuit_breaker, CircuitBreakerConfig
 from .types import (
     ProcessingMetadata,
@@ -166,7 +172,7 @@ class ServerState:
             EnvironmentInitializer(),
             TeamInitializer(),
         ]
-        self._team_initializer = self._initializers[1]  # Access team initializer
+        self._team_initializer = self._initializers[ProcessingDefaults.TEAM_INITIALIZER_INDEX]
 
     async def initialize(self, config: ServerConfig) -> None:
         """Initialize all server components."""
@@ -213,7 +219,7 @@ class ServerState:
 class ThoughtProcessor:
     """Handles thought processing with optimized performance and error handling."""
 
-    __slots__ = ("_session", "_coordinator", "_quality_manager", "_circuit_breaker")  # Memory optimization
+    __slots__ = ("_session", "_coordinator", "_quality_manager", "_router", "_circuit_breaker")  # Memory optimization
 
     def __init__(self, session: SessionMemory) -> None:
         self._session = session
@@ -228,11 +234,17 @@ class ThoughtProcessor:
         self._quality_manager = create_quality_assurance_manager()
         logger.info("✅ Quality Assurance ready - evaluation pipeline activated")
 
+        # ADAPTIVE ROUTING: For compatibility with existing code
+        self._router = AdaptiveRouter()
+
         # HOTFIX: Add circuit breaker for failure protection
         provider = os.environ.get("LLM_PROVIDER", "deepseek").lower()
         self._circuit_breaker = get_circuit_breaker(
             f"{provider}_processing",
-            CircuitBreakerConfig(failure_threshold=3, timeout_seconds=30)
+            CircuitBreakerConfig(
+                failure_threshold=CircuitBreakerDefaults.FAILURE_THRESHOLD,
+                timeout_seconds=CircuitBreakerDefaults.TIMEOUT_SECONDS
+            )
         )
 
     def _extract_response_content(self, response) -> str:
@@ -267,32 +279,17 @@ class ThoughtProcessor:
             error_msg = f"Failed to process {thought_data.thought_type.value} thought #{thought_data.thought_number}: {e}"
             logger.error(error_msg, exc_info=True)
             metadata: ProcessingMetadata = {
-                "error_count": 1,
-                "retry_count": 0,
-                "processing_time": 0.0,
+                "error_count": ProcessingDefaults.ERROR_COUNT_INITIAL,
+                "retry_count": ProcessingDefaults.RETRY_COUNT_INITIAL,
+                "processing_time": ProcessingDefaults.PROCESSING_TIME_INITIAL,
             }
             raise ThoughtProcessingError(error_msg, metadata) from e
 
     async def _process_thought_internal(self, thought_data: ThoughtData) -> str:
         """Internal thought processing logic with structured logging."""
-        # HOTFIX: Add performance monitoring
         start_time = time.time()
 
-        # ENHANCED LOGGING: Complete thought data
-        logger.info(f"🧩 THOUGHT DATA:")
-        logger.info(f"  Thought #{thought_data.thought_number}/{thought_data.total_thoughts}")
-        logger.info(f"  Type: {thought_data.thought_type.value}")
-        logger.info(f"  Content: {thought_data.thought}")
-        logger.info(f"  Next needed: {thought_data.next_needed}")
-        logger.info(f"  Needs more: {thought_data.needs_more}")
-        if thought_data.is_revision:
-            logger.info(f"  Is revision: True (revises thought #{thought_data.revises_thought})")
-        if thought_data.branch_from:
-            logger.info(f"  Branch from: #{thought_data.branch_from} (ID: {thought_data.branch_id})")
-        logger.info(f"  Raw data: {thought_data.format_for_log()}")
-        logger.info(f"  {'='*50}")
-
-        # Add to session
+        self._log_thought_data(thought_data)
         self._session.add_thought(thought_data)
 
         # INTELLIGENT COORDINATION: Create comprehensive coordination plan
@@ -313,32 +310,8 @@ class ThoughtProcessor:
         logger.info(f"  Confidence: {coordination_plan.confidence:.2f}")
         logger.debug(f"  Reasoning: {coordination_plan.reasoning}")
 
-        # Build context-aware input
         input_prompt = self._build_context_prompt(thought_data)
-
-        # ENHANCED LOGGING: Context building details
-        logger.info(f"📝 CONTEXT BUILDING:")
-        if thought_data.is_revision and thought_data.revises_thought:
-            logger.info(f"  Type: Revision of thought #{thought_data.revises_thought}")
-            try:
-                original = self._session.find_thought_content(thought_data.revises_thought)
-                logger.info(f"  Original thought: {original}")
-            except:
-                logger.info(f"  Original thought: [not found]")
-        elif thought_data.branch_from and thought_data.branch_id:
-            logger.info(f"  Type: Branch '{thought_data.branch_id}' from thought #{thought_data.branch_from}")
-            try:
-                origin = self._session.find_thought_content(thought_data.branch_from)
-                logger.info(f"  Branch origin: {origin}")
-            except:
-                logger.info(f"  Branch origin: [not found]")
-        else:
-            logger.info(f"  Type: Sequential thought #{thought_data.thought_number}")
-        logger.info(f"  Session thoughts: {len(self._session.thought_history)} total")
-        logger.info(f"  Input thought: {thought_data.thought}")
-        logger.info(f"  Built prompt length: {len(input_prompt)} chars")
-        logger.info(f"  Built prompt:\n{input_prompt}")
-        logger.info(f"  {'='*50}")
+        self._log_context_building(thought_data, input_prompt)
 
         # UNIFIED EXECUTION: Direct execution based on coordination plan
         processing_start = time.time()
@@ -414,9 +387,110 @@ class ThoughtProcessor:
         logger.info(f"  Processing time: {processing_time:.3f}s")
         logger.info(f"  Total time: {total_time:.3f}s")
         logger.info(f"  Response length: {len(final_response)} chars")
-        logger.info(f"  {'='*50}")
+        logger.info(f"  {'=' * FieldLengthLimits.SEPARATOR_LENGTH}")
 
         return final_response
+
+    def _log_thought_data(self, thought_data: ThoughtData) -> None:
+        """Log comprehensive thought data information."""
+        logger.info(f"🧩 THOUGHT DATA:")
+        logger.info(f"  Thought #{thought_data.thought_number}/{thought_data.total_thoughts}")
+        logger.info(f"  Type: {thought_data.thought_type.value}")
+        logger.info(f"  Content: {thought_data.thought}")
+        logger.info(f"  Next needed: {thought_data.next_needed}")
+        logger.info(f"  Needs more: {thought_data.needs_more}")
+
+        if thought_data.is_revision:
+            logger.info(f"  Is revision: True (revises thought #{thought_data.revises_thought})")
+        if thought_data.branch_from:
+            logger.info(f"  Branch from: #{thought_data.branch_from} (ID: {thought_data.branch_id})")
+
+        logger.info(f"  Raw data: {thought_data.format_for_log()}")
+        logger.info(f"  {'=' * FieldLengthLimits.SEPARATOR_LENGTH}")
+
+    async def _analyze_routing(self, thought_data: ThoughtData) -> tuple[object, float]:
+        """Analyze routing decision and return decision with timing."""
+        routing_start = time.time()
+        routing_decision = self._router.route_thought(thought_data)
+        routing_time = time.time() - routing_start
+
+        self._log_routing_analysis(routing_decision, routing_time)
+        return routing_decision, routing_time
+
+    def _log_routing_analysis(self, routing_decision, routing_time: float) -> None:
+        """Log detailed routing analysis information."""
+        logger.info(f"🧠 ROUTING ANALYSIS:")
+        logger.info(f"  Strategy: {routing_decision.strategy.value}")
+        logger.info(f"  Complexity: {routing_decision.complexity_level.value} (score: {routing_decision.complexity_score:.1f}/100)")
+        logger.info(f"  Estimated tokens: {routing_decision.estimated_token_usage[0]}-{routing_decision.estimated_token_usage[1]}")
+        logger.info(f"  Estimated cost: ${routing_decision.estimated_cost:.6f}")
+        logger.info(f"  Routing time: {routing_time:.3f}s")
+
+        if routing_decision.specialist_recommendations:
+            logger.info(f"  Recommended specialists: {', '.join(routing_decision.specialist_recommendations)}")
+        logger.debug(f"  Reasoning: {routing_decision.reasoning}")
+
+    def _log_context_building(self, thought_data: ThoughtData, input_prompt: str) -> None:
+        """Log context building details."""
+        logger.info(f"📝 CONTEXT BUILDING:")
+
+        if thought_data.is_revision and thought_data.revises_thought:
+            logger.info(f"  Type: Revision of thought #{thought_data.revises_thought}")
+            try:
+                original = self._session.find_thought_content(thought_data.revises_thought)
+                logger.info(f"  Original thought: {original}")
+            except:
+                logger.info(f"  Original thought: [not found]")
+        elif thought_data.branch_from and thought_data.branch_id:
+            logger.info(f"  Type: Branch '{thought_data.branch_id}' from thought #{thought_data.branch_from}")
+            try:
+                origin = self._session.find_thought_content(thought_data.branch_from)
+                logger.info(f"  Branch origin: {origin}")
+            except:
+                logger.info(f"  Branch origin: [not found]")
+        else:
+            logger.info(f"  Type: Sequential thought #{thought_data.thought_number}")
+
+        logger.info(f"  Session thoughts: {len(self._session.thought_history)} total")
+        logger.info(f"  Input thought: {thought_data.thought}")
+        logger.info(f"  Built prompt length: {len(input_prompt)} chars")
+        logger.info(f"  Built prompt:\n{input_prompt}")
+        logger.info(f"  {'=' * FieldLengthLimits.SEPARATOR_LENGTH}")
+
+    async def _execute_processing_strategy(self, input_prompt: str, routing_decision) -> tuple[str, str, float]:
+        """Execute processing strategy and return response, strategy used, and processing time."""
+        processing_start = time.time()
+
+        if routing_decision.strategy == ProcessingStrategy.SINGLE_AGENT:
+            response = await self._execute_single_agent_processing(input_prompt, routing_decision)
+            strategy_used = "single_agent"
+        else:
+            response = await self._execute_team_processing_with_retries(
+                input_prompt, routing_decision.complexity_level
+            )
+            strategy_used = "multi_agent"
+
+        processing_time = time.time() - processing_start
+        return response, strategy_used, processing_time
+
+    def _log_performance_metrics(self, thought_data: ThoughtData, strategy_used: str, processing_time: float, total_time: float) -> None:
+        """Log performance metrics for the processing."""
+        logger.info(
+            f"Thought #{thought_data.thought_number} completed: "
+            f"strategy={strategy_used}, "
+            f"processing_time={processing_time:.3f}s, "
+            f"total_time={total_time:.3f}s"
+        )
+
+    def _log_processing_completion(self, thought_data: ThoughtData, strategy_used: str, processing_time: float, total_time: float, final_response: str) -> None:
+        """Log final processing completion summary."""
+        logger.info(f"🎯 PROCESSING COMPLETE:")
+        logger.info(f"  Thought #{thought_data.thought_number} processed successfully")
+        logger.info(f"  Strategy used: {strategy_used}")
+        logger.info(f"  Processing time: {processing_time:.3f}s")
+        logger.info(f"  Total time: {total_time:.3f}s")
+        logger.info(f"  Response length: {len(final_response)} chars")
+        logger.info(f"  {'=' * FieldLengthLimits.SEPARATOR_LENGTH}")
 
     async def _execute_coordination_plan(self, input_prompt: str, plan: CoordinationPlan) -> str:
         """Execute thought processing based on coordination plan (unified approach)."""
@@ -432,7 +506,7 @@ class ThoughtProcessor:
                 return await self._execute_selective_team(input_prompt, plan)
 
             elif plan.execution_mode == ExecutionMode.FULL_TEAM:
-                return await self._execute_full_team_with_timeout(input_prompt, plan)
+                return await self._execute_full_team_unlimited(input_prompt, plan)
 
             else:
                 raise ValueError(f"Unknown execution mode: {plan.execution_mode}")
@@ -535,7 +609,7 @@ class ThoughtProcessor:
                 logger.info(f"  Members: {', '.join([m.name for m in team.members])}")
                 logger.info(f"  Input length: {len(input_prompt)} chars")
                 logger.info(f"  Full input:\n{input_prompt}")
-                logger.info(f"  {'='*50}")
+                logger.info(f"  {'=' * FieldLengthLimits.SEPARATOR_LENGTH}")
 
                 start_time = time.time()
                 # REMOVED: All timeout restrictions for unlimited processing time
@@ -549,7 +623,7 @@ class ThoughtProcessor:
                 logger.info(f"  Processing time: {processing_time:.3f}s")
                 logger.info(f"  Output length: {len(response_content)} chars")
                 logger.info(f"  Full response:\n{response_content}")
-                logger.info(f"  {'='*50}")
+                logger.info(f"  {'=' * FieldLengthLimits.SEPARATOR_LENGTH}")
 
                 return response_content
 
@@ -603,7 +677,7 @@ Provide a focused response with clear guidance for the next step."""
             logger.info(f"  Model: {getattr(single_model, 'id', 'unknown')} ({single_model.__class__.__name__})")
             logger.info(f"  Input length: {len(simplified_prompt)} chars")
             logger.info(f"  Full input:\n{simplified_prompt}")
-            logger.info(f"  {'='*50}")
+            logger.info(f"  {'=' * FieldLengthLimits.SEPARATOR_LENGTH}")
 
             start_time = time.time()
             # REMOVED: All timeout restrictions for unlimited processing time
@@ -618,7 +692,7 @@ Provide a focused response with clear guidance for the next step."""
             logger.info(f"  Processing time: {processing_time:.3f}s")
             logger.info(f"  Output length: {len(response_content)} chars")
             logger.info(f"  Full response:\n{response_content}")
-            logger.info(f"  {'='*50}")
+            logger.info(f"  {'=' * FieldLengthLimits.SEPARATOR_LENGTH}")
 
             logger.info(f"Single-agent processing completed (saved ~{routing_decision.estimated_cost:.4f}$ vs multi-agent)")
             return response_content
@@ -670,7 +744,7 @@ Provide a focused response with clear guidance for the next step."""
         logger.info(f"  Guidance added: {guidance.strip()}")
         logger.info(f"  Final response length: {len(final_response)} chars")
         logger.info(f"  Final response:\n{final_response}")
-        logger.info(f"  {'='*50}")
+        logger.info(f"  {'=' * FieldLengthLimits.SEPARATOR_LENGTH}")
 
         return final_response
 

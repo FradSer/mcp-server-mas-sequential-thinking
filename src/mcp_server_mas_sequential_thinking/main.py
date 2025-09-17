@@ -20,7 +20,7 @@ from .server_core import (
 )
 from .types import ThoughtProcessingError, ValidationError as CustomValidationError
 from .utils import setup_logging
-from .constants import ValidationLimits
+from .constants import ValidationLimits, ProcessingDefaults, ThoughtProcessingLimits
 
 # Initialize environment and logging
 load_dotenv()
@@ -92,7 +92,7 @@ def sequential_thinking_prompt(problem: str, context: str = "") -> list[dict]:
     assistant_guide = f"""Starting sequential thinking process for: {problem}
 
 Process Guidelines:
-1. Estimate at least 5 total thoughts initially
+1. Estimate at least {ThoughtProcessingLimits.MIN_TOTAL_THOUGHTS} total thoughts initially
 2. Begin with: "Plan comprehensive analysis for: {problem}"
 3. Use revisions (isRevision=True) to improve previous thoughts  
 4. Use branching (branchFromThought, branchId) for alternative approaches
@@ -141,8 +141,8 @@ async def sequentialthinking(
 
     Args:
         thought: Content of the thinking step (required)
-        thought_number: Sequence number starting from 1 (≥1)
-        total_thoughts: Estimated total thoughts required (≥5)
+        thought_number: Sequence number starting from {ThoughtProcessingLimits.MIN_THOUGHT_SEQUENCE} (≥{ThoughtProcessingLimits.MIN_THOUGHT_SEQUENCE})
+        total_thoughts: Estimated total thoughts required (≥{ThoughtProcessingLimits.MIN_TOTAL_THOUGHTS})
         next_needed: Whether another thought step follows this one
         is_revision: Whether this thought revises a previous thought
         revises_thought: Thought number being revised (requires is_revision=True)
@@ -218,7 +218,7 @@ def run() -> None:
 
     except Exception as e:
         logger.error(f"Critical server error: {e}", exc_info=True)
-        sys.exit(1)
+        sys.exit(ProcessingDefaults.EXIT_CODE_ERROR)
 
     finally:
         logger.info("Server shutdown sequence complete")
@@ -230,7 +230,7 @@ def main() -> None:
         run()
     except Exception as e:
         logger.critical(f"Fatal error in main: {e}", exc_info=True)
-        sys.exit(1)
+        sys.exit(ProcessingDefaults.EXIT_CODE_ERROR)
 
 
 if __name__ == "__main__":

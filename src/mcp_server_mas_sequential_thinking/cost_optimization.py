@@ -10,6 +10,12 @@ from abc import ABC, abstractmethod
 
 from .ai_routing import ProcessingStrategy, ComplexityLevel, RoutingDecision
 from .models import ThoughtData
+from .constants import (
+    TokenCosts,
+    QualityThresholds,
+    ProviderDefaults,
+    ComplexityThresholds
+)
 
 logger = logging.getLogger(__name__)
 
@@ -31,20 +37,20 @@ class ProviderProfile:
     name: str
     cost_tier: CostTier
     cost_per_1k_tokens: float
-    avg_quality_score: float = 0.8  # 0.0-1.0
-    avg_response_time: float = 2.0  # seconds
+    avg_quality_score: float = ProviderDefaults.DEFAULT_QUALITY_SCORE  # 0.0-1.0
+    avg_response_time: float = ProviderDefaults.DEFAULT_RESPONSE_TIME  # seconds
     rate_limit_per_hour: Optional[int] = None
     supports_streaming: bool = True
     supports_function_calling: bool = True
-    max_context_length: int = 4096
+    max_context_length: int = ProviderDefaults.DEFAULT_CONTEXT_LENGTH
 
     # Model specifications
     team_model_id: Optional[str] = None
     agent_model_id: Optional[str] = None
 
     # Availability and reliability
-    uptime_score: float = 0.95  # 0.0-1.0
-    error_rate: float = 0.05  # 0.0-1.0
+    uptime_score: float = ProviderDefaults.DEFAULT_UPTIME_SCORE  # 0.0-1.0
+    error_rate: float = ProviderDefaults.DEFAULT_ERROR_RATE  # 0.0-1.0
 
     @property
     def cost_effectiveness(self) -> float:
@@ -131,72 +137,103 @@ class CostOptimizationMetrics:
     provider_costs: Dict[str, float] = field(default_factory=dict)
 
 
-class CostOptimizer:
-    """Main cost optimization framework."""
+class ProviderProfileFactory:
+    """Factory for creating provider profiles with standardized defaults."""
 
-    # Default provider profiles
-    DEFAULT_PROVIDERS = {
-        "groq": ProviderProfile(
+    @staticmethod
+    def create_groq_profile() -> ProviderProfile:
+        """Create Groq provider profile."""
+        return ProviderProfile(
             name="groq",
             cost_tier=CostTier.FREE,
-            cost_per_1k_tokens=0.0,
+            cost_per_1k_tokens=TokenCosts.GROQ_COST_PER_1K,
             avg_quality_score=0.75,
             avg_response_time=0.8,
             rate_limit_per_hour=14400,
             max_context_length=32768,
             team_model_id="llama3-groq-70b-8192-tool-use-preview",
             agent_model_id="llama3-groq-8b-8192-tool-use-preview",
-        ),
-        "deepseek": ProviderProfile(
+        )
+
+    @staticmethod
+    def create_deepseek_profile() -> ProviderProfile:
+        """Create Deepseek provider profile."""
+        return ProviderProfile(
             name="deepseek",
             cost_tier=CostTier.LOW,
-            cost_per_1k_tokens=0.0002,
+            cost_per_1k_tokens=TokenCosts.DEEPSEEK_COST_PER_1K,
             avg_quality_score=0.85,
-            avg_response_time=2.5,
+            avg_response_time=ProviderDefaults.DEFAULT_RESPONSE_TIME,
             max_context_length=128000,
             team_model_id="deepseek-reasoning",
             agent_model_id="deepseek-chat",
-        ),
-        "github": ProviderProfile(
+        )
+
+    @staticmethod
+    def create_github_profile() -> ProviderProfile:
+        """Create GitHub provider profile."""
+        return ProviderProfile(
             name="github",
             cost_tier=CostTier.MEDIUM,
-            cost_per_1k_tokens=0.0005,
-            avg_quality_score=0.90,
-            avg_response_time=2.0,
+            cost_per_1k_tokens=TokenCosts.GITHUB_COST_PER_1K,
+            avg_quality_score=ProviderDefaults.DEFAULT_QUALITY_SCORE,
+            avg_response_time=ProviderDefaults.DEFAULT_RESPONSE_TIME,
             max_context_length=128000,
             team_model_id="gpt-4o",
             agent_model_id="gpt-4o-mini",
-        ),
-        "openrouter": ProviderProfile(
+        )
+
+    @staticmethod
+    def create_openrouter_profile() -> ProviderProfile:
+        """Create OpenRouter provider profile."""
+        return ProviderProfile(
             name="openrouter",
             cost_tier=CostTier.MEDIUM,
-            cost_per_1k_tokens=0.001,
-            avg_quality_score=0.90,
+            cost_per_1k_tokens=TokenCosts.OPENROUTER_COST_PER_1K,
+            avg_quality_score=ProviderDefaults.DEFAULT_QUALITY_SCORE,
             avg_response_time=3.0,
             max_context_length=200000,
             team_model_id="anthropic/claude-3.5-sonnet",
             agent_model_id="anthropic/claude-3.5-haiku",
-        ),
-        "ollama": ProviderProfile(
+        )
+
+    @staticmethod
+    def create_ollama_profile() -> ProviderProfile:
+        """Create Ollama provider profile."""
+        return ProviderProfile(
             name="ollama",
             cost_tier=CostTier.FREE,
-            cost_per_1k_tokens=0.0,
+            cost_per_1k_tokens=TokenCosts.OLLAMA_COST_PER_1K,
             avg_quality_score=0.70,
             avg_response_time=5.0,
             max_context_length=8192,
             team_model_id="devstral:24b",
             agent_model_id="devstral:24b",
-        ),
-    }
+        )
+
+    @classmethod
+    def get_default_providers(cls) -> Dict[str, ProviderProfile]:
+        """Get dictionary of all default provider profiles."""
+        return {
+            "groq": cls.create_groq_profile(),
+            "deepseek": cls.create_deepseek_profile(),
+            "github": cls.create_github_profile(),
+            "openrouter": cls.create_openrouter_profile(),
+            "ollama": cls.create_ollama_profile(),
+        }
+
+
+class CostOptimizer:
+    """Main cost optimization framework."""
 
     def __init__(
         self,
         budget_constraints: Optional[BudgetConstraints] = None,
         provider_profiles: Optional[Dict[str, ProviderProfile]] = None,
-        quality_threshold: float = 0.7,
+        quality_threshold: float = QualityThresholds.DEFAULT_QUALITY_THRESHOLD,
     ):
         self.budget_constraints = budget_constraints or BudgetConstraints()
-        self.provider_profiles = provider_profiles or self.DEFAULT_PROVIDERS.copy()
+        self.provider_profiles = provider_profiles or ProviderProfileFactory.get_default_providers()
         self.quality_threshold = quality_threshold
         self.metrics = CostOptimizationMetrics()
 
