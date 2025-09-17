@@ -67,8 +67,29 @@ class DefaultTimeouts:
     """Default timeout values in seconds."""
 
     PROCESSING_TIMEOUT = 30.0
-    DEEPSEEK_PROCESSING_TIMEOUT = 120.0  # Longer timeout for Deepseek
+    DEEPSEEK_PROCESSING_TIMEOUT = 120.0  # Legacy timeout for Deepseek (deprecated)
     MULTI_AGENT_TIMEOUT_MULTIPLIER = 2.0  # Multiply timeout for multi-agent
+
+    # Adaptive timeout strategy (v0.5.1+)
+    ADAPTIVE_BASE_DEEPSEEK = 90.0       # Base timeout for Deepseek with adaptive scaling
+    ADAPTIVE_BASE_GROQ = 20.0           # Base timeout for Groq
+    ADAPTIVE_BASE_OPENAI = 45.0         # Base timeout for OpenAI
+    ADAPTIVE_BASE_DEFAULT = 30.0        # Default base timeout
+
+    # Maximum timeouts (safety ceiling)
+    MAX_TIMEOUT_DEEPSEEK = 300.0        # 5 minutes absolute maximum for Deepseek
+    MAX_TIMEOUT_DEFAULT = 180.0         # 3 minutes maximum for others
+
+    # Complexity multipliers for adaptive timeouts
+    COMPLEXITY_SIMPLE_MULTIPLIER = 1.0
+    COMPLEXITY_MODERATE_MULTIPLIER = 1.5
+    COMPLEXITY_COMPLEX_MULTIPLIER = 2.0
+    COMPLEXITY_HIGHLY_COMPLEX_MULTIPLIER = 3.0
+
+    # Retry configuration
+    RETRY_EXPONENTIAL_BASE = 1.5        # Exponential backoff base
+    MAX_RETRY_ATTEMPTS = 2              # Maximum retry attempts
+
     SESSION_CLEANUP_DAYS = 30
     RECENT_SESSION_KEEP_COUNT = 100
 

@@ -290,7 +290,9 @@ class ThoughtProcessor:
             response = await self._execute_single_agent_processing(input_prompt, routing_decision)
             strategy_used = "single_agent"
         else:
-            response = await self._execute_team_processing(input_prompt)
+            response = await self._execute_team_processing_with_retries(
+                input_prompt, routing_decision.complexity_level
+            )
             strategy_used = "multi_agent"
 
         processing_time = time.time() - processing_start
@@ -322,6 +324,68 @@ class ThoughtProcessor:
         except Exception as e:
             raise ThoughtProcessingError(f"Team coordination failed: {e}") from e
 
+    async def _execute_team_processing_with_retries(
+        self, input_prompt: str, complexity_level: ComplexityLevel
+    ) -> str:
+        """Execute team processing with adaptive timeout and intelligent retries."""
+        max_retries = DefaultTimeouts.MAX_RETRY_ATTEMPTS  # Allow up to 3 total attempts
+        last_exception = None
+
+        for retry_count in range(max_retries + 1):
+            try:
+                # Calculate adaptive timeout for this attempt
+                timeout = self._get_adaptive_timeout(complexity_level, retry_count)
+
+                logger.info(
+                    f"Processing attempt {retry_count + 1}/{max_retries + 1}: "
+                    f"timeout={timeout:.1f}s, complexity={complexity_level.value}"
+                )
+
+                response = await asyncio.wait_for(
+                    self._session.team.arun(input_prompt),
+                    timeout=timeout
+                )
+
+                # Success! Log the successful attempt
+                if retry_count > 0:
+                    logger.info(f"Processing succeeded on retry {retry_count}")
+
+                return getattr(response, "content", "") or str(response)
+
+            except asyncio.TimeoutError as e:
+                last_exception = e
+                if retry_count < max_retries:
+                    # Log timeout and prepare for retry
+                    next_timeout = self._get_adaptive_timeout(complexity_level, retry_count + 1)
+                    logger.warning(
+                        f"Timeout on attempt {retry_count + 1} ({timeout:.1f}s). "
+                        f"Retrying with longer timeout ({next_timeout:.1f}s)..."
+                    )
+                    continue
+                else:
+                    # Final timeout - calculate total time spent
+                    total_time = sum(
+                        self._get_adaptive_timeout(complexity_level, i)
+                        for i in range(max_retries + 1)
+                    )
+                    provider = os.environ.get("LLM_PROVIDER", "unknown")
+
+                    raise ThoughtProcessingError(
+                        f"Processing failed after {max_retries + 1} attempts "
+                        f"(total time: {total_time:.1f}s). "
+                        f"This {complexity_level.value} thought exceeded the maximum "
+                        f"processing time for {provider}. Consider breaking it into "
+                        f"smaller, simpler thoughts or try again later."
+                    )
+
+            except Exception as e:
+                # Non-timeout errors don't retry
+                last_exception = e
+                raise ThoughtProcessingError(f"Team coordination failed: {e}") from e
+
+        # This should never be reached, but just in case
+        raise ThoughtProcessingError(f"Unexpected error after retries") from last_exception
+
     async def _execute_single_agent_processing(self, input_prompt: str, routing_decision) -> str:
         """Execute single-agent processing for simple thoughts (hotfix optimization)."""
         try:
@@ -336,8 +400,11 @@ class ThoughtProcessor:
 
 Provide a focused response with clear guidance for the next step."""
 
-            # HOTFIX: Add timeout protection for single agent
-            timeout = self._get_provider_timeout() // 2  # Single agent should be faster
+            # HOTFIX: Add adaptive timeout protection for single agent
+            # Single agent gets simpler complexity level for faster timeout
+            single_agent_complexity = ComplexityLevel.SIMPLE
+            timeout = self._get_adaptive_timeout(single_agent_complexity, 0) * 0.5  # 50% of base
+
             response = await asyncio.wait_for(
                 single_model.apredict(simplified_prompt),
                 timeout=timeout
@@ -354,8 +421,45 @@ Provide a focused response with clear guidance for the next step."""
             # Fallback to team processing if single agent fails
             return await self._execute_team_processing(input_prompt)
 
+    def _get_adaptive_timeout(self, complexity_level: ComplexityLevel, retry_count: int = 0) -> float:
+        """Get adaptive timeout based on complexity and retry attempts."""
+        provider = os.environ.get("LLM_PROVIDER", "").lower()
+
+        # Base timeout by provider
+        base_timeouts = {
+            "deepseek": DefaultTimeouts.ADAPTIVE_BASE_DEEPSEEK,
+            "groq": DefaultTimeouts.ADAPTIVE_BASE_GROQ,
+            "openai": DefaultTimeouts.ADAPTIVE_BASE_OPENAI,
+            "default": DefaultTimeouts.ADAPTIVE_BASE_DEFAULT
+        }
+        base_timeout = base_timeouts.get(provider, base_timeouts["default"])
+
+        # Complexity multipliers
+        complexity_multipliers = {
+            ComplexityLevel.SIMPLE: DefaultTimeouts.COMPLEXITY_SIMPLE_MULTIPLIER,
+            ComplexityLevel.MODERATE: DefaultTimeouts.COMPLEXITY_MODERATE_MULTIPLIER,
+            ComplexityLevel.COMPLEX: DefaultTimeouts.COMPLEXITY_COMPLEX_MULTIPLIER,
+            ComplexityLevel.HIGHLY_COMPLEX: DefaultTimeouts.COMPLEXITY_HIGHLY_COMPLEX_MULTIPLIER
+        }
+        complexity_multiplier = complexity_multipliers.get(complexity_level, DefaultTimeouts.COMPLEXITY_COMPLEX_MULTIPLIER)
+
+        # Exponential backoff for retries
+        retry_multiplier = DefaultTimeouts.RETRY_EXPONENTIAL_BASE ** retry_count
+
+        # Calculate adaptive timeout
+        adaptive_timeout = base_timeout * complexity_multiplier * retry_multiplier
+
+        # Safety ceiling - never exceed maximum
+        max_timeouts = {
+            "deepseek": DefaultTimeouts.MAX_TIMEOUT_DEEPSEEK,
+            "default": DefaultTimeouts.MAX_TIMEOUT_DEFAULT
+        }
+        max_timeout = max_timeouts.get(provider, max_timeouts["default"])
+
+        return min(adaptive_timeout, max_timeout)
+
     def _get_provider_timeout(self) -> float:
-        """Get provider-specific timeout (hotfix for Deepseek performance)."""
+        """Get provider-specific timeout (legacy method for backward compatibility)."""
         provider = os.environ.get("LLM_PROVIDER", "").lower()
 
         if provider == "deepseek":
