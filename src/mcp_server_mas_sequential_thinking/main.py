@@ -17,6 +17,7 @@ from .server_core import (
     ServerConfig,
     ServerState,
     ThoughtProcessor,
+    get_thought_processor,
 )
 from .types import ThoughtProcessingError, ValidationError as CustomValidationError
 from .utils import setup_logging
@@ -175,8 +176,8 @@ async def sequentialthinking(
             needs_more=needs_more,
         )
 
-        # Process through team using refactored processor
-        processor = ThoughtProcessor(_server_state.session)
+        # Process through team using global processor with workflow support
+        processor = await get_thought_processor()
         result = await processor.process_thought(thought_data)
 
         logger.info(f"Successfully processed thought #{thought_number}")

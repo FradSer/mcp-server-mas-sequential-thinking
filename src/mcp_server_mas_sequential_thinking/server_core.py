@@ -11,6 +11,8 @@ from pathlib import Path
 from typing import AsyncIterator, Optional
 
 from agno.team.team import Team
+from agno.agent import Agent
+from agno.tools.reasoning import ReasoningTools
 from pydantic import ValidationError
 
 from .modernized_config import check_required_api_keys, get_model_config
@@ -26,6 +28,7 @@ from .constants import (
     PerformanceMetrics
 )
 from .adaptive_routing import AdaptiveRouter, ComplexityLevel, ProcessingStrategy
+from .agno_workflow_router import AgnoWorkflowRouter, WorkflowResult
 from .types import (
     ProcessingMetadata,
     ThoughtProcessingError,
@@ -218,15 +221,25 @@ class ServerState:
 class ThoughtProcessor:
     """Handles thought processing with optimized performance and error handling."""
 
-    __slots__ = ("_session", "_router")  # Memory optimization
+    __slots__ = ("_session", "_router", "_agno_router", "_use_workflow")  # Memory optimization
 
-    def __init__(self, session: SessionMemory) -> None:
+    def __init__(self, session: SessionMemory, use_agno_workflow: bool = False) -> None:
         self._session = session
+        self._use_workflow = use_agno_workflow
 
-        # ADAPTIVE ROUTING: Primary decision making system
-        logger.info("Initializing Adaptive Router (complexity analysis + strategy selection)")
-        self._router = AdaptiveRouter()
-        logger.info("✅ Adaptive Router ready - intelligent routing activated")
+        if use_agno_workflow:
+            # AGNO WORKFLOW: Standard Agno Router + Workflow pattern
+            logger.info("Initializing Agno-compliant Workflow Router (Workflow + Router pattern)")
+            self._agno_router = AgnoWorkflowRouter()
+            self._router = None  # Legacy router disabled
+            logger.info("✅ Agno Workflow Router ready - standard routing activated")
+        else:
+            # LEGACY ADAPTIVE ROUTING: Custom routing system (deprecated)
+            logger.info("Initializing Legacy Adaptive Router (complexity analysis + strategy selection)")
+            self._router = AdaptiveRouter()
+            self._agno_router = None
+            logger.warning("⚠️  Using legacy AdaptiveRouter - consider migrating to Agno workflow")
+            logger.info("✅ Legacy Adaptive Router ready - custom routing activated")
 
 
     def _extract_response_content(self, response) -> str:
@@ -264,6 +277,33 @@ class ThoughtProcessor:
         self._log_thought_data(thought_data)
         self._session.add_thought(thought_data)
 
+        if self._use_workflow:
+            # Use Agno-compliant workflow processing
+            return await self._process_with_agno_workflow(thought_data, start_time)
+        else:
+            # Use legacy adaptive routing (deprecated)
+            return await self._process_with_legacy_router(thought_data, start_time)
+
+    async def _process_with_agno_workflow(self, thought_data: ThoughtData, start_time: float) -> str:
+        """Process thought using Agno-compliant workflow."""
+        input_prompt = self._build_context_prompt(thought_data)
+        self._log_context_building(thought_data, input_prompt)
+
+        # Execute Agno workflow
+        workflow_result: WorkflowResult = await self._agno_router.process_thought_workflow(
+            thought_data, input_prompt
+        )
+
+        final_response = self._format_response(workflow_result.content, thought_data)
+        total_time = time.time() - start_time
+
+        # Log workflow completion with Agno-specific metrics
+        self._log_workflow_completion(thought_data, workflow_result, total_time, final_response)
+
+        return final_response
+
+    async def _process_with_legacy_router(self, thought_data: ThoughtData, start_time: float) -> str:
+        """Process thought using legacy adaptive router (deprecated)."""
         coordination_plan, coordination_time = await self._create_coordination_plan(thought_data)
         input_prompt = self._build_context_prompt(thought_data)
         self._log_context_building(thought_data, input_prompt)
@@ -347,6 +387,29 @@ class ThoughtProcessor:
         processing_time = time.time() - processing_start
 
         return response, processing_time
+
+    def _log_workflow_completion(self, thought_data: ThoughtData, workflow_result: WorkflowResult,
+                                total_time: float, final_response: str) -> None:
+        """Log workflow completion with Agno-specific metrics."""
+        logger.info(f"🎯 AGNO WORKFLOW COMPLETION:")
+        logger.info(f"  Thought #{thought_data.thought_number} processed successfully")
+        logger.info(f"  Strategy: {workflow_result.strategy_used}")
+        logger.info(f"  Complexity Score: {workflow_result.complexity_score:.1f}/100")
+        logger.info(f"  Step: {workflow_result.step_name}")
+        logger.info(f"  Processing time: {workflow_result.processing_time:.3f}s")
+        logger.info(f"  Total time: {total_time:.3f}s")
+        logger.info(f"  Response length: {len(final_response)} chars")
+        logger.info(f"  {'=' * PerformanceMetrics.SEPARATOR_LENGTH}")
+
+        # Performance metrics calculation
+        execution_consistency = PerformanceMetrics.PERFECT_EXECUTION_CONSISTENCY if workflow_result.strategy_used != "error_fallback" else PerformanceMetrics.DEFAULT_EXECUTION_CONSISTENCY
+        efficiency_score = PerformanceMetrics.PERFECT_EFFICIENCY_SCORE if workflow_result.processing_time < PerformanceMetrics.EFFICIENCY_TIME_THRESHOLD else max(PerformanceMetrics.MINIMUM_EFFICIENCY_SCORE, PerformanceMetrics.EFFICIENCY_TIME_THRESHOLD / workflow_result.processing_time)
+
+        logger.info(f"📊 WORKFLOW PERFORMANCE METRICS:")
+        logger.info(f"  Execution Consistency: {execution_consistency:.2f}")
+        logger.info(f"  Efficiency Score: {efficiency_score:.2f}")
+        logger.info(f"  Response Length: {len(final_response)} chars")
+        logger.info(f"  Strategy Executed: {workflow_result.strategy_used}")
 
     def _log_completion_summary(self, thought_data: ThoughtData, coordination_plan: CoordinationPlan,
                                processing_time: float, total_time: float, final_response: str) -> None:
@@ -740,3 +803,34 @@ def create_validated_thought_data(
         )
     except ValidationError as e:
         raise ValueError(f"Invalid thought data: {e}") from e
+
+
+# Global configuration
+def get_workflow_enabled() -> bool:
+    """Check if Agno workflow routing is enabled."""
+    import os
+    return os.getenv("USE_AGNO_WORKFLOW", "false").lower() in ("true", "1", "yes", "on")
+
+
+# Global server state with workflow support
+_server_state: Optional[ServerState] = None
+_thought_processor: Optional[ThoughtProcessor] = None
+
+
+async def get_thought_processor() -> ThoughtProcessor:
+    """Get or create the global thought processor with workflow support."""
+    global _thought_processor, _server_state
+
+    if _thought_processor is None:
+        if _server_state is None:
+            config = ServerConfig.from_environment()
+            _server_state = ServerState()
+            await _server_state.initialize(config)
+
+        # Check workflow configuration
+        use_workflow = get_workflow_enabled()
+        logger.info(f"Initializing ThoughtProcessor with workflow={use_workflow}")
+
+        _thought_processor = ThoughtProcessor(_server_state.session, use_agno_workflow=use_workflow)
+
+    return _thought_processor
