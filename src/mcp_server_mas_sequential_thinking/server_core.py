@@ -24,8 +24,6 @@ from .constants import (
     ProcessingDefaults,
     FieldLengthLimits
 )
-from .intelligent_coordinator import create_intelligent_coordinator, IntelligentCoordinator, CoordinationPlan
-from .quality_assurance import create_quality_assurance_manager, QualityAssuranceManager
 from .adaptive_routing import AdaptiveRouter, ComplexityLevel, ProcessingStrategy
 from .types import (
     ProcessingMetadata,
@@ -33,6 +31,8 @@ from .types import (
     ConfigurationError,
     TeamCreationError,
     ConfigDict,
+    SimplifiedCoordinationPlan,
+    ExecutionMode,
 )
 
 logger = setup_logging()
@@ -217,23 +217,15 @@ class ServerState:
 class ThoughtProcessor:
     """Handles thought processing with optimized performance and error handling."""
 
-    __slots__ = ("_session", "_coordinator", "_quality_manager", "_router")  # Memory optimization
+    __slots__ = ("_session", "_router")  # Memory optimization
 
     def __init__(self, session: SessionMemory) -> None:
         self._session = session
 
-        # INTELLIGENT COORDINATION: Unified routing and planning system
-        logger.info("Initializing Intelligent Coordinator (eliminates router+planner duplication)")
-        self._coordinator = create_intelligent_coordinator()
-        logger.info("✅ Intelligent Coordinator ready - unified decision making activated")
-
-        # QUALITY ASSURANCE: Comprehensive evaluation and feedback system
-        logger.info("Initializing Quality Assurance Manager (evaluation + continuous improvement)")
-        self._quality_manager = create_quality_assurance_manager()
-        logger.info("✅ Quality Assurance ready - evaluation pipeline activated")
-
-        # ADAPTIVE ROUTING: For compatibility with existing code
+        # ADAPTIVE ROUTING: Primary decision making system
+        logger.info("Initializing Adaptive Router (complexity analysis + strategy selection)")
         self._router = AdaptiveRouter()
+        logger.info("✅ Adaptive Router ready - intelligent routing activated")
 
 
     def _extract_response_content(self, response) -> str:
@@ -271,15 +263,16 @@ class ThoughtProcessor:
         self._log_thought_data(thought_data)
         self._session.add_thought(thought_data)
 
-        # INTELLIGENT COORDINATION: Create comprehensive coordination plan
+        # ADAPTIVE ROUTING: Create coordination plan from routing decision
         coordination_start = time.time()
-        coordination_plan = await self._coordinator.create_coordination_plan(thought_data)
+        routing_decision = self._router.route_thought(thought_data)
+        coordination_plan = SimplifiedCoordinationPlan.from_routing_decision(routing_decision, thought_data)
         coordination_time = time.time() - coordination_start
 
         # ENHANCED LOGGING: Detailed coordination analysis
         logger.info(f"🎯 COORDINATION PLAN:")
-        logger.info(f"  Strategy: {coordination_plan.strategy.value}")
-        logger.info(f"  Complexity: {coordination_plan.complexity_level.value} (score: {coordination_plan.complexity_score:.1f}/100)")
+        logger.info(f"  Strategy: {coordination_plan.strategy}")
+        logger.info(f"  Complexity: {coordination_plan.complexity_level} (score: {coordination_plan.complexity_score:.1f}/100)")
         logger.info(f"  Execution mode: {coordination_plan.execution_mode.value}")
         logger.info(f"  Specialists: {coordination_plan.specialist_roles}")
         logger.info(f"  Team size: {coordination_plan.team_size}")
@@ -319,43 +312,15 @@ class ThoughtProcessor:
         # Format and return response
         final_response = self._format_response(response, thought_data)
 
-        # QUALITY ASSURANCE: Comprehensive evaluation and feedback
-        quality_eval_enabled = os.environ.get("ENABLE_QUALITY_EVAL", "true").lower() == "true"
+        # SIMPLIFIED METRICS: Basic performance tracking without LLM overhead
+        execution_consistency = 1.0 if coordination_plan.execution_mode.value else 0.9
+        efficiency_score = 1.0 if processing_time < 60 else max(0.5, 60.0 / processing_time)
 
-        if quality_eval_enabled:
-            try:
-                # Build execution log for evaluation
-                execution_log = {
-                    "execution_mode": coordination_plan.execution_mode.value,
-                    "agents_used": coordination_plan.specialist_roles,
-                    "processing_time": processing_time,
-                    "strategy": coordination_plan.strategy.value,
-                    "unlimited_processing": True,
-                    "actual_specialists": len(coordination_plan.specialist_roles)
-                }
-
-                # Run comprehensive quality evaluation
-                logger.info("🔍 Running quality evaluation...")
-                quality_metrics = await self._quality_manager.evaluate_full_pipeline(
-                    thought_data, coordination_plan, execution_log, final_response, processing_time
-                )
-
-                # Log quality results
-                logger.info(f"📊 QUALITY METRICS:")
-                logger.info(f"  Overall Score: {quality_metrics.overall_score:.2f}")
-                logger.info(f"  Coordination Accuracy: {quality_metrics.coordination_accuracy:.2f}")
-                logger.info(f"  Execution Consistency: {quality_metrics.execution_consistency:.2f}")
-                logger.info(f"  Response Quality: {quality_metrics.response_quality:.2f}")
-                logger.info(f"  Efficiency: {quality_metrics.efficiency_score:.2f}")
-
-                if quality_metrics.improvement_suggestions:
-                    logger.info(f"  Suggestions: {'; '.join(quality_metrics.improvement_suggestions[:2])}")
-
-                # Simplified quality logging without complex trends
-                logger.info(f"  Quality evaluation completed")
-
-            except Exception as e:
-                logger.warning(f"Quality evaluation failed: {e}")
+        logger.info(f"📊 PERFORMANCE METRICS:")
+        logger.info(f"  Execution Consistency: {execution_consistency:.2f}")
+        logger.info(f"  Efficiency Score: {efficiency_score:.2f}")
+        logger.info(f"  Response Length: {len(final_response)} chars")
+        logger.info(f"  Strategy Executed: {coordination_plan.execution_mode.value}")
 
         # ENHANCED LOGGING: Final processing summary
         logger.info(f"🎯 PROCESSING COMPLETE:")
@@ -469,9 +434,8 @@ class ThoughtProcessor:
         logger.info(f"  Response length: {len(final_response)} chars")
         logger.info(f"  {'=' * FieldLengthLimits.SEPARATOR_LENGTH}")
 
-    async def _execute_coordination_plan(self, input_prompt: str, plan: CoordinationPlan) -> str:
+    async def _execute_coordination_plan(self, input_prompt: str, plan: SimplifiedCoordinationPlan) -> str:
         """Execute thought processing based on coordination plan (unified approach)."""
-        from .types import ExecutionMode
 
         logger.info(f"🎯 Executing {plan.execution_mode.value} with {plan.specialist_roles}")
 
@@ -537,7 +501,7 @@ class ThoughtProcessor:
 
         return response_content
 
-    async def _execute_selective_team(self, input_prompt: str, plan: CoordinationPlan) -> str:
+    async def _execute_selective_team(self, input_prompt: str, plan: SimplifiedCoordinationPlan) -> str:
         """Execute selective team processing (hybrid approach)."""
         # For now, delegate to full team but log as selective
         logger.info(f"🏢 SELECTIVE TEAM CALL:")
@@ -548,7 +512,7 @@ class ThoughtProcessor:
         # For now, use existing team without timeout
         return await self._execute_full_team_unlimited(input_prompt, plan)
 
-    async def _execute_full_team_unlimited(self, input_prompt: str, plan: CoordinationPlan) -> str:
+    async def _execute_full_team_unlimited(self, input_prompt: str, plan: SimplifiedCoordinationPlan) -> str:
         """Execute full team processing without timeout restrictions."""
         return await self._execute_team_processing_with_retries(
             input_prompt, plan.complexity_level

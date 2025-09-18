@@ -2,6 +2,7 @@
 
 from typing import Dict, List, Optional, Protocol, TypedDict, Any
 from enum import Enum
+from dataclasses import dataclass
 from agno.models.base import Model
 from agno.agent import Agent
 from agno.team.team import Team
@@ -23,6 +24,66 @@ class ExecutionMode(Enum):
     SINGLE_AGENT = "single_agent"
     SELECTIVE_TEAM = "selective_team"  # Hybrid with specific specialists
     FULL_TEAM = "full_team"  # Complete multi-agent team
+
+
+@dataclass
+class SimplifiedCoordinationPlan:
+    """Simplified coordination plan created from adaptive routing decisions."""
+
+    # Core routing decisions
+    strategy: str  # ProcessingStrategy value
+    complexity_level: str  # ComplexityLevel value
+    complexity_score: float
+
+    # Execution parameters
+    execution_mode: ExecutionMode
+    specialist_roles: List[str]
+    team_size: int
+
+    # Simplified coordination
+    coordination_strategy: str
+    task_breakdown: List[str]
+    expected_interactions: int
+
+    # Metadata
+    reasoning: str
+    confidence: float
+
+    @classmethod
+    def from_routing_decision(cls, routing_decision, thought_data) -> 'SimplifiedCoordinationPlan':
+        """Create coordination plan from adaptive routing decision."""
+
+        # Map ProcessingStrategy to ExecutionMode
+        strategy_to_mode = {
+            "single_agent": ExecutionMode.SINGLE_AGENT,
+            "hybrid": ExecutionMode.SELECTIVE_TEAM,
+            "multi_agent": ExecutionMode.FULL_TEAM,
+        }
+
+        # Map complexity to specialist roles
+        complexity_to_specialists = {
+            "simple": ["general"],
+            "moderate": ["planner", "analyzer"],
+            "complex": ["planner", "researcher", "analyzer", "critic"],
+            "highly_complex": ["planner", "researcher", "analyzer", "critic", "synthesizer"],
+        }
+
+        execution_mode = strategy_to_mode.get(routing_decision.strategy.value, ExecutionMode.SINGLE_AGENT)
+        specialists = complexity_to_specialists.get(routing_decision.complexity_level.value, ["general"])
+
+        return cls(
+            strategy=routing_decision.strategy.value,
+            complexity_level=routing_decision.complexity_level.value,
+            complexity_score=routing_decision.complexity_score,
+            execution_mode=execution_mode,
+            specialist_roles=specialists,
+            team_size=len(specialists),
+            coordination_strategy="adaptive_routing_based",
+            task_breakdown=[f"Process {thought_data.thought_type.value} thought", "Generate guidance"],
+            expected_interactions=len(specialists),
+            reasoning=routing_decision.reasoning,
+            confidence=0.8,  # Default confidence for rule-based routing
+        )
 
 
 class ProcessingMetadata(TypedDict, total=False):
