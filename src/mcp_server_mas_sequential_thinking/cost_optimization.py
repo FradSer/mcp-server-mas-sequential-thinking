@@ -14,7 +14,8 @@ from .constants import (
     TokenCosts,
     QualityThresholds,
     ProviderDefaults,
-    ComplexityThresholds
+    ComplexityThresholds,
+    CostOptimizationConstants
 )
 
 logger = logging.getLogger(__name__)
@@ -62,17 +63,22 @@ class ProviderProfile:
     @property
     def overall_score(self) -> float:
         """Calculate overall provider score."""
-        # Weighted scoring: quality 40%, cost 30%, speed 20%, reliability 10%
-        speed_score = max(0, 1 - (self.avg_response_time - 1) / 10)  # Normalize to 0-1
-        reliability_score = self.uptime_score * (1 - self.error_rate)
+        # Weighted scoring using constants
+        speed_score = max(CostOptimizationConstants.MIN_QUALITY_SCORE,
+                         CostOptimizationConstants.MAX_QUALITY_SCORE -
+                         (self.avg_response_time - CostOptimizationConstants.SPEED_THRESHOLD) /
+                         CostOptimizationConstants.SPEED_NORMALIZATION_BASE)
+        reliability_score = self.uptime_score * (CostOptimizationConstants.MAX_QUALITY_SCORE - self.error_rate)
 
         score = (
-            self.avg_quality_score * 0.4
-            + (1 / (self.cost_per_1k_tokens + 0.0001)) * 0.0003  # Normalize cost impact
-            + speed_score * 0.2
-            + reliability_score * 0.1
+            self.avg_quality_score * CostOptimizationConstants.QUALITY_WEIGHT
+            + (CostOptimizationConstants.MAX_QUALITY_SCORE /
+               (self.cost_per_1k_tokens + CostOptimizationConstants.COST_EPSILON)) *
+               CostOptimizationConstants.COST_NORMALIZATION_FACTOR
+            + speed_score * CostOptimizationConstants.SPEED_WEIGHT
+            + reliability_score * CostOptimizationConstants.RELIABILITY_WEIGHT
         )
-        return min(score, 1.0)
+        return min(score, CostOptimizationConstants.MAX_QUALITY_SCORE)
 
 
 @dataclass
@@ -542,11 +548,11 @@ class CostOptimizer:
                 self.budget_constraints.daily_spent
                 / self.budget_constraints.daily_limit
             )
-            if utilization > 0.9:
+            if utilization > CostOptimizationConstants.CRITICAL_BUDGET_UTILIZATION:
                 suggestions.append(
                     "Daily budget nearly exhausted - consider increasing limit or reducing usage"
                 )
-            elif utilization > 0.7:
+            elif utilization > CostOptimizationConstants.MODERATE_BUDGET_UTILIZATION:
                 suggestions.append(
                     "High daily budget utilization - monitor usage closely"
                 )
@@ -558,15 +564,15 @@ class CostOptimizer:
             + self.metrics.hybrid_usage
         )
 
-        if total_usage > 10:  # Only suggest if we have enough data
+        if total_usage > CostOptimizationConstants.MIN_DATA_THRESHOLD:  # Only suggest if we have enough data
             multi_agent_ratio = self.metrics.multi_agent_usage / total_usage
-            if multi_agent_ratio > 0.7:
+            if multi_agent_ratio > CostOptimizationConstants.HIGH_MULTI_AGENT_RATIO:
                 suggestions.append(
                     "High multi-agent usage detected - consider using hybrid strategy for cost savings"
                 )
 
             single_agent_ratio = self.metrics.single_agent_usage / total_usage
-            if single_agent_ratio > 0.8:
+            if single_agent_ratio > CostOptimizationConstants.HIGH_SINGLE_AGENT_RATIO:
                 suggestions.append(
                     "High single-agent usage - you may benefit from multi-agent for complex thoughts"
                 )

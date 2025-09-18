@@ -255,6 +255,66 @@ class DefaultSettings:
     DEFAULT_SESSION_TIMEOUT = 3600
 
 
+class CostOptimizationConstants:
+    """Constants for cost optimization calculations."""
+
+    # Quality scoring weights
+    QUALITY_WEIGHT = 0.4
+    COST_WEIGHT = 0.3
+    SPEED_WEIGHT = 0.2
+    RELIABILITY_WEIGHT = 0.1
+
+    # Cost calculation factors
+    COST_NORMALIZATION_FACTOR = 0.0003
+    COST_EPSILON = 0.0001  # Prevent division by zero
+    DEFAULT_COST_ESTIMATE = 0.0002
+    SPEED_NORMALIZATION_BASE = 10
+    SPEED_THRESHOLD = 1
+
+    # Quality scoring bounds
+    MIN_QUALITY_SCORE = 0.0
+    MAX_QUALITY_SCORE = 1.0
+
+    # Budget utilization thresholds
+    HIGH_BUDGET_UTILIZATION = 0.8
+    MODERATE_BUDGET_UTILIZATION = 0.7
+    CRITICAL_BUDGET_UTILIZATION = 0.9
+
+    # Complexity bonuses
+    QUALITY_COMPLEXITY_BONUS = 0.2
+    COST_COMPLEXITY_BONUS = 0.0001
+
+    # Provider optimization
+    HIGH_USAGE_PENALTY = 2.0
+    MODERATE_USAGE_PENALTY = 0.5
+    QUALITY_UPDATE_WEIGHT = 0.1
+    OLD_QUALITY_WEIGHT = 0.9
+
+    # Usage analysis thresholds
+    MIN_DATA_THRESHOLD = 10
+    HIGH_MULTI_AGENT_RATIO = 0.7
+    HIGH_SINGLE_AGENT_RATIO = 0.8
+    MINIMUM_COST_DIFFERENCE = 0.01
+
+    # Provider-specific configurations
+    GROQ_RATE_LIMIT = 14400
+    GROQ_CONTEXT_LENGTH = 32768
+    GROQ_QUALITY_SCORE = 0.75
+    GROQ_RESPONSE_TIME = 0.8
+
+    DEEPSEEK_QUALITY_SCORE = 0.85
+    DEEPSEEK_CONTEXT_LENGTH = 128000
+
+    GITHUB_CONTEXT_LENGTH = 128000
+
+    OPENROUTER_RESPONSE_TIME = 3.0
+    OPENROUTER_CONTEXT_LENGTH = 200000
+
+    OLLAMA_QUALITY_SCORE = 0.70
+    OLLAMA_RESPONSE_TIME = 5.0
+    OLLAMA_CONTEXT_LENGTH = 8192
+
+
 class ProcessingStrategy(Enum):
     """Processing strategy enumeration."""
 
