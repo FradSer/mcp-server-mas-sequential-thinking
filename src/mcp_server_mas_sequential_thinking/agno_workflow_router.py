@@ -5,7 +5,7 @@ This module implements Agno-standard Workflow orchestration with Router pattern
 for intelligent multi-agent coordination without FastAPI dependencies.
 """
 
-from typing import Dict, Any, Optional, List
+from typing import Dict, Any, Optional, List, Union
 from dataclasses import dataclass
 import logging
 import time
@@ -32,7 +32,7 @@ class AgentFactory:
     """Factory for creating standardized agents with reduced duplication."""
 
     @staticmethod
-    def create_agent(name: str, role: str, model, instructions: list[str]) -> Agent:
+    def create_agent(name: str, role: str, model: Any, instructions: List[str]) -> Agent:
         """Create a standardized agent with common configuration."""
         return Agent(
             name=name,
@@ -43,7 +43,7 @@ class AgentFactory:
         )
 
     @classmethod
-    def create_planner(cls, model, complexity_level: str = "basic") -> Agent:
+    def create_planner(cls, model: Any, complexity_level: str = "basic") -> Agent:
         """Create a planner agent with complexity-appropriate instructions."""
         instructions = {
             "basic": [
@@ -118,8 +118,8 @@ class StepExecutorMixin:
 
     @staticmethod
     def _create_step_output(content: str, strategy: str, success: bool = True,
-                           session_state: dict = None, error: str = None,
-                           specialists: list[str] = None) -> StepOutput:
+                           session_state: Optional[Dict[str, Any]] = None, error: Optional[str] = None,
+                           specialists: Optional[List[str]] = None) -> StepOutput:
         """Create standardized StepOutput with common fields."""
         additional_data = {
             "strategy": strategy,
@@ -136,7 +136,7 @@ class StepExecutorMixin:
         )
 
     @staticmethod
-    def _update_session_state(session_state: dict, strategy: str, completed_key: str) -> None:
+    def _update_session_state(session_state: Optional[Dict[str, Any]], strategy: str, completed_key: str) -> None:
         """Update session state with completion tracking."""
         if session_state:
             session_state[completed_key] = True
