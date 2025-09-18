@@ -22,7 +22,8 @@ from .constants import (
     DefaultValues,
     DefaultTimeouts,
     ProcessingDefaults,
-    FieldLengthLimits
+    FieldLengthLimits,
+    PerformanceMetrics
 )
 from .adaptive_routing import AdaptiveRouter, ComplexityLevel, ProcessingStrategy
 from .types import (
@@ -275,6 +276,40 @@ class ThoughtProcessor:
 
         return final_response
 
+    def _log_input_details(self, input_prompt: str, context_description: str = "input") -> None:
+        """Log input details with consistent formatting."""
+        logger.info(f"  Input length: {len(input_prompt)} chars")
+        logger.info(f"  Full {context_description}:\\n{input_prompt}")
+        logger.info(f"  {'='*PerformanceMetrics.SEPARATOR_LENGTH}")
+
+    def _log_output_details(self, response_content: str, processing_time: float, context_description: str = "response") -> None:
+        """Log output details with consistent formatting."""
+        logger.info(f"  Processing time: {processing_time:.3f}s")
+        logger.info(f"  Output length: {len(response_content)} chars")
+        logger.info(f"  Full {context_description}:\\n{response_content}")
+        logger.info(f"  {'='*PerformanceMetrics.SEPARATOR_LENGTH}")
+
+    def _create_simple_agent(self, processing_type: str = "thought", use_markdown: bool = False) -> Agent:
+        """Create a simple agent for single-thought processing."""
+        from agno.agent import Agent
+
+        model_config = get_model_config()
+        single_model = model_config.create_team_model()
+
+        return Agent(
+            name="SimpleProcessor",
+            role="Simple Thought Processor",
+            description=f"Processes {processing_type}s efficiently without multi-agent overhead",
+            model=single_model,
+            instructions=[
+                f"You are processing a {processing_type} efficiently.",
+                "Provide a focused, clear response.",
+                "Include guidance for the next step.",
+                "Be concise but helpful."
+            ],
+            markdown=use_markdown
+        )
+
     async def _create_coordination_plan(self, thought_data: ThoughtData) -> tuple[CoordinationPlan, float]:
         """Create coordination plan from routing decision with timing."""
         coordination_start = time.time()
@@ -327,8 +362,8 @@ class ThoughtProcessor:
         )
 
         # Calculate and log performance metrics
-        execution_consistency = 1.0 if coordination_plan.execution_mode.value else 0.9
-        efficiency_score = 1.0 if processing_time < 60 else max(0.5, 60.0 / processing_time)
+        execution_consistency = PerformanceMetrics.PERFECT_EXECUTION_CONSISTENCY if coordination_plan.execution_mode.value else PerformanceMetrics.DEFAULT_EXECUTION_CONSISTENCY
+        efficiency_score = PerformanceMetrics.PERFECT_EFFICIENCY_SCORE if processing_time < PerformanceMetrics.EFFICIENCY_TIME_THRESHOLD else max(PerformanceMetrics.MINIMUM_EFFICIENCY_SCORE, PerformanceMetrics.EFFICIENCY_TIME_THRESHOLD / processing_time)
 
         logger.info(f"📊 PERFORMANCE METRICS:")
         logger.info(f"  Execution Consistency: {execution_consistency:.2f}")
@@ -472,31 +507,12 @@ class ThoughtProcessor:
 
     async def _execute_single_agent_simple(self, input_prompt: str) -> str:
         """Execute simple single-agent processing."""
-        from agno.agent import Agent
-
-        model_config = get_model_config()
-        single_model = model_config.create_team_model()
-
-        simple_agent = Agent(
-            name="SimpleProcessor",
-            role="Simple Thought Processor",
-            description="Processes thoughts efficiently without multi-agent overhead",
-            model=single_model,
-            instructions=[
-                "You are processing a thought efficiently.",
-                "Provide a focused, clear response.",
-                "Include guidance for the next step.",
-                "Be concise but helpful."
-            ],
-            markdown=False
-        )
+        simple_agent = self._create_simple_agent(processing_type="thought", use_markdown=False)
 
         logger.info(f"🤖 SINGLE-AGENT CALL:")
         logger.info(f"  Agent: {simple_agent.name} ({simple_agent.role})")
-        logger.info(f"  Model: {getattr(single_model, 'id', 'unknown')} ({single_model.__class__.__name__})")
-        logger.info(f"  Input length: {len(input_prompt)} chars")
-        logger.info(f"  Full input:\n{input_prompt}")
-        logger.info(f"  {'='*50}")
+        logger.info(f"  Model: {getattr(simple_agent.model, 'id', 'unknown')} ({simple_agent.model.__class__.__name__})")
+        self._log_input_details(input_prompt)
 
         start_time = time.time()
         response = await simple_agent.arun(input_prompt)
@@ -506,10 +522,7 @@ class ThoughtProcessor:
         response_content = self._extract_response_content(response)
 
         logger.info(f"✅ SINGLE-AGENT RESPONSE:")
-        logger.info(f"  Processing time: {processing_time:.3f}s")
-        logger.info(f"  Output length: {len(response_content)} chars")
-        logger.info(f"  Full response:\n{response_content}")
-        logger.info(f"  {'='*50}")
+        self._log_output_details(response_content, processing_time)
 
         return response_content
 
@@ -560,9 +573,7 @@ class ThoughtProcessor:
                 logger.info(f"  Team: {team.name} ({len(team.members)} agents)")
                 logger.info(f"  Leader: {team.model.__class__.__name__} (model: {getattr(team.model, 'id', 'unknown')})")
                 logger.info(f"  Members: {', '.join([m.name for m in team.members])}")
-                logger.info(f"  Input length: {len(input_prompt)} chars")
-                logger.info(f"  Full input:\n{input_prompt}")
-                logger.info(f"  {'=' * FieldLengthLimits.SEPARATOR_LENGTH}")
+                self._log_input_details(input_prompt)
 
                 start_time = time.time()
                 # REMOVED: All timeout restrictions for unlimited processing time
@@ -573,10 +584,7 @@ class ThoughtProcessor:
                 response_content = self._extract_response_content(response)
 
                 logger.info(f"✅ MULTI-AGENT RESPONSE:")
-                logger.info(f"  Processing time: {processing_time:.3f}s")
-                logger.info(f"  Output length: {len(response_content)} chars")
-                logger.info(f"  Full response:\n{response_content}")
-                logger.info(f"  {'=' * FieldLengthLimits.SEPARATOR_LENGTH}")
+                self._log_output_details(response_content, processing_time)
 
                 return response_content
 
@@ -586,7 +594,7 @@ class ThoughtProcessor:
 
                 if retry_count < max_retries:
                     logger.info(f"Retrying... ({retry_count + 1}/{max_retries})")
-                    await asyncio.sleep(1)  # Brief pause before retry
+                    await asyncio.sleep(PerformanceMetrics.RETRY_SLEEP_DURATION)  # Brief pause before retry
                 else:
                     logger.error(f"All retry attempts exhausted")
                     raise ThoughtProcessingError(f"Team processing failed after {max_retries + 1} attempts: {e}") from e
@@ -597,25 +605,8 @@ class ThoughtProcessor:
     async def _execute_single_agent_processing(self, input_prompt: str, routing_decision) -> str:
         """Execute single-agent processing for simple thoughts without timeout restrictions."""
         try:
-            # HOTFIX: Create a simple agent instead of calling model directly
-            from agno.agent import Agent
-            model_config = get_model_config()
-            single_model = model_config.create_team_model()
-
             # Create a lightweight agent for single processing
-            simple_agent = Agent(
-                name="SimpleProcessor",
-                role="Simple Thought Processor",
-                description="Processes simple thoughts efficiently without multi-agent overhead",
-                model=single_model,
-                instructions=[
-                    "You are processing a simple thought efficiently.",
-                    "Provide a focused, clear response.",
-                    "Include guidance for the next step.",
-                    "Be concise but helpful."
-                ],
-                markdown=True
-            )
+            simple_agent = self._create_simple_agent(processing_type="simple thought", use_markdown=True)
 
             # Create a simple response without multi-agent overhead
             simplified_prompt = f"""Process this thought efficiently:
@@ -627,10 +618,8 @@ Provide a focused response with clear guidance for the next step."""
             # ENHANCED LOGGING: Log single agent call details
             logger.info(f"🤖 SINGLE-AGENT CALL:")
             logger.info(f"  Agent: {simple_agent.name} ({simple_agent.role})")
-            logger.info(f"  Model: {getattr(single_model, 'id', 'unknown')} ({single_model.__class__.__name__})")
-            logger.info(f"  Input length: {len(simplified_prompt)} chars")
-            logger.info(f"  Full input:\n{simplified_prompt}")
-            logger.info(f"  {'=' * FieldLengthLimits.SEPARATOR_LENGTH}")
+            logger.info(f"  Model: {getattr(simple_agent.model, 'id', 'unknown')} ({simple_agent.model.__class__.__name__})")
+            self._log_input_details(simplified_prompt)
 
             start_time = time.time()
             # REMOVED: All timeout restrictions for unlimited processing time
@@ -642,10 +631,7 @@ Provide a focused response with clear guidance for the next step."""
 
             # ENHANCED LOGGING: Log single agent response details
             logger.info(f"✅ SINGLE-AGENT RESPONSE:")
-            logger.info(f"  Processing time: {processing_time:.3f}s")
-            logger.info(f"  Output length: {len(response_content)} chars")
-            logger.info(f"  Full response:\n{response_content}")
-            logger.info(f"  {'=' * FieldLengthLimits.SEPARATOR_LENGTH}")
+            self._log_output_details(response_content, processing_time)
 
             logger.info(f"Single-agent processing completed (saved ~{routing_decision.estimated_cost:.4f}$ vs multi-agent)")
             return response_content
