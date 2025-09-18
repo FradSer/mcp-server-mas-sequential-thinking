@@ -2,157 +2,90 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## Development Commands
+## Essential Commands
 
-### Dependencies & Environment
-- Use `uv` for dependency management (preferred over pip)
-- Install dependencies: `uv pip install -e .` (uses pyproject.toml dependencies)
-- Install dev dependencies: `uv pip install -e ".[dev]"` (pytest, black, isort, mypy)
-- Upgrade agno: `uv pip install --upgrade agno`
-- Test Python imports: `uv run python -c "import agno; print('Agno imported successfully')"`
-- Project requires Python 3.10+ and uses modern packaging (PEP 621)
+```bash
+# Setup & Installation
+uv pip install -e ".[dev]"                              # Install all dependencies
+uv run python -c "import agno; print('Agno imported successfully')"  # Verify setup
 
-### Code Quality
-- Linting: `ruff check . --fix` (requires ruff to be installed)
-- Formatting: `black .` (requires black to be installed)
-- Type checking: `mypy .` (requires mypy to be installed)
-- Testing: `pytest` (configured in tests/pytest.ini with async support)
-- Run single test: `pytest tests/unit/test_models.py::test_thought_data_validation -v`
-- Run with coverage: `pytest --cov=. --cov-report=html`
-- Install dev dependencies: `uv pip install -e ".[dev]"` or use dependency groups: `uv pip install --group dev`
+# Development Workflow
+uv run mcp-server-mas-sequential-thinking               # Run server
+ruff check . --fix && black . && mypy .                 # Code quality
+pytest --cov=. --cov-report=html                        # Test with coverage
 
-### Log Monitoring
-- Real-time log monitoring: `tail -f ~/.sequential_thinking/logs/sequential_thinking.log`
-- View recent logs: `tail -n 50 ~/.sequential_thinking/logs/sequential_thinking.log`
-- Search for errors: `grep "ERROR\|WARNING" ~/.sequential_thinking/logs/sequential_thinking.log`
+# Monitoring & Debugging
+tail -f ~/.sequential_thinking/logs/sequential_thinking.log  # Live logs
+grep "ERROR\|WARNING" ~/.sequential_thinking/logs/sequential_thinking.log  # Error search
+```
 
-### Running the Server
-- Direct execution: `uv run python src/mcp_server_mas_sequential_thinking/main.py`
-- Using uv: `uv run mcp-server-mas-sequential-thinking`
-- Package execution: `uvx mcp-server-mas-sequential-thinking`
-- Testing with MCP Inspector: `npx @modelcontextprotocol/inspector uv run python src/mcp_server_mas_sequential_thinking/main.py`
+### Additional Commands
+- **Upgrade agno**: `uv pip install --upgrade agno`
+- **Single test**: `pytest tests/unit/test_models.py::test_thought_data_validation -v`
+- **Alternative server runs**: `uvx mcp-server-mas-sequential-thinking` or `uv run python src/mcp_server_mas_sequential_thinking/main.py`
+- **MCP Inspector**: `npx @modelcontextprotocol/inspector uv run python src/mcp_server_mas_sequential_thinking/main.py`
 
-## Project Architecture
+## Project Overview
 
-This is a Multi-Agent System (MAS) for sequential thinking built with the Agno framework and served via MCP. The project features **AI-powered intelligent routing** and follows modern Python packaging standards with **src layout** structure.
+Multi-Agent System (MAS) for sequential thinking built with **Agno v2.0** framework and served via MCP. Features **AI-powered intelligent routing** with modern Python packaging (src layout, Python 3.10+).
 
-### Core Components
+### Architecture
 
-**Project Structure:**
-- `src/mcp_server_mas_sequential_thinking/` contains all Python modules
-- `tests/` directory with comprehensive unit and integration tests
-- `docs/` directory for documentation organization
+**Entry Point:** `src/mcp_server_mas_sequential_thinking/main.py`
+- FastMCP application with server lifespan management
+- Delegates to specialized modules: `server_core.py`, `models.py`, `team.py`, `agents.py`
 
-**Main Entry Point:** `src/mcp_server_mas_sequential_thinking/main.py` serves as the FastMCP application entry point with refactored architecture:
-- Server lifespan management and FastMCP setup
-- Core logic delegated to specialized modules:
-  - `server_core.py`: Server state, configuration, and thought processing
-  - `models.py`: Pydantic models for data validation (ThoughtData)  
-  - `team.py` / `unified_team.py`: Multi-agent team implementations
-  - `agents.py`: Individual agent definitions and roles
+**Agent System (Agno v2.0):**
+- **Coordinator:** Team leader with v2 attributes (`respond_directly=False`, `delegate_task_to_all_members=False`)
+- **Specialists:** Planner, Researcher, Analyzer, Critic, Synthesizer using ReasoningTools
+- **Performance:** ~10,000x faster agent creation, ~50x less memory vs LangGraph
 
-**Agent Architecture (Agno v2.0):**
-- **Team Coordinator:** Uses Agno's `Team` with v2 coordination attributes (respond_directly=False, delegate_task_to_all_members=False)
-- **Specialist Agents:** Planner, Researcher, Analyzer, Critic, Synthesizer using ReasoningTools
-- **Agent Flow:** Coordinator receives thoughts → delegates to specialists → synthesizes responses
-- **Performance:** ~10,000x faster agent creation, ~50x less memory usage vs LangGraph
+**Core Modules:**
+- `ThoughtProcessor`: Central async processing logic
+- `SessionMemory`: In-memory state with branch support
+- `ai_routing.py`: Complexity analysis and routing decisions
+- `adaptive_routing.py`: Performance-based route optimization
 
-### Key Components
+### Configuration & Data Flow
 
-**Core Functions:**
-- `create_sequential_thinking_team()`: Instantiates multi-agent team with specialized roles
-- `sequentialthinking` tool (in main.py): Core MCP tool that processes ThoughtData objects  
-- `get_model_config()` (in config.py): Configures LLM providers
-
-**Architecture Modules:**
-- `ThoughtProcessor` (server_core.py): Central processing logic with async team coordination
-- `ServerState` & `ServerConfig`: State management and configuration containers
-- `SessionMemory` (session.py): In-memory state tracking with branch support
-- Multiple team implementations: `team.py`, `unified_team.py` for different coordination strategies
-- `ai_routing.py`: AI-powered complexity analysis and routing decisions
-- `route_execution.py`: Route execution validation and consistency checking
-- `adaptive_routing.py`: Adaptive routing strategy selection and optimization
-
-### Configuration
-
-Environment variables control behavior:
+**Environment Variables:**
 - `LLM_PROVIDER`: Provider selection (deepseek, groq, openrouter, ollama, github)
-- `{PROVIDER}_API_KEY`: API keys for each provider (e.g., `DEEPSEEK_API_KEY`, `GITHUB_TOKEN`)
+- `{PROVIDER}_API_KEY`: API keys (e.g., `DEEPSEEK_API_KEY`, `GITHUB_TOKEN`)
 - `{PROVIDER}_{TEAM|AGENT}_MODEL_ID`: Model selection for coordinator vs specialists
-- `EXA_API_KEY`: For research capabilities
-- `AI_CONFIDENCE_THRESHOLD`: Minimum confidence for AI routing decisions (default: 0.7)
+- `EXA_API_KEY`: Research capabilities
+- `AI_CONFIDENCE_THRESHOLD`: Routing confidence threshold (default: 0.7)
 
-**GitHub Models Support:**
-- Enhanced GitHub token validation with format checking
-- Supports PAT tokens and OAuth tokens
-- Uses custom `GitHubOpenAI` class extending OpenAI for GitHub Models API
+**Processing Flow:**
+1. External LLM → `sequentialthinking` tool → ThoughtData validation
+2. **AI Routing:** Complexity analysis selects strategy (`single_agent`, `hybrid`, `multi_agent`)
+3. Coordinator delegates to specialists → synthesis → response
+4. SessionMemory tracks history with branch support
 
-### Data Flow
+### Testing & Key Notes
 
-1. External LLM calls `sequentialthinking` tool with ThoughtData
-2. Tool validates input via Pydantic model
-3. **AI-Powered Routing:** Intelligent complexity analysis determines optimal strategy:
-   - `single_agent`: Simple thoughts processed by single agent
-   - `hybrid`: Moderate complexity with selective specialist collaboration
-   - `multi_agent`: Complex thoughts requiring full team coordination
-   - **Route Execution Validation**: Ensures routing decisions are consistent and validated
-   - **Adaptive Optimization**: Learns from routing performance to improve future decisions
-4. Coordinator analyzes thought and delegates to relevant specialists
-5. Specialists process sub-tasks using their tools (ReasoningTools, ExaTools)
-6. Coordinator synthesizes responses and returns guidance
-7. Process continues with revisions/branches as needed
+**Test Organization:**
+- Unit tests: `tests/unit/` | Integration: `tests/` root
+- Async configuration: `tests/pytest.ini` with `asyncio_mode = auto`
+- Fixtures: `tests/conftest.py` | Factories: `tests/helpers/`
 
-### Memory & State
+**Important Characteristics:**
+- **High token usage**: 3-6x consumption due to multi-agent architecture
+- **Modern Python**: Dataclasses, type hints, async/await, pattern matching
+- **Environment-based config**: No config files, all via environment variables
+- **Structured logging**: Rotation to `~/.sequential_thinking/logs/`
 
-- **SessionMemory:** In-memory storage for thought history and branches
-- **Logging:** Structured logging to `~/.sequential_thinking/logs/`
-- **Branch Management:** Supports non-linear thinking with branch tracking
+## Agno v2.0 Migration Notes
 
-### Testing Architecture
+**Key Changes:**
+- Team coordination: `respond_directly=False`, `delegate_task_to_all_members=False`
+- Tools: `ThinkingTools` → `ReasoningTools` (`agno.tools.reasoning`)
+- Memory: `enable_memory` → `enable_user_memories`
+- Version: Requires `agno>=2.0.5`
 
-**Test Structure:**
-- Unit tests in `tests/unit/` with comprehensive coverage
-- Integration tests at `tests/` root level  
-- Async test configuration in `tests/pytest.ini` with coverage reporting
-- Well-organized fixtures in `tests/conftest.py`
-- Factory pattern for mock data in `tests/helpers/factories.py`
-- Mock utilities in `tests/helpers/mocks.py`
+**Performance Gains:**
+- ~10,000x faster agent creation vs LangGraph
+- ~50x less memory usage
+- Microsecond-level initialization
 
-**Key Testing Patterns:**
-- Async test configuration (`asyncio_mode = auto`) with proper event loop management
-- Comprehensive mocking of external dependencies (Agno teams, API calls)
-- Pydantic model validation testing with error handling scenarios
-- Test-driven development approach with enhanced validation coverage
-- Performance and integration test markers for categorized test runs
-
-## Important Notes
-
-- **High token usage**: Multi-agent architecture leads to 3-6x higher token consumption per thought
-- **Modular design**: Clean separation allows independent agent development and testing
-- **Modern Python practices**: Uses dataclasses, type hints, async/await, and pattern matching
-- **Environment-based configuration**: No config files, all settings via environment variables
-- **Comprehensive logging**: Structured logging with rotation to `~/.sequential_thinking/logs/`
-
-## Agno v2.0 Migration
-
-This project has been migrated to Agno v2.0 with the following key changes:
-
-### Architecture Updates
-- **Team coordination**: Replaced `mode="coordinate"` with explicit v2 attributes
-  - `respond_directly=False` - Team leader processes member responses
-  - `delegate_task_to_all_members=False` - Sequential task delegation  
-  - `determine_input_for_members=True` - Team leader synthesizes inputs
-- **Tool modules**: Migrated from `ThinkingTools` to `ReasoningTools` (`agno.tools.reasoning`)
-- **Minimum version requirement**: Updated to `agno>=2.0.5` due to BaseRunOutputEvent import fixes
-- **Memory management**: Updated `enable_memory` to `enable_user_memories` parameter
-
-### Performance Improvements
-- **~10,000x faster** agent creation compared to LangGraph
-- **~50x less memory** usage for agent instances
-- **Microsecond-level** factory and configuration initialization
-- **Optimized imports** and module loading
-
-### Compatibility
-- **Backward compatible**: All public APIs remain unchanged
-- **Environment variables**: Same configuration approach maintained
-- **Functionality preserved**: All existing features work identically
+**Compatibility:** Backward compatible, all APIs and environment variables unchanged
+- **deepwiki MCP reference**: For agno framework documentation, use repoName: `agno-agi/agno`
