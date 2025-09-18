@@ -143,6 +143,23 @@ class DefaultValues:
     DEFAULT_TIMEOUT = 30.0
 
 
+class PerformanceMetrics:
+    """Performance measurement constants."""
+
+    # Efficiency calculation thresholds
+    EFFICIENCY_TIME_THRESHOLD = 60.0  # seconds
+    PERFECT_EXECUTION_CONSISTENCY = 1.0
+    DEFAULT_EXECUTION_CONSISTENCY = 0.9
+    PERFECT_EFFICIENCY_SCORE = 1.0
+    MINIMUM_EFFICIENCY_SCORE = 0.5
+
+    # Retry and sleep constants
+    RETRY_SLEEP_DURATION = 1.0  # seconds
+
+    # Logging formatting
+    SEPARATOR_LENGTH = 50
+
+
 
 
 class ProcessingDefaults:
