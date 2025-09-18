@@ -27,30 +27,32 @@ class ExecutionMode(Enum):
 
 
 @dataclass
-class SimplifiedCoordinationPlan:
-    """Simplified coordination plan created from adaptive routing decisions."""
+class CoordinationPlan:
+    """Comprehensive plan combining routing and coordination decisions."""
 
-    # Core routing decisions
+    # Routing decisions - using string values for simplicity
     strategy: str  # ProcessingStrategy value
     complexity_level: str  # ComplexityLevel value
     complexity_score: float
 
-    # Execution parameters
+    # Coordination decisions
     execution_mode: ExecutionMode
     specialist_roles: List[str]
+    task_breakdown: List[str]
+    coordination_strategy: str
+
+    # Execution parameters
+    timeout_seconds: float
+    expected_interactions: int
     team_size: int
 
-    # Simplified coordination
-    coordination_strategy: str
-    task_breakdown: List[str]
-    expected_interactions: int
-
-    # Metadata
+    # Reasoning and metadata
     reasoning: str
     confidence: float
+    original_thought: str
 
     @classmethod
-    def from_routing_decision(cls, routing_decision, thought_data) -> 'SimplifiedCoordinationPlan':
+    def from_routing_decision(cls, routing_decision, thought_data) -> 'CoordinationPlan':
         """Create coordination plan from adaptive routing decision."""
 
         # Map ProcessingStrategy to ExecutionMode
@@ -81,8 +83,10 @@ class SimplifiedCoordinationPlan:
             coordination_strategy="adaptive_routing_based",
             task_breakdown=[f"Process {thought_data.thought_type.value} thought", "Generate guidance"],
             expected_interactions=len(specialists),
+            timeout_seconds=300.0,  # Default timeout
             reasoning=routing_decision.reasoning,
             confidence=0.8,  # Default confidence for rule-based routing
+            original_thought=thought_data.thought,
         )
 
 

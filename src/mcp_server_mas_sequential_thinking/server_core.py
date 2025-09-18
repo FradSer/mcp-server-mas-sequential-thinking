@@ -31,7 +31,7 @@ from .types import (
     ConfigurationError,
     TeamCreationError,
     ConfigDict,
-    SimplifiedCoordinationPlan,
+    CoordinationPlan,
     ExecutionMode,
 )
 
@@ -266,7 +266,7 @@ class ThoughtProcessor:
         # ADAPTIVE ROUTING: Create coordination plan from routing decision
         coordination_start = time.time()
         routing_decision = self._router.route_thought(thought_data)
-        coordination_plan = SimplifiedCoordinationPlan.from_routing_decision(routing_decision, thought_data)
+        coordination_plan = CoordinationPlan.from_routing_decision(routing_decision, thought_data)
         coordination_time = time.time() - coordination_start
 
         # ENHANCED LOGGING: Detailed coordination analysis
@@ -434,7 +434,7 @@ class ThoughtProcessor:
         logger.info(f"  Response length: {len(final_response)} chars")
         logger.info(f"  {'=' * FieldLengthLimits.SEPARATOR_LENGTH}")
 
-    async def _execute_coordination_plan(self, input_prompt: str, plan: SimplifiedCoordinationPlan) -> str:
+    async def _execute_coordination_plan(self, input_prompt: str, plan: CoordinationPlan) -> str:
         """Execute thought processing based on coordination plan (unified approach)."""
 
         logger.info(f"🎯 Executing {plan.execution_mode.value} with {plan.specialist_roles}")
@@ -501,7 +501,7 @@ class ThoughtProcessor:
 
         return response_content
 
-    async def _execute_selective_team(self, input_prompt: str, plan: SimplifiedCoordinationPlan) -> str:
+    async def _execute_selective_team(self, input_prompt: str, plan: CoordinationPlan) -> str:
         """Execute selective team processing (hybrid approach)."""
         # For now, delegate to full team but log as selective
         logger.info(f"🏢 SELECTIVE TEAM CALL:")
@@ -512,7 +512,7 @@ class ThoughtProcessor:
         # For now, use existing team without timeout
         return await self._execute_full_team_unlimited(input_prompt, plan)
 
-    async def _execute_full_team_unlimited(self, input_prompt: str, plan: SimplifiedCoordinationPlan) -> str:
+    async def _execute_full_team_unlimited(self, input_prompt: str, plan: CoordinationPlan) -> str:
         """Execute full team processing without timeout restrictions."""
         return await self._execute_team_processing_with_retries(
             input_prompt, plan.complexity_level

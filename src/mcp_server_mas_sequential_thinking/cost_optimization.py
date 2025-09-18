@@ -8,7 +8,7 @@ from enum import Enum
 from typing import Dict, List, Optional, Tuple, Callable
 from abc import ABC, abstractmethod
 
-from .ai_routing import ProcessingStrategy, ComplexityLevel, RoutingDecision
+from .adaptive_routing import ProcessingStrategy, ComplexityLevel, RoutingDecision
 from .models import ThoughtData
 from .constants import (
     TokenCosts,
