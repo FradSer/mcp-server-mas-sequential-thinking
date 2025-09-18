@@ -42,6 +42,47 @@ from .types import (
 logger = setup_logging()
 
 
+class LoggingMixin:
+    """Mixin class providing common logging utilities with reduced duplication."""
+
+    @staticmethod
+    def _log_section_header(title: str, separator_length: int = PerformanceMetrics.SEPARATOR_LENGTH) -> None:
+        """Log a formatted section header."""
+        logger.info(f"{title}")
+
+    @staticmethod
+    def _log_metrics_block(title: str, metrics: dict[str, any]) -> None:
+        """Log a formatted metrics block."""
+        logger.info(f"{title}")
+        for key, value in metrics.items():
+            if isinstance(value, float):
+                logger.info(f"  {key}: {value:.2f}")
+            elif isinstance(value, (int, str)):
+                logger.info(f"  {key}: {value}")
+            else:
+                logger.info(f"  {key}: {value}")
+
+    @staticmethod
+    def _log_separator(length: int = PerformanceMetrics.SEPARATOR_LENGTH) -> None:
+        """Log a separator line."""
+        logger.info(f"  {'=' * length}")
+
+    @staticmethod
+    def _calculate_efficiency_score(processing_time: float) -> float:
+        """Calculate efficiency score using standard metrics."""
+        return (PerformanceMetrics.PERFECT_EFFICIENCY_SCORE
+                if processing_time < PerformanceMetrics.EFFICIENCY_TIME_THRESHOLD
+                else max(PerformanceMetrics.MINIMUM_EFFICIENCY_SCORE,
+                        PerformanceMetrics.EFFICIENCY_TIME_THRESHOLD / processing_time))
+
+    @staticmethod
+    def _calculate_execution_consistency(success_indicator: bool) -> float:
+        """Calculate execution consistency using standard metrics."""
+        return (PerformanceMetrics.PERFECT_EXECUTION_CONSISTENCY
+                if success_indicator
+                else PerformanceMetrics.DEFAULT_EXECUTION_CONSISTENCY)
+
+
 @dataclass(frozen=True, slots=True)
 class ServerConfig:
     """Immutable server configuration with clear defaults."""
@@ -218,7 +259,7 @@ class ServerState:
 # Remove redundant exception definition as it's now in types.py
 
 
-class ThoughtProcessor:
+class ThoughtProcessor(LoggingMixin):
     """Handles thought processing with optimized performance and error handling."""
 
     __slots__ = ("_session", "_router", "_agno_router", "_use_workflow")  # Memory optimization
@@ -391,74 +432,88 @@ class ThoughtProcessor:
     def _log_workflow_completion(self, thought_data: ThoughtData, workflow_result: WorkflowResult,
                                 total_time: float, final_response: str) -> None:
         """Log workflow completion with Agno-specific metrics."""
-        logger.info(f"🎯 AGNO WORKFLOW COMPLETION:")
-        logger.info(f"  Thought #{thought_data.thought_number} processed successfully")
-        logger.info(f"  Strategy: {workflow_result.strategy_used}")
-        logger.info(f"  Complexity Score: {workflow_result.complexity_score:.1f}/100")
-        logger.info(f"  Step: {workflow_result.step_name}")
-        logger.info(f"  Processing time: {workflow_result.processing_time:.3f}s")
-        logger.info(f"  Total time: {total_time:.3f}s")
-        logger.info(f"  Response length: {len(final_response)} chars")
-        logger.info(f"  {'=' * PerformanceMetrics.SEPARATOR_LENGTH}")
+        # Basic completion info
+        completion_metrics = {
+            f"Thought #{thought_data.thought_number}": "processed successfully",
+            "Strategy": workflow_result.strategy_used,
+            "Complexity Score": f"{workflow_result.complexity_score:.1f}/100",
+            "Step": workflow_result.step_name,
+            "Processing time": f"{workflow_result.processing_time:.3f}s",
+            "Total time": f"{total_time:.3f}s",
+            "Response length": f"{len(final_response)} chars"
+        }
+        self._log_metrics_block("🎯 AGNO WORKFLOW COMPLETION:", completion_metrics)
+        self._log_separator()
 
-        # Performance metrics calculation
-        execution_consistency = PerformanceMetrics.PERFECT_EXECUTION_CONSISTENCY if workflow_result.strategy_used != "error_fallback" else PerformanceMetrics.DEFAULT_EXECUTION_CONSISTENCY
-        efficiency_score = PerformanceMetrics.PERFECT_EFFICIENCY_SCORE if workflow_result.processing_time < PerformanceMetrics.EFFICIENCY_TIME_THRESHOLD else max(PerformanceMetrics.MINIMUM_EFFICIENCY_SCORE, PerformanceMetrics.EFFICIENCY_TIME_THRESHOLD / workflow_result.processing_time)
+        # Performance metrics
+        execution_consistency = self._calculate_execution_consistency(workflow_result.strategy_used != "error_fallback")
+        efficiency_score = self._calculate_efficiency_score(workflow_result.processing_time)
 
-        logger.info(f"📊 WORKFLOW PERFORMANCE METRICS:")
-        logger.info(f"  Execution Consistency: {execution_consistency:.2f}")
-        logger.info(f"  Efficiency Score: {efficiency_score:.2f}")
-        logger.info(f"  Response Length: {len(final_response)} chars")
-        logger.info(f"  Strategy Executed: {workflow_result.strategy_used}")
+        performance_metrics = {
+            "Execution Consistency": execution_consistency,
+            "Efficiency Score": efficiency_score,
+            "Response Length": f"{len(final_response)} chars",
+            "Strategy Executed": workflow_result.strategy_used
+        }
+        self._log_metrics_block("📊 WORKFLOW PERFORMANCE METRICS:", performance_metrics)
 
     def _log_completion_summary(self, thought_data: ThoughtData, coordination_plan: CoordinationPlan,
                                processing_time: float, total_time: float, final_response: str) -> None:
         """Log performance metrics and completion summary."""
-        # Log completion status
-        logger.info(
-            f"Thought #{thought_data.thought_number} completed: "
-            f"strategy={coordination_plan.execution_mode.value}, "
-            f"specialists={len(coordination_plan.specialist_roles)}, "
-            f"processing_time={processing_time:.3f}s, "
-            f"total_time={total_time:.3f}s, "
-            f"confidence={coordination_plan.confidence:.2f}"
-        )
+        # Completion summary
+        completion_info = {
+            f"Thought #{thought_data.thought_number}": "completed",
+            "Strategy": coordination_plan.execution_mode.value,
+            "Specialists": len(coordination_plan.specialist_roles),
+            "Processing time": f"{processing_time:.3f}s",
+            "Total time": f"{total_time:.3f}s",
+            "Confidence": coordination_plan.confidence
+        }
+        self._log_metrics_block("💫 COMPLETION SUMMARY:", completion_info)
 
-        # Calculate and log performance metrics
-        execution_consistency = PerformanceMetrics.PERFECT_EXECUTION_CONSISTENCY if coordination_plan.execution_mode.value else PerformanceMetrics.DEFAULT_EXECUTION_CONSISTENCY
-        efficiency_score = PerformanceMetrics.PERFECT_EFFICIENCY_SCORE if processing_time < PerformanceMetrics.EFFICIENCY_TIME_THRESHOLD else max(PerformanceMetrics.MINIMUM_EFFICIENCY_SCORE, PerformanceMetrics.EFFICIENCY_TIME_THRESHOLD / processing_time)
+        # Performance metrics
+        execution_consistency = self._calculate_execution_consistency(bool(coordination_plan.execution_mode.value))
+        efficiency_score = self._calculate_efficiency_score(processing_time)
 
-        logger.info(f"📊 PERFORMANCE METRICS:")
-        logger.info(f"  Execution Consistency: {execution_consistency:.2f}")
-        logger.info(f"  Efficiency Score: {efficiency_score:.2f}")
-        logger.info(f"  Response Length: {len(final_response)} chars")
-        logger.info(f"  Strategy Executed: {coordination_plan.execution_mode.value}")
+        performance_metrics = {
+            "Execution Consistency": execution_consistency,
+            "Efficiency Score": efficiency_score,
+            "Response Length": f"{len(final_response)} chars",
+            "Strategy Executed": coordination_plan.execution_mode.value
+        }
+        self._log_metrics_block("📊 PERFORMANCE METRICS:", performance_metrics)
 
         # Final processing summary
-        logger.info(f"🎯 PROCESSING COMPLETE:")
-        logger.info(f"  Thought #{thought_data.thought_number} processed successfully")
-        logger.info(f"  Strategy used: {coordination_plan.execution_mode.value}")
-        logger.info(f"  Processing time: {processing_time:.3f}s")
-        logger.info(f"  Total time: {total_time:.3f}s")
-        logger.info(f"  Response length: {len(final_response)} chars")
-        logger.info(f"  {'=' * FieldLengthLimits.SEPARATOR_LENGTH}")
+        final_summary = {
+            f"Thought #{thought_data.thought_number}": "processed successfully",
+            "Strategy used": coordination_plan.execution_mode.value,
+            "Processing time": f"{processing_time:.3f}s",
+            "Total time": f"{total_time:.3f}s",
+            "Response length": f"{len(final_response)} chars"
+        }
+        self._log_metrics_block("🎯 PROCESSING COMPLETE:", final_summary)
+        self._log_separator(FieldLengthLimits.SEPARATOR_LENGTH)
 
     def _log_thought_data(self, thought_data: ThoughtData) -> None:
         """Log comprehensive thought data information."""
-        logger.info(f"🧩 THOUGHT DATA:")
-        logger.info(f"  Thought #{thought_data.thought_number}/{thought_data.total_thoughts}")
-        logger.info(f"  Type: {thought_data.thought_type.value}")
-        logger.info(f"  Content: {thought_data.thought}")
-        logger.info(f"  Next needed: {thought_data.next_needed}")
-        logger.info(f"  Needs more: {thought_data.needs_more}")
+        basic_info = {
+            f"Thought #{thought_data.thought_number}": f"{thought_data.thought_number}/{thought_data.total_thoughts}",
+            "Type": thought_data.thought_type.value,
+            "Content": thought_data.thought,
+            "Next needed": thought_data.next_needed,
+            "Needs more": thought_data.needs_more
+        }
 
+        # Add conditional fields
         if thought_data.is_revision:
-            logger.info(f"  Is revision: True (revises thought #{thought_data.revises_thought})")
+            basic_info["Is revision"] = f"True (revises thought #{thought_data.revises_thought})"
         if thought_data.branch_from:
-            logger.info(f"  Branch from: #{thought_data.branch_from} (ID: {thought_data.branch_id})")
+            basic_info["Branch from"] = f"#{thought_data.branch_from} (ID: {thought_data.branch_id})"
 
-        logger.info(f"  Raw data: {thought_data.format_for_log()}")
-        logger.info(f"  {'=' * FieldLengthLimits.SEPARATOR_LENGTH}")
+        basic_info["Raw data"] = thought_data.format_for_log()
+
+        self._log_metrics_block("🧩 THOUGHT DATA:", basic_info)
+        self._log_separator(FieldLengthLimits.SEPARATOR_LENGTH)
 
     async def _analyze_routing(self, thought_data: ThoughtData) -> tuple[object, float]:
         """Analyze routing decision and return decision with timing."""
