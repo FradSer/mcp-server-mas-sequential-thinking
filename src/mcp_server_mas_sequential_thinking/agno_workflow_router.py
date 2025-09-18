@@ -28,6 +28,131 @@ from .modernized_config import get_model_config
 logger = logging.getLogger(__name__)
 
 
+class AgentFactory:
+    """Factory for creating standardized agents with reduced duplication."""
+
+    @staticmethod
+    def create_agent(name: str, role: str, model, instructions: list[str]) -> Agent:
+        """Create a standardized agent with common configuration."""
+        return Agent(
+            name=name,
+            role=role,
+            model=model,
+            tools=[ReasoningTools],
+            instructions=instructions
+        )
+
+    @classmethod
+    def create_planner(cls, model, complexity_level: str = "basic") -> Agent:
+        """Create a planner agent with complexity-appropriate instructions."""
+        instructions = {
+            "basic": [
+                "Analyze the thought and create a strategic approach.",
+                "Break down complex ideas into manageable components.",
+                "Provide clear planning guidance."
+            ],
+            "advanced": [
+                "Create comprehensive strategic approaches.",
+                "Plan multi-step solutions and methodologies.",
+                "Provide strategic oversight and direction."
+            ]
+        }
+        return cls.create_agent("Planner", "Strategic Planner", model, instructions[complexity_level])
+
+    @classmethod
+    def create_analyzer(cls, model, complexity_level: str = "basic") -> Agent:
+        """Create an analyzer agent with complexity-appropriate instructions."""
+        instructions = {
+            "basic": [
+                "Perform deep analysis of the thought content.",
+                "Identify patterns, connections, and implications.",
+                "Provide analytical insights."
+            ],
+            "advanced": [
+                "Perform comprehensive analysis of complex thoughts.",
+                "Identify deep patterns and relationships.",
+                "Provide sophisticated analytical perspectives."
+            ]
+        }
+        return cls.create_agent("Analyzer", "Core Analyst", model, instructions[complexity_level])
+
+    @classmethod
+    def create_researcher(cls, model) -> Agent:
+        """Create a researcher agent."""
+        return cls.create_agent(
+            "Researcher", "Information Gatherer", model,
+            [
+                "Gather relevant information and context.",
+                "Verify facts and explore related concepts.",
+                "Provide research-backed insights."
+            ]
+        )
+
+    @classmethod
+    def create_critic(cls, model) -> Agent:
+        """Create a critic agent."""
+        return cls.create_agent(
+            "Critic", "Quality Controller", model,
+            [
+                "Critically evaluate ideas and proposals.",
+                "Identify potential weaknesses and improvements.",
+                "Ensure high-quality outputs."
+            ]
+        )
+
+    @classmethod
+    def create_synthesizer(cls, model) -> Agent:
+        """Create a synthesizer agent."""
+        return cls.create_agent(
+            "Synthesizer", "Response Coordinator", model,
+            [
+                "Synthesize insights from all team members.",
+                "Create coherent and comprehensive responses.",
+                "Provide actionable guidance for next steps."
+            ]
+        )
+
+
+class StepExecutorMixin:
+    """Mixin providing common step execution patterns."""
+
+    @staticmethod
+    def _create_step_output(content: str, strategy: str, success: bool = True,
+                           session_state: dict = None, error: str = None,
+                           specialists: list[str] = None) -> StepOutput:
+        """Create standardized StepOutput with common fields."""
+        additional_data = {
+            "strategy": strategy,
+            "complexity": session_state.get("current_complexity_score", 0) if session_state else 0
+        }
+        if specialists:
+            additional_data["specialists"] = specialists
+
+        return StepOutput(
+            content=content,
+            success=success,
+            additional_data=additional_data,
+            error=error
+        )
+
+    @staticmethod
+    def _update_session_state(session_state: dict, strategy: str, completed_key: str) -> None:
+        """Update session state with completion tracking."""
+        if session_state:
+            session_state[completed_key] = True
+            session_state["processing_strategy"] = strategy
+
+    @staticmethod
+    def _handle_execution_error(error: Exception, strategy: str) -> StepOutput:
+        """Handle execution errors with standardized error response."""
+        error_msg = f"{strategy.title()} processing failed: {str(error)}"
+        return StepOutput(
+            content=error_msg,
+            success=False,
+            error=str(error)
+        )
+
+
 @dataclass
 class WorkflowResult:
     """Result from Agno workflow execution with metadata."""
@@ -41,7 +166,7 @@ class WorkflowResult:
 # Removed ThoughtInput - using Agno standard StepInput instead
 
 
-class AgnoWorkflowRouter:
+class AgnoWorkflowRouter(StepExecutorMixin):
     """
     Agno Workflow-based router with intelligent complexity routing.
 
@@ -404,24 +529,15 @@ class AgnoWorkflowRouter:
                 )
 
                 # Track performance in session_state
-                if step_input.session_state:
-                    step_input.session_state["single_agent_completed"] = True
-                    step_input.session_state["processing_strategy"] = "single_agent"
+                self._update_session_state(step_input.session_state, "single_agent", "single_agent_completed")
 
-                return StepOutput(
+                return self._create_step_output(
                     content=result,
-                    success=True,
-                    additional_data={
-                        "strategy": "single_agent",
-                        "complexity": step_input.session_state.get("current_complexity_score", 0) if step_input.session_state else 0
-                    }
+                    strategy="single_agent",
+                    session_state=step_input.session_state
                 )
             except Exception as e:
-                return StepOutput(
-                    content=f"Single agent processing failed: {str(e)}",
-                    success=False,
-                    error=str(e)
-                )
+                return self._handle_execution_error(e, "single_agent")
 
         return Step(
             name="single_agent_processing",
@@ -433,30 +549,9 @@ class AgnoWorkflowRouter:
         """Create hybrid team processing step for moderate complexity."""
         model = self.model_config.create_team_model()
 
-        # Selective specialist team
-        planner = Agent(
-            name="Planner",
-            role="Strategic Planner",
-            model=model,
-            tools=[ReasoningTools],
-            instructions=[
-                "Analyze the thought and create a strategic approach.",
-                "Break down complex ideas into manageable components.",
-                "Provide clear planning guidance."
-            ]
-        )
-
-        analyzer = Agent(
-            name="Analyzer",
-            role="Core Analyst",
-            model=model,
-            tools=[ReasoningTools],
-            instructions=[
-                "Perform deep analysis of the thought content.",
-                "Identify patterns, connections, and implications.",
-                "Provide analytical insights."
-            ]
-        )
+        # Selective specialist team using factory
+        planner = AgentFactory.create_planner(model, "basic")
+        analyzer = AgentFactory.create_analyzer(model, "basic")
 
         hybrid_team = Team(
             name="HybridSpecialistTeam",
@@ -485,25 +580,16 @@ class AgnoWorkflowRouter:
                 )
 
                 # Track performance in session_state
-                if step_input.session_state:
-                    step_input.session_state["hybrid_team_completed"] = True
-                    step_input.session_state["processing_strategy"] = "hybrid"
+                self._update_session_state(step_input.session_state, "hybrid", "hybrid_team_completed")
 
-                return StepOutput(
+                return self._create_step_output(
                     content=result,
-                    success=True,
-                    additional_data={
-                        "strategy": "hybrid",
-                        "specialists": ["planner", "analyzer"],
-                        "complexity": step_input.session_state.get("current_complexity_score", 0) if step_input.session_state else 0
-                    }
+                    strategy="hybrid",
+                    session_state=step_input.session_state,
+                    specialists=["planner", "analyzer"]
                 )
             except Exception as e:
-                return StepOutput(
-                    content=f"Hybrid team processing failed: {str(e)}",
-                    success=False,
-                    error=str(e)
-                )
+                return self._handle_execution_error(e, "hybrid team")
 
         return Step(
             name="hybrid_team_processing",
