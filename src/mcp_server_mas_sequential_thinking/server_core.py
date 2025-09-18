@@ -351,10 +351,8 @@ class ThoughtProcessor:
                 if quality_metrics.improvement_suggestions:
                     logger.info(f"  Suggestions: {'; '.join(quality_metrics.improvement_suggestions[:2])}")
 
-                # Performance trending
-                trends = self._quality_manager.get_performance_trends()
-                if trends:
-                    logger.info(f"  Trend: {trends.get('trend_direction', 'unknown')} (avg: {trends.get('avg_overall_score', 0):.2f})")
+                # Simplified quality logging without complex trends
+                logger.info(f"  Quality evaluation completed")
 
             except Exception as e:
                 logger.warning(f"Quality evaluation failed: {e}")
@@ -473,7 +471,7 @@ class ThoughtProcessor:
 
     async def _execute_coordination_plan(self, input_prompt: str, plan: CoordinationPlan) -> str:
         """Execute thought processing based on coordination plan (unified approach)."""
-        from .route_execution import ExecutionMode
+        from .types import ExecutionMode
 
         logger.info(f"🎯 Executing {plan.execution_mode.value} with {plan.specialist_roles}")
 

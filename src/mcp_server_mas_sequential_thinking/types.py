@@ -1,6 +1,7 @@
 """Type definitions for better type safety."""
 
 from typing import Dict, List, Optional, Protocol, TypedDict, Any
+from enum import Enum
 from agno.models.base import Model
 from agno.agent import Agent
 from agno.team.team import Team
@@ -14,6 +15,14 @@ AgentType = str
 ConfigDict = Dict[str, Any]
 InstructionsList = List[str]
 SuccessCriteriaList = List[str]
+
+
+class ExecutionMode(Enum):
+    """Execution modes for different routing strategies."""
+
+    SINGLE_AGENT = "single_agent"
+    SELECTIVE_TEAM = "selective_team"  # Hybrid with specific specialists
+    FULL_TEAM = "full_team"  # Complete multi-agent team
 
 
 class ProcessingMetadata(TypedDict, total=False):
