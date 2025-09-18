@@ -370,43 +370,36 @@ class AdaptiveRouter:
         if budget_remaining is None:
             return strategy
 
-        _, estimated_cost = self.cost_estimator.estimate_cost(
-            strategy, complexity_level, provider
-        )
+        # Define fallback strategy hierarchy (expensive to cheap)
+        fallback_strategies = {
+            ProcessingStrategy.MULTI_AGENT: [ProcessingStrategy.HYBRID, ProcessingStrategy.SINGLE_AGENT],
+            ProcessingStrategy.HYBRID: [ProcessingStrategy.SINGLE_AGENT],
+            ProcessingStrategy.SINGLE_AGENT: []
+        }
 
-        # If cost exceeds budget, try cheaper alternatives
-        if estimated_cost > budget_remaining:
-            if strategy == ProcessingStrategy.MULTI_AGENT:
-                # Try hybrid first
-                _, hybrid_cost = self.cost_estimator.estimate_cost(
-                    ProcessingStrategy.HYBRID, complexity_level, provider
-                )
-                if hybrid_cost <= budget_remaining:
-                    logger.info(f"Budget constraint: switching to hybrid strategy")
-                    return ProcessingStrategy.HYBRID
+        # Check if current strategy fits budget
+        if self._strategy_fits_budget(strategy, complexity_level, provider, budget_remaining):
+            return strategy
 
-                # Fall back to single agent
-                _, single_cost = self.cost_estimator.estimate_cost(
-                    ProcessingStrategy.SINGLE_AGENT, complexity_level, provider
-                )
-                if single_cost <= budget_remaining:
-                    logger.info(
-                        f"Budget constraint: switching to single-agent strategy"
-                    )
-                    return ProcessingStrategy.SINGLE_AGENT
-
-            elif strategy == ProcessingStrategy.HYBRID:
-                # Fall back to single agent
-                _, single_cost = self.cost_estimator.estimate_cost(
-                    ProcessingStrategy.SINGLE_AGENT, complexity_level, provider
-                )
-                if single_cost <= budget_remaining:
-                    logger.info(
-                        f"Budget constraint: switching to single-agent strategy"
-                    )
-                    return ProcessingStrategy.SINGLE_AGENT
+        # Try fallback strategies in order
+        for fallback_strategy in fallback_strategies.get(strategy, []):
+            if self._strategy_fits_budget(fallback_strategy, complexity_level, provider, budget_remaining):
+                strategy_name = fallback_strategy.value.replace('_', '-')
+                logger.info(f"Budget constraint: switching to {strategy_name} strategy")
+                return fallback_strategy
 
         return strategy
+
+    def _strategy_fits_budget(
+        self,
+        strategy: ProcessingStrategy,
+        complexity_level: ComplexityLevel,
+        provider: str,
+        budget_remaining: float
+    ) -> bool:
+        """Check if a strategy fits within the budget."""
+        _, estimated_cost = self.cost_estimator.estimate_cost(strategy, complexity_level, provider)
+        return estimated_cost <= budget_remaining
 
     def _recommend_specialists(
         self,
