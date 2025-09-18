@@ -11,6 +11,7 @@ from agno.models.groq import Groq
 from agno.models.ollama import Ollama
 from agno.models.openrouter import OpenRouter
 from agno.models.openai import OpenAIChat
+from agno.models.anthropic import Claude
 
 
 class GitHubOpenAI(OpenAIChat):
@@ -64,10 +65,22 @@ class ModelConfig:
 
     def create_team_model(self) -> Model:
         """Create team model instance with configuration."""
+        # Enable prompt caching for Anthropic models
+        if self.provider_class == Claude:
+            return self.provider_class(
+                id=self.team_model_id,
+                cache_system_prompt=True  # Enable Anthropic prompt caching
+            )
         return self.provider_class(id=self.team_model_id)
 
     def create_agent_model(self) -> Model:
         """Create agent model instance with configuration."""
+        # Enable prompt caching for Anthropic models
+        if self.provider_class == Claude:
+            return self.provider_class(
+                id=self.agent_model_id,
+                cache_system_prompt=True  # Enable Anthropic prompt caching
+            )
         return self.provider_class(id=self.agent_model_id)
 
 
@@ -212,6 +225,26 @@ class GitHubStrategy(BaseProviderStrategy):
         return "GITHUB_TOKEN"
 
 
+class AnthropicStrategy(BaseProviderStrategy):
+    """Anthropic Claude provider strategy with prompt caching enabled."""
+
+    @property
+    def provider_class(self) -> Type[Model]:
+        return Claude
+
+    @property
+    def default_team_model(self) -> str:
+        return "claude-3-5-sonnet-20241022"
+
+    @property
+    def default_agent_model(self) -> str:
+        return "claude-3-5-haiku-20241022"
+
+    @property
+    def api_key_name(self) -> str:
+        return "ANTHROPIC_API_KEY"
+
+
 class ConfigurationManager:
     """Manages configuration strategies with dependency injection."""
 
@@ -222,6 +255,7 @@ class ConfigurationManager:
             "openrouter": OpenRouterStrategy(),
             "ollama": OllamaStrategy(),
             "github": GitHubStrategy(),
+            "anthropic": AnthropicStrategy(),
         }
         self._default_strategy = "deepseek"
 
