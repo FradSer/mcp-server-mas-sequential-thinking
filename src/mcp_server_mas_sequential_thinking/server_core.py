@@ -263,13 +263,30 @@ class ThoughtProcessor:
         self._log_thought_data(thought_data)
         self._session.add_thought(thought_data)
 
-        # ADAPTIVE ROUTING: Create coordination plan from routing decision
+        coordination_plan, coordination_time = await self._create_coordination_plan(thought_data)
+        input_prompt = self._build_context_prompt(thought_data)
+        self._log_context_building(thought_data, input_prompt)
+
+        response, processing_time = await self._execute_with_timing(input_prompt, coordination_plan)
+        final_response = self._format_response(response, thought_data)
+
+        total_time = time.time() - start_time
+        self._log_completion_summary(thought_data, coordination_plan, processing_time, total_time, final_response)
+
+        return final_response
+
+    async def _create_coordination_plan(self, thought_data: ThoughtData) -> tuple[CoordinationPlan, float]:
+        """Create coordination plan from routing decision with timing."""
         coordination_start = time.time()
         routing_decision = self._router.route_thought(thought_data)
         coordination_plan = CoordinationPlan.from_routing_decision(routing_decision, thought_data)
         coordination_time = time.time() - coordination_start
 
-        # ENHANCED LOGGING: Detailed coordination analysis
+        self._log_coordination_plan(coordination_plan, coordination_time)
+        return coordination_plan, coordination_time
+
+    def _log_coordination_plan(self, coordination_plan: CoordinationPlan, coordination_time: float) -> None:
+        """Log detailed coordination plan analysis."""
         logger.info(f"🎯 COORDINATION PLAN:")
         logger.info(f"  Strategy: {coordination_plan.strategy}")
         logger.info(f"  Complexity: {coordination_plan.complexity_level} (score: {coordination_plan.complexity_score:.1f}/100)")
@@ -282,10 +299,8 @@ class ThoughtProcessor:
         logger.info(f"  Confidence: {coordination_plan.confidence:.2f}")
         logger.debug(f"  Reasoning: {coordination_plan.reasoning}")
 
-        input_prompt = self._build_context_prompt(thought_data)
-        self._log_context_building(thought_data, input_prompt)
-
-        # UNIFIED EXECUTION: Direct execution based on coordination plan
+    async def _execute_with_timing(self, input_prompt: str, coordination_plan: CoordinationPlan) -> tuple[str, float]:
+        """Execute coordination plan with timing and logging."""
         processing_start = time.time()
 
         logger.info(f"📋 EXECUTING COORDINATION PLAN:")
@@ -293,13 +308,15 @@ class ThoughtProcessor:
         logger.info(f"  Task breakdown: {coordination_plan.task_breakdown}")
         logger.info(f"  Expected interactions: {coordination_plan.expected_interactions}")
 
-        # Execute based on coordination plan (no redundant validation needed)
         response = await self._execute_coordination_plan(input_prompt, coordination_plan)
         processing_time = time.time() - processing_start
 
-        total_time = time.time() - start_time
+        return response, processing_time
 
-        # Log performance metrics with coordination status
+    def _log_completion_summary(self, thought_data: ThoughtData, coordination_plan: CoordinationPlan,
+                               processing_time: float, total_time: float, final_response: str) -> None:
+        """Log performance metrics and completion summary."""
+        # Log completion status
         logger.info(
             f"Thought #{thought_data.thought_number} completed: "
             f"strategy={coordination_plan.execution_mode.value}, "
@@ -309,10 +326,7 @@ class ThoughtProcessor:
             f"confidence={coordination_plan.confidence:.2f}"
         )
 
-        # Format and return response
-        final_response = self._format_response(response, thought_data)
-
-        # SIMPLIFIED METRICS: Basic performance tracking without LLM overhead
+        # Calculate and log performance metrics
         execution_consistency = 1.0 if coordination_plan.execution_mode.value else 0.9
         efficiency_score = 1.0 if processing_time < 60 else max(0.5, 60.0 / processing_time)
 
@@ -322,7 +336,7 @@ class ThoughtProcessor:
         logger.info(f"  Response Length: {len(final_response)} chars")
         logger.info(f"  Strategy Executed: {coordination_plan.execution_mode.value}")
 
-        # ENHANCED LOGGING: Final processing summary
+        # Final processing summary
         logger.info(f"🎯 PROCESSING COMPLETE:")
         logger.info(f"  Thought #{thought_data.thought_number} processed successfully")
         logger.info(f"  Strategy used: {coordination_plan.execution_mode.value}")
@@ -330,8 +344,6 @@ class ThoughtProcessor:
         logger.info(f"  Total time: {total_time:.3f}s")
         logger.info(f"  Response length: {len(final_response)} chars")
         logger.info(f"  {'=' * FieldLengthLimits.SEPARATOR_LENGTH}")
-
-        return final_response
 
     def _log_thought_data(self, thought_data: ThoughtData) -> None:
         """Log comprehensive thought data information."""
