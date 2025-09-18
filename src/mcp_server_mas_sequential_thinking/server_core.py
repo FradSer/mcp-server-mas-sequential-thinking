@@ -21,14 +21,12 @@ from .utils import setup_logging
 from .constants import (
     DefaultValues,
     DefaultTimeouts,
-    CircuitBreakerDefaults,
     ProcessingDefaults,
     FieldLengthLimits
 )
 from .intelligent_coordinator import create_intelligent_coordinator, IntelligentCoordinator, CoordinationPlan
 from .quality_assurance import create_quality_assurance_manager, QualityAssuranceManager
 from .adaptive_routing import AdaptiveRouter, ComplexityLevel, ProcessingStrategy
-from .circuit_breaker import get_circuit_breaker, CircuitBreakerConfig
 from .types import (
     ProcessingMetadata,
     ThoughtProcessingError,
@@ -219,7 +217,7 @@ class ServerState:
 class ThoughtProcessor:
     """Handles thought processing with optimized performance and error handling."""
 
-    __slots__ = ("_session", "_coordinator", "_quality_manager", "_router", "_circuit_breaker")  # Memory optimization
+    __slots__ = ("_session", "_coordinator", "_quality_manager", "_router")  # Memory optimization
 
     def __init__(self, session: SessionMemory) -> None:
         self._session = session
@@ -237,15 +235,6 @@ class ThoughtProcessor:
         # ADAPTIVE ROUTING: For compatibility with existing code
         self._router = AdaptiveRouter()
 
-        # HOTFIX: Add circuit breaker for failure protection
-        provider = os.environ.get("LLM_PROVIDER", "deepseek").lower()
-        self._circuit_breaker = get_circuit_breaker(
-            f"{provider}_processing",
-            CircuitBreakerConfig(
-                failure_threshold=CircuitBreakerDefaults.FAILURE_THRESHOLD,
-                timeout_seconds=CircuitBreakerDefaults.TIMEOUT_SECONDS
-            )
-        )
 
     def _extract_response_content(self, response) -> str:
         """Extract clean content from Agno RunOutput objects."""
@@ -262,20 +251,10 @@ class ThoughtProcessor:
 
     async def process_thought(self, thought_data: ThoughtData) -> str:
         """Process a thought through the team with comprehensive error handling."""
-        # HOTFIX: Check circuit breaker before processing
-        if not self._circuit_breaker.can_proceed():
-            error_msg = f"Circuit breaker is OPEN - skipping thought #{thought_data.thought_number} processing"
-            logger.warning(error_msg)
-            return f"Processing temporarily unavailable due to repeated failures. Please try again later."
-
         try:
             result = await self._process_thought_internal(thought_data)
-            # Record success for circuit breaker
-            self._circuit_breaker.record_success()
             return result
         except Exception as e:
-            # Record failure for circuit breaker
-            self._circuit_breaker.record_failure()
             error_msg = f"Failed to process {thought_data.thought_type.value} thought #{thought_data.thought_number}: {e}"
             logger.error(error_msg, exc_info=True)
             metadata: ProcessingMetadata = {

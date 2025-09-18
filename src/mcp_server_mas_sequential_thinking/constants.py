@@ -143,13 +143,6 @@ class DefaultValues:
     DEFAULT_TIMEOUT = 30.0
 
 
-class CircuitBreakerDefaults:
-    """Circuit breaker configuration defaults."""
-
-    FAILURE_THRESHOLD = 3
-    TIMEOUT_SECONDS = 30
-    RESET_TIMEOUT = 60
-    HALF_OPEN_MAX_CALLS = 5
 
 
 class ProcessingDefaults:
