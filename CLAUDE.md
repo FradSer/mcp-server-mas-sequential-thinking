@@ -11,7 +11,7 @@ uv run python -c "import agno; print('Agno imported successfully')"  # Verify se
 
 # Development Workflow
 uv run mcp-server-mas-sequential-thinking               # Run server
-ruff check . --fix && black . && mypy .                 # Code quality
+ruff check . --fix && ruff format . && mypy .           # Code quality (ruff replaces black + isort)
 pytest --cov=. --cov-report=html                        # Test with coverage
 
 # Monitoring & Debugging
