@@ -34,14 +34,16 @@ def sample_thought_data():
         thought="What are the implications of artificial intelligence on society?",
         thought_number=1,
         total_thoughts=5,
-        next_needed=True
+        next_needed=True,
     )
 
 
 @pytest.fixture
 def agno_router(mock_model_config):
     """Create AgnoWorkflowRouter instance for testing."""
-    with patch('src.mcp_server_mas_sequential_thinking.agno_workflow_router.get_model_config') as mock_get_config:
+    with patch(
+        "src.mcp_server_mas_sequential_thinking.agno_workflow_router.get_model_config"
+    ) as mock_get_config:
         mock_get_config.return_value = mock_model_config
         router = AgnoWorkflowRouter()
         return router
@@ -72,7 +74,7 @@ class TestAgnoWorkflowRouter:
         input_data.input = {
             "thought": "Hello world",
             "thought_number": 1,
-            "total_thoughts": 5
+            "total_thoughts": 5,
         }
         input_data.session_state = session_state
 
@@ -89,7 +91,9 @@ class TestAgnoWorkflowRouter:
 
         # Should set metadata in session_state via cache key
         cache_keys = [k for k in session_state.keys() if k.startswith("complexity_")]
-        assert len(cache_keys) > 0, f"No complexity cache found in session_state: {session_state}"
+        assert len(cache_keys) > 0, (
+            f"No complexity cache found in session_state: {session_state}"
+        )
 
         # Check cached data structure
         cache_key = cache_keys[0]
@@ -109,7 +113,7 @@ class TestAgnoWorkflowRouter:
         input_data.input = {
             "thought": "What are the technical implications of machine learning algorithms in healthcare diagnostics?",
             "thought_number": 1,
-            "total_thoughts": 5
+            "total_thoughts": 5,
         }
         input_data.session_state = session_state
 
@@ -122,7 +126,9 @@ class TestAgnoWorkflowRouter:
 
         # Check cached data structure
         cache_keys = [k for k in session_state.keys() if k.startswith("complexity_")]
-        assert len(cache_keys) > 0, f"No complexity cache found in session_state: {session_state}"
+        assert len(cache_keys) > 0, (
+            f"No complexity cache found in session_state: {session_state}"
+        )
         cache_key = cache_keys[0]
         cached_data = session_state[cache_key]
         assert cached_data["strategy"] == "hybrid"
@@ -139,7 +145,7 @@ class TestAgnoWorkflowRouter:
         input_data.input = {
             "thought": "Analyze the multifaceted implications of artificial intelligence on economic systems, considering technological unemployment and wealth distribution.",
             "thought_number": 1,
-            "total_thoughts": 5
+            "total_thoughts": 5,
         }
         input_data.session_state = session_state
 
@@ -148,10 +154,14 @@ class TestAgnoWorkflowRouter:
 
         # Debug: Check actual complexity score
         cache_keys = [k for k in session_state.keys() if k.startswith("complexity_")]
-        assert len(cache_keys) > 0, f"No complexity cache found in session_state: {session_state}"
+        assert len(cache_keys) > 0, (
+            f"No complexity cache found in session_state: {session_state}"
+        )
         cache_key = cache_keys[0]
         cached_data = session_state[cache_key]
-        print(f"Complex thought score: {cached_data['score']}, strategy: {cached_data['strategy']}")
+        print(
+            f"Complex thought score: {cached_data['score']}, strategy: {cached_data['strategy']}"
+        )
 
         # Should return appropriate step based on actual complexity score
         assert len(result) == 1
@@ -181,7 +191,7 @@ class TestAgnoWorkflowRouter:
             policy interventions needed? How might different stakeholders respond? What are the unintended consequences?
             Consider the impact on labor markets, education systems, social safety nets, and democratic institutions.""",
             "thought_number": 1,
-            "total_thoughts": 5
+            "total_thoughts": 5,
         }
         input_data.session_state = session_state
 
@@ -194,7 +204,9 @@ class TestAgnoWorkflowRouter:
 
         # Check cached data structure
         cache_keys = [k for k in session_state.keys() if k.startswith("complexity_")]
-        assert len(cache_keys) > 0, f"No complexity cache found in session_state: {session_state}"
+        assert len(cache_keys) > 0, (
+            f"No complexity cache found in session_state: {session_state}"
+        )
         cache_key = cache_keys[0]
         cached_data = session_state[cache_key]
         assert cached_data["strategy"] == "parallel_analysis"
@@ -220,10 +232,15 @@ class TestAgnoWorkflowRouter:
         assert agno_router._determine_complexity_level(2) == ComplexityLevel.SIMPLE
         assert agno_router._determine_complexity_level(10) == ComplexityLevel.MODERATE
         assert agno_router._determine_complexity_level(20) == ComplexityLevel.COMPLEX
-        assert agno_router._determine_complexity_level(30) == ComplexityLevel.HIGHLY_COMPLEX
+        assert (
+            agno_router._determine_complexity_level(30)
+            == ComplexityLevel.HIGHLY_COMPLEX
+        )
 
     @pytest.mark.asyncio
-    async def test_process_thought_workflow_mock(self, agno_router, sample_thought_data):
+    async def test_process_thought_workflow_mock(
+        self, agno_router, sample_thought_data
+    ):
         """Test workflow processing with mocked workflow execution."""
         # Mock workflow execution
         mock_result = Mock()
@@ -232,8 +249,7 @@ class TestAgnoWorkflowRouter:
 
         # Process thought
         result = await agno_router.process_thought_workflow(
-            sample_thought_data,
-            "Test context prompt"
+            sample_thought_data, "Test context prompt"
         )
 
         # Verify result
@@ -243,15 +259,16 @@ class TestAgnoWorkflowRouter:
         assert result.step_name == "workflow_execution"
 
     @pytest.mark.asyncio
-    async def test_process_thought_workflow_error(self, agno_router, sample_thought_data):
+    async def test_process_thought_workflow_error(
+        self, agno_router, sample_thought_data
+    ):
         """Test workflow processing error handling."""
         # Mock workflow execution to raise error
         agno_router.workflow.arun = AsyncMock(side_effect=Exception("Workflow error"))
 
         # Process thought
         result = await agno_router.process_thought_workflow(
-            sample_thought_data,
-            "Test context prompt"
+            sample_thought_data, "Test context prompt"
         )
 
         # Should return error result
@@ -269,13 +286,17 @@ class TestWorkflowIntegration:
         """Test ThoughtProcessor integration with workflow."""
         from src.mcp_server_mas_sequential_thinking.server_core import ThoughtProcessor
         from src.mcp_server_mas_sequential_thinking.session import SessionMemory
-        from src.mcp_server_mas_sequential_thinking.unified_team import create_team_by_type
+        from src.mcp_server_mas_sequential_thinking.unified_team import (
+            create_team_by_type,
+        )
 
         # Create mock session
         mock_team = Mock()
         mock_team.name = "TestTeam"
 
-        with patch('src.mcp_server_mas_sequential_thinking.unified_team.create_team_by_type') as mock_create_team:
+        with patch(
+            "src.mcp_server_mas_sequential_thinking.unified_team.create_team_by_type"
+        ) as mock_create_team:
             mock_create_team.return_value = mock_team
             session = SessionMemory(mock_team)
 
@@ -284,6 +305,3 @@ class TestWorkflowIntegration:
 
         # Verify workflow router is initialized
         assert processor._agno_router is not None
-
-
-

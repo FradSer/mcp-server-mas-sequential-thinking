@@ -15,7 +15,7 @@ from .constants import (
     QualityThresholds,
     ProviderDefaults,
     ComplexityThresholds,
-    CostOptimizationConstants
+    CostOptimizationConstants,
 )
 
 logger = logging.getLogger(__name__)
@@ -64,17 +64,23 @@ class ProviderProfile:
     def overall_score(self) -> float:
         """Calculate overall provider score."""
         # Weighted scoring using constants
-        speed_score = max(CostOptimizationConstants.MIN_QUALITY_SCORE,
-                         CostOptimizationConstants.MAX_QUALITY_SCORE -
-                         (self.avg_response_time - CostOptimizationConstants.SPEED_THRESHOLD) /
-                         CostOptimizationConstants.SPEED_NORMALIZATION_BASE)
-        reliability_score = self.uptime_score * (CostOptimizationConstants.MAX_QUALITY_SCORE - self.error_rate)
+        speed_score = max(
+            CostOptimizationConstants.MIN_QUALITY_SCORE,
+            CostOptimizationConstants.MAX_QUALITY_SCORE
+            - (self.avg_response_time - CostOptimizationConstants.SPEED_THRESHOLD)
+            / CostOptimizationConstants.SPEED_NORMALIZATION_BASE,
+        )
+        reliability_score = self.uptime_score * (
+            CostOptimizationConstants.MAX_QUALITY_SCORE - self.error_rate
+        )
 
         score = (
             self.avg_quality_score * CostOptimizationConstants.QUALITY_WEIGHT
-            + (CostOptimizationConstants.MAX_QUALITY_SCORE /
-               (self.cost_per_1k_tokens + CostOptimizationConstants.COST_EPSILON)) *
-               CostOptimizationConstants.COST_NORMALIZATION_FACTOR
+            + (
+                CostOptimizationConstants.MAX_QUALITY_SCORE
+                / (self.cost_per_1k_tokens + CostOptimizationConstants.COST_EPSILON)
+            )
+            * CostOptimizationConstants.COST_NORMALIZATION_FACTOR
             + speed_score * CostOptimizationConstants.SPEED_WEIGHT
             + reliability_score * CostOptimizationConstants.RELIABILITY_WEIGHT
         )
@@ -239,7 +245,9 @@ class CostOptimizer:
         quality_threshold: float = QualityThresholds.DEFAULT_QUALITY_THRESHOLD,
     ):
         self.budget_constraints = budget_constraints or BudgetConstraints()
-        self.provider_profiles = provider_profiles or ProviderProfileFactory.get_default_providers()
+        self.provider_profiles = (
+            provider_profiles or ProviderProfileFactory.get_default_providers()
+        )
         self.quality_threshold = quality_threshold
         self.metrics = CostOptimizationMetrics()
 
@@ -564,7 +572,9 @@ class CostOptimizer:
             + self.metrics.hybrid_usage
         )
 
-        if total_usage > CostOptimizationConstants.MIN_DATA_THRESHOLD:  # Only suggest if we have enough data
+        if (
+            total_usage > CostOptimizationConstants.MIN_DATA_THRESHOLD
+        ):  # Only suggest if we have enough data
             multi_agent_ratio = self.metrics.multi_agent_usage / total_usage
             if multi_agent_ratio > CostOptimizationConstants.HIGH_MULTI_AGENT_RATIO:
                 suggestions.append(

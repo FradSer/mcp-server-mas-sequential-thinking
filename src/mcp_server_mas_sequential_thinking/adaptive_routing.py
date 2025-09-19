@@ -108,18 +108,110 @@ class BasicComplexityAnalyzer(ComplexityAnalyzer):
         "assessment",
         "validation",
         # Chinese philosophical and academic terms
-        "哲学", "心理学", "存在主义", "萨特", "加缪", "尼采", "康德", "亚里士多德",
-        "佛教", "道家", "儒家", "意义", "存在", "本质", "自由", "选择", "死亡", "生命",
-        "理论", "框架", "方法论", "模式", "体系", "结构", "分析", "综合", "评估",
-        "研究", "调查", "比较", "评价", "验证", "实证", "逻辑", "推理", "论证",
-        "概念", "范式", "维度", "层面", "角度", "视角", "观点", "立场", "态度",
-        "价值观", "世界观", "人生观", "道德", "伦理", "美学", "认识论", "本体论",
-        "现象学", "解构主义", "后现代", "结构主义", "功能主义", "行为主义",
-        "认知", "意识", "潜意识", "心理", "精神", "情感", "感知", "体验", "经验",
-        "直觉", "理性", "感性", "主观", "客观", "相对", "绝对", "必然", "偶然",
-        "因果", "关系", "联系", "影响", "作用", "机制", "过程", "发展", "变化",
-        "趋势", "规律", "原则", "标准", "准则", "依据", "根据", "基础", "前提",
-        "假设", "条件", "环境", "背景", "语境", "情境", "场景", "状况", "情况"
+        "哲学",
+        "心理学",
+        "存在主义",
+        "萨特",
+        "加缪",
+        "尼采",
+        "康德",
+        "亚里士多德",
+        "佛教",
+        "道家",
+        "儒家",
+        "意义",
+        "存在",
+        "本质",
+        "自由",
+        "选择",
+        "死亡",
+        "生命",
+        "理论",
+        "框架",
+        "方法论",
+        "模式",
+        "体系",
+        "结构",
+        "分析",
+        "综合",
+        "评估",
+        "研究",
+        "调查",
+        "比较",
+        "评价",
+        "验证",
+        "实证",
+        "逻辑",
+        "推理",
+        "论证",
+        "概念",
+        "范式",
+        "维度",
+        "层面",
+        "角度",
+        "视角",
+        "观点",
+        "立场",
+        "态度",
+        "价值观",
+        "世界观",
+        "人生观",
+        "道德",
+        "伦理",
+        "美学",
+        "认识论",
+        "本体论",
+        "现象学",
+        "解构主义",
+        "后现代",
+        "结构主义",
+        "功能主义",
+        "行为主义",
+        "认知",
+        "意识",
+        "潜意识",
+        "心理",
+        "精神",
+        "情感",
+        "感知",
+        "体验",
+        "经验",
+        "直觉",
+        "理性",
+        "感性",
+        "主观",
+        "客观",
+        "相对",
+        "绝对",
+        "必然",
+        "偶然",
+        "因果",
+        "关系",
+        "联系",
+        "影响",
+        "作用",
+        "机制",
+        "过程",
+        "发展",
+        "变化",
+        "趋势",
+        "规律",
+        "原则",
+        "标准",
+        "准则",
+        "依据",
+        "根据",
+        "基础",
+        "前提",
+        "假设",
+        "条件",
+        "环境",
+        "背景",
+        "语境",
+        "情境",
+        "场景",
+        "状况",
+        "情况",
     }
 
     # Research indicators (English + Chinese)
@@ -138,10 +230,42 @@ class BasicComplexityAnalyzer(ComplexityAnalyzer):
         "evaluate",
         "assess",
         # Chinese research terms
-        "研究", "调查", "探索", "发现", "分析", "学习", "研读", "考察", "检视",
-        "比较", "评估", "评价", "审视", "观察", "调研", "探讨", "探究", "深入",
-        "了解", "理解", "掌握", "查找", "搜索", "寻找", "找出", "查明", "弄清",
-        "揭示", "揭露", "挖掘", "阐述", "阐释", "解释", "说明", "论述", "论证"
+        "研究",
+        "调查",
+        "探索",
+        "发现",
+        "分析",
+        "学习",
+        "研读",
+        "考察",
+        "检视",
+        "比较",
+        "评估",
+        "评价",
+        "审视",
+        "观察",
+        "调研",
+        "探讨",
+        "探究",
+        "深入",
+        "了解",
+        "理解",
+        "掌握",
+        "查找",
+        "搜索",
+        "寻找",
+        "找出",
+        "查明",
+        "弄清",
+        "揭示",
+        "揭露",
+        "挖掘",
+        "阐述",
+        "阐释",
+        "解释",
+        "说明",
+        "论述",
+        "论证",
     }
 
     # Branching indicators (English + Chinese)
@@ -160,10 +284,42 @@ class BasicComplexityAnalyzer(ComplexityAnalyzer):
         "route",
         "direction",
         # Chinese branching terms
-        "分支", "分叉", "替代", "选择", "可能性", "情况", "场景", "方案", "策略",
-        "方法", "方式", "途径", "路径", "路线", "方向", "角度", "视角", "层面",
-        "维度", "方面", "思路", "思考", "考虑", "权衡", "比较", "对比", "或者",
-        "或", "还是", "另外", "另一", "其他", "别的", "不同", "多种", "各种"
+        "分支",
+        "分叉",
+        "替代",
+        "选择",
+        "可能性",
+        "情况",
+        "场景",
+        "方案",
+        "策略",
+        "方法",
+        "方式",
+        "途径",
+        "路径",
+        "路线",
+        "方向",
+        "角度",
+        "视角",
+        "层面",
+        "维度",
+        "方面",
+        "思路",
+        "思考",
+        "考虑",
+        "权衡",
+        "比较",
+        "对比",
+        "或者",
+        "或",
+        "还是",
+        "另外",
+        "另一",
+        "其他",
+        "别的",
+        "不同",
+        "多种",
+        "各种",
     }
 
     def analyze(self, thought_data: ThoughtData) -> ComplexityMetrics:
@@ -174,7 +330,7 @@ class BasicComplexityAnalyzer(ComplexityAnalyzer):
         # For Chinese: estimate word count by character count / 2 (rough approximation)
         # For mixed content: use both space-split and character-based counting
         space_words = text.split()
-        chinese_chars = len([c for c in text if '\u4e00' <= c <= '\u9fff'])
+        chinese_chars = len([c for c in text if "\u4e00" <= c <= "\u9fff"])
         estimated_chinese_words = chinese_chars // 2
         total_words = len(space_words) + estimated_chinese_words
 
@@ -198,13 +354,30 @@ class BasicComplexityAnalyzer(ComplexityAnalyzer):
         # Analysis depth indicators with Chinese support
         analysis_depth = (
             # English connectors
-            text.count("because") + text.count("therefore") + text.count("however") +
-            text.count("moreover") + text.count("furthermore") + text.count("consequently") +
+            text.count("because")
+            + text.count("therefore")
+            + text.count("however")
+            + text.count("moreover")
+            + text.count("furthermore")
+            + text.count("consequently")
+            +
             # Chinese connectors
-            text.count("因为") + text.count("所以") + text.count("因此") + text.count("然而") +
-            text.count("但是") + text.count("不过") + text.count("而且") + text.count("并且") +
-            text.count("另外") + text.count("此外") + text.count("由于") + text.count("既然") +
-            text.count("如果") + text.count("假如") + text.count("虽然") + text.count("尽管")
+            text.count("因为")
+            + text.count("所以")
+            + text.count("因此")
+            + text.count("然而")
+            + text.count("但是")
+            + text.count("不过")
+            + text.count("而且")
+            + text.count("并且")
+            + text.count("另外")
+            + text.count("此外")
+            + text.count("由于")
+            + text.count("既然")
+            + text.count("如果")
+            + text.count("假如")
+            + text.count("虽然")
+            + text.count("尽管")
         )
 
         # Check for branching context
@@ -373,19 +546,26 @@ class AdaptiveRouter:
 
         # Define fallback strategy hierarchy (expensive to cheap)
         fallback_strategies = {
-            ProcessingStrategy.MULTI_AGENT: [ProcessingStrategy.HYBRID, ProcessingStrategy.SINGLE_AGENT],
+            ProcessingStrategy.MULTI_AGENT: [
+                ProcessingStrategy.HYBRID,
+                ProcessingStrategy.SINGLE_AGENT,
+            ],
             ProcessingStrategy.HYBRID: [ProcessingStrategy.SINGLE_AGENT],
-            ProcessingStrategy.SINGLE_AGENT: []
+            ProcessingStrategy.SINGLE_AGENT: [],
         }
 
         # Check if current strategy fits budget
-        if self._strategy_fits_budget(strategy, complexity_level, provider, budget_remaining):
+        if self._strategy_fits_budget(
+            strategy, complexity_level, provider, budget_remaining
+        ):
             return strategy
 
         # Try fallback strategies in order
         for fallback_strategy in fallback_strategies.get(strategy, []):
-            if self._strategy_fits_budget(fallback_strategy, complexity_level, provider, budget_remaining):
-                strategy_name = fallback_strategy.value.replace('_', '-')
+            if self._strategy_fits_budget(
+                fallback_strategy, complexity_level, provider, budget_remaining
+            ):
+                strategy_name = fallback_strategy.value.replace("_", "-")
                 logger.info(f"Budget constraint: switching to {strategy_name} strategy")
                 return fallback_strategy
 
@@ -396,10 +576,12 @@ class AdaptiveRouter:
         strategy: ProcessingStrategy,
         complexity_level: ComplexityLevel,
         provider: str,
-        budget_remaining: float
+        budget_remaining: float,
     ) -> bool:
         """Check if a strategy fits within the budget."""
-        _, estimated_cost = self.cost_estimator.estimate_cost(strategy, complexity_level, provider)
+        _, estimated_cost = self.cost_estimator.estimate_cost(
+            strategy, complexity_level, provider
+        )
         return estimated_cost <= budget_remaining
 
     def _recommend_specialists(

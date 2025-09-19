@@ -18,7 +18,9 @@ from src.mcp_server_mas_sequential_thinking.types import (
 )
 from src.mcp_server_mas_sequential_thinking.models import ThoughtData
 from src.mcp_server_mas_sequential_thinking.session import SessionMemory
-from src.mcp_server_mas_sequential_thinking.server_core import create_validated_thought_data
+from src.mcp_server_mas_sequential_thinking.server_core import (
+    create_validated_thought_data,
+)
 from tests.helpers.factories import ThoughtDataBuilder
 
 
@@ -32,7 +34,7 @@ class TestConstantsIntegration:
             create_validated_thought_data(
                 thought="Test thought",
                 thought_number=0,  # Below MIN_THOUGHT_NUMBER
-                total_thoughts=ValidationLimits.MIN_TOTAL_THOUGHTS,
+                total_thoughts=5,
                 next_needed=True,
                 is_revision=False,
                 revises_thought=None,
@@ -49,9 +51,17 @@ class TestConstantsIntegration:
         session = SessionMemory(team=mock_team)
 
         # Verify that SessionMemory uses the same limits as ValidationLimits
-        assert session.MAX_THOUGHTS_PER_SESSION == ValidationLimits.MAX_THOUGHTS_PER_SESSION
-        assert session.MAX_BRANCHES_PER_SESSION == ValidationLimits.MAX_BRANCHES_PER_SESSION
-        assert session.MAX_THOUGHTS_PER_BRANCH == ValidationLimits.MAX_THOUGHTS_PER_BRANCH
+        assert (
+            session.MAX_THOUGHTS_PER_SESSION
+            == ValidationLimits.MAX_THOUGHTS_PER_SESSION
+        )
+        assert (
+            session.MAX_BRANCHES_PER_SESSION
+            == ValidationLimits.MAX_BRANCHES_PER_SESSION
+        )
+        assert (
+            session.MAX_THOUGHTS_PER_BRANCH == ValidationLimits.MAX_THOUGHTS_PER_BRANCH
+        )
 
         # Test with a smaller limit to avoid creating 1000 objects in test
         # Fill up to just under the limit
@@ -191,7 +201,7 @@ class TestRefactoredValidationBehavior:
         valid_thought = create_validated_thought_data(
             thought="This is a valid test thought",
             thought_number=ValidationLimits.MIN_THOUGHT_NUMBER,
-            total_thoughts=ValidationLimits.MIN_TOTAL_THOUGHTS,
+            total_thoughts=5,
             next_needed=True,
             is_revision=False,
             revises_thought=None,
@@ -200,7 +210,7 @@ class TestRefactoredValidationBehavior:
             needs_more=True,
         )
         assert valid_thought.thought_number == ValidationLimits.MIN_THOUGHT_NUMBER
-        assert valid_thought.total_thoughts == ValidationLimits.MIN_TOTAL_THOUGHTS
+        assert valid_thought.total_thoughts == 5
 
     def test_session_memory_limits_enforced(self):
         """RED: Test SessionMemory enforces limits using constants."""
@@ -290,7 +300,9 @@ class TestPerformanceImprovements:
         # Add multiple thoughts
         thoughts = []
         for i in range(1, 20):
-            thought = ThoughtDataBuilder().with_number(i).with_thought(f"Thought {i}").build()
+            thought = (
+                ThoughtDataBuilder().with_number(i).with_thought(f"Thought {i}").build()
+            )
             session.add_thought(thought)
             thoughts.append(thought)
 
@@ -308,16 +320,14 @@ class TestPerformanceImprovements:
         # Now they should all use constants
 
         # Test that we can find the source of all important limits
-        assert hasattr(ValidationLimits, 'MAX_THOUGHTS_PER_SESSION')
-        assert hasattr(ValidationLimits, 'MAX_BRANCHES_PER_SESSION')
-        assert hasattr(ValidationLimits, 'MIN_THOUGHT_NUMBER')
-        assert hasattr(ValidationLimits, 'MIN_TOTAL_THOUGHTS')
+        assert hasattr(ValidationLimits, "MAX_THOUGHTS_PER_SESSION")
+        assert hasattr(ValidationLimits, "MAX_BRANCHES_PER_SESSION")
+        assert hasattr(ValidationLimits, "MIN_THOUGHT_NUMBER")
 
         # Test that they have reasonable values
         assert ValidationLimits.MAX_THOUGHTS_PER_SESSION >= 100
         assert ValidationLimits.MAX_BRANCHES_PER_SESSION >= 10
         assert ValidationLimits.MIN_THOUGHT_NUMBER == 1
-        assert ValidationLimits.MIN_TOTAL_THOUGHTS >= 5
 
 
 class TestBackwardCompatibility:
@@ -357,10 +367,10 @@ class TestBackwardCompatibility:
         session.add_thought(thought)
 
         # All original methods should be available
-        assert hasattr(session, 'add_thought')
-        assert hasattr(session, 'find_thought_content')
-        assert hasattr(session, 'get_branch_summary')
-        assert hasattr(session, 'get_current_branch_id')
+        assert hasattr(session, "add_thought")
+        assert hasattr(session, "find_thought_content")
+        assert hasattr(session, "get_branch_summary")
+        assert hasattr(session, "get_current_branch_id")
 
 
 class TestRefactoredComponentsIntegration:
@@ -369,7 +379,9 @@ class TestRefactoredComponentsIntegration:
     def test_logging_mixin_with_cost_optimization_constants(self):
         """Test LoggingMixin uses CostOptimizationConstants correctly."""
         from src.mcp_server_mas_sequential_thinking.server_core import LoggingMixin
-        from src.mcp_server_mas_sequential_thinking.constants import CostOptimizationConstants
+        from src.mcp_server_mas_sequential_thinking.constants import (
+            CostOptimizationConstants,
+        )
 
         mixin = LoggingMixin()
 
@@ -388,7 +400,9 @@ class TestRefactoredComponentsIntegration:
 
     def test_agent_factory_creates_functional_agents(self):
         """Test AgentFactory creates agents that can be used in workflows."""
-        from src.mcp_server_mas_sequential_thinking.agno_workflow_router import AgentFactory
+        from src.mcp_server_mas_sequential_thinking.agno_workflow_router import (
+            AgentFactory,
+        )
         from unittest.mock import Mock
 
         # Mock model for agent creation
@@ -396,7 +410,9 @@ class TestRefactoredComponentsIntegration:
         mock_model.id = "test-model"
 
         # Test creating different types of agents
-        with patch('src.mcp_server_mas_sequential_thinking.agno_workflow_router.Agent') as mock_agent_class:
+        with patch(
+            "src.mcp_server_mas_sequential_thinking.agno_workflow_router.Agent"
+        ) as mock_agent_class:
             mock_agent = Mock()
             mock_agent_class.return_value = mock_agent
 
@@ -419,21 +435,25 @@ class TestRefactoredComponentsIntegration:
 
     def test_step_executor_mixin_with_cost_optimization_constants(self):
         """Test StepExecutorMixin integrates with CostOptimizationConstants for session state."""
-        from src.mcp_server_mas_sequential_thinking.agno_workflow_router import StepExecutorMixin
-        from src.mcp_server_mas_sequential_thinking.constants import CostOptimizationConstants
+        from src.mcp_server_mas_sequential_thinking.agno_workflow_router import (
+            StepExecutorMixin,
+        )
+        from src.mcp_server_mas_sequential_thinking.constants import (
+            CostOptimizationConstants,
+        )
 
         # Test step output creation with complexity from session state
         session_state = {
             "current_complexity_score": 75.5,
             "provider": "deepseek",
-            "estimated_cost": CostOptimizationConstants.DEFAULT_COST_ESTIMATE
+            "estimated_cost": CostOptimizationConstants.DEFAULT_COST_ESTIMATE,
         }
 
         result = StepExecutorMixin._create_step_output(
             content="Integration test result",
             strategy="multi_agent",
             session_state=session_state,
-            specialists=["planner", "analyzer"]
+            specialists=["planner", "analyzer"],
         )
 
         # Verify integration
@@ -445,9 +465,14 @@ class TestRefactoredComponentsIntegration:
 
     def test_complete_workflow_integration(self):
         """Test complete workflow using all refactored components together."""
-        from src.mcp_server_mas_sequential_thinking.agno_workflow_router import AgentFactory, StepExecutorMixin
+        from src.mcp_server_mas_sequential_thinking.agno_workflow_router import (
+            AgentFactory,
+            StepExecutorMixin,
+        )
         from src.mcp_server_mas_sequential_thinking.server_core import LoggingMixin
-        from src.mcp_server_mas_sequential_thinking.constants import CostOptimizationConstants
+        from src.mcp_server_mas_sequential_thinking.constants import (
+            CostOptimizationConstants,
+        )
         from unittest.mock import Mock, patch
 
         # Create a mock class that uses all mixins
@@ -457,17 +482,22 @@ class TestRefactoredComponentsIntegration:
 
             def process_complex_request(self, content: str, complexity_score: float):
                 # Use AgentFactory to create agents
-                with patch('src.mcp_server_mas_sequential_thinking.agno_workflow_router.Agent') as mock_agent_class:
+                with patch(
+                    "src.mcp_server_mas_sequential_thinking.agno_workflow_router.Agent"
+                ) as mock_agent_class:
                     mock_agent = Mock()
                     mock_agent_class.return_value = mock_agent
 
                     # Create agents using factory
-                    if complexity_score > CostOptimizationConstants.HIGH_BUDGET_UTILIZATION * 100:
+                    if (
+                        complexity_score
+                        > CostOptimizationConstants.HIGH_BUDGET_UTILIZATION * 100
+                    ):
                         agents = [
                             AgentFactory.create_planner(self.model, "advanced"),
                             AgentFactory.create_analyzer(self.model, "advanced"),
                             AgentFactory.create_researcher(self.model),
-                            AgentFactory.create_critic(self.model)
+                            AgentFactory.create_critic(self.model),
                         ]
                         strategy = "multi_agent"
                     else:
@@ -477,11 +507,13 @@ class TestRefactoredComponentsIntegration:
                     # Create session state
                     session_state = {
                         "current_complexity_score": complexity_score,
-                        "agents_created": len(agents)
+                        "agents_created": len(agents),
                     }
 
                     # Update session state using mixin
-                    self._update_session_state(session_state, strategy, f"{strategy}_completed")
+                    self._update_session_state(
+                        session_state, strategy, f"{strategy}_completed"
+                    )
 
                     # Calculate efficiency (simulate processing time)
                     processing_time = 45.0 if strategy == "single_agent" else 90.0
@@ -492,7 +524,9 @@ class TestRefactoredComponentsIntegration:
                         content=f"Processed '{content}' using {strategy}",
                         strategy=strategy,
                         session_state=session_state,
-                        specialists=[agent.__class__.__name__ for agent in agents] if len(agents) > 1 else None
+                        specialists=[agent.__class__.__name__ for agent in agents]
+                        if len(agents) > 1
+                        else None,
                     )
 
                     return result, efficiency_score, session_state
@@ -505,11 +539,14 @@ class TestRefactoredComponentsIntegration:
         # Test high complexity scenario
         result, efficiency, session = processor.process_complex_request(
             "Complex analysis request",
-            85.0  # High complexity
+            85.0,  # High complexity
         )
 
         # Verify all components worked together
-        assert result.content["result"] == "Processed 'Complex analysis request' using multi_agent"
+        assert (
+            result.content["result"]
+            == "Processed 'Complex analysis request' using multi_agent"
+        )
         assert result.content["strategy"] == "multi_agent"
         assert result.content["complexity"] == 85.0
         assert "specialists" in result.content
@@ -520,7 +557,7 @@ class TestRefactoredComponentsIntegration:
         # Test low complexity scenario
         result2, efficiency2, session2 = processor.process_complex_request(
             "Simple task",
-            25.0  # Low complexity
+            25.0,  # Low complexity
         )
 
         assert result2.content["strategy"] == "single_agent"
@@ -531,23 +568,29 @@ class TestRefactoredComponentsIntegration:
         from src.mcp_server_mas_sequential_thinking.constants import (
             CostOptimizationConstants,
             QualityThresholds,
-            TokenCosts
+            TokenCosts,
         )
 
         # Test that related constants are consistent
         # Quality thresholds should align with cost optimization thresholds
-        assert QualityThresholds.HIGH_BUDGET_UTILIZATION == CostOptimizationConstants.HIGH_BUDGET_UTILIZATION
+        assert (
+            QualityThresholds.HIGH_BUDGET_UTILIZATION
+            == CostOptimizationConstants.HIGH_BUDGET_UTILIZATION
+        )
 
         # Test that token costs are reasonable for cost optimization
         # Both represent cost per 1000 tokens, so they should be equal
-        assert TokenCosts.DEFAULT_COST_PER_1K == CostOptimizationConstants.DEFAULT_COST_ESTIMATE
+        assert (
+            TokenCosts.DEFAULT_COST_PER_1K
+            == CostOptimizationConstants.DEFAULT_COST_ESTIMATE
+        )
 
         # Test that cost optimization constants are in valid ranges
         weights = [
             CostOptimizationConstants.QUALITY_WEIGHT,
             CostOptimizationConstants.COST_WEIGHT,
             CostOptimizationConstants.SPEED_WEIGHT,
-            CostOptimizationConstants.RELIABILITY_WEIGHT
+            CostOptimizationConstants.RELIABILITY_WEIGHT,
         ]
 
         # All weights should sum to 1.0
@@ -559,7 +602,9 @@ class TestRefactoredComponentsIntegration:
 
     def test_error_handling_integration(self):
         """Test error handling works across all refactored components."""
-        from src.mcp_server_mas_sequential_thinking.agno_workflow_router import StepExecutorMixin
+        from src.mcp_server_mas_sequential_thinking.agno_workflow_router import (
+            StepExecutorMixin,
+        )
 
         # Test error handling with different strategies
         test_error = ValueError("Integration test error")
@@ -578,7 +623,10 @@ class TestRefactoredComponentsIntegration:
     def test_performance_metrics_integration(self):
         """Test performance metrics work with logging and cost optimization."""
         from src.mcp_server_mas_sequential_thinking.server_core import LoggingMixin
-        from src.mcp_server_mas_sequential_thinking.constants import PerformanceMetrics, CostOptimizationConstants
+        from src.mcp_server_mas_sequential_thinking.constants import (
+            PerformanceMetrics,
+            CostOptimizationConstants,
+        )
 
         mixin = LoggingMixin()
 
@@ -589,7 +637,7 @@ class TestRefactoredComponentsIntegration:
         score_at_threshold = mixin._calculate_efficiency_score(threshold_time)
         expected_score = max(
             PerformanceMetrics.MINIMUM_EFFICIENCY_SCORE,
-            PerformanceMetrics.EFFICIENCY_TIME_THRESHOLD / threshold_time
+            PerformanceMetrics.EFFICIENCY_TIME_THRESHOLD / threshold_time,
         )
         assert score_at_threshold == expected_score
 

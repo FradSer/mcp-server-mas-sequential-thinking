@@ -11,7 +11,7 @@ from .types import ThoughtProcessingError
 
 logger = logging.getLogger(__name__)
 
-T = TypeVar('T')
+T = TypeVar("T")
 
 
 @dataclass
@@ -35,7 +35,7 @@ class RetryHandler:
         self,
         operation: Callable[[], Any],
         operation_name: str,
-        context_info: Optional[dict] = None
+        context_info: Optional[dict] = None,
     ) -> Any:
         """Execute operation with retry logic."""
         last_exception = None
@@ -43,7 +43,9 @@ class RetryHandler:
 
         for retry_count in range(max_retries + 1):
             try:
-                self._log_attempt(retry_count, max_retries, operation_name, context_info)
+                self._log_attempt(
+                    retry_count, max_retries, operation_name, context_info
+                )
 
                 start_time = time.time()
                 result = await operation()
@@ -74,7 +76,7 @@ class RetryHandler:
         retry_count: int,
         max_retries: int,
         operation_name: str,
-        context_info: Optional[dict]
+        context_info: Optional[dict],
     ) -> None:
         """Log retry attempt information."""
         logger.info(
@@ -90,11 +92,7 @@ class RetryHandler:
         logger.info(f"✅ {operation_name} completed in {processing_time:.3f}s")
 
     def _log_error(
-        self,
-        retry_count: int,
-        max_retries: int,
-        operation_name: str,
-        error: Exception
+        self, retry_count: int, max_retries: int, operation_name: str, error: Exception
     ) -> None:
         """Log error information."""
         logger.error(f"{operation_name} error on attempt {retry_count + 1}: {error}")
@@ -110,7 +108,7 @@ class RetryHandler:
         """Wait before retry with optional exponential backoff."""
         if self.config.use_exponential_backoff:
             wait_time = self.config.sleep_duration * (
-                self.config.exponential_base ** retry_count
+                self.config.exponential_base**retry_count
             )
         else:
             wait_time = self.config.sleep_duration
@@ -126,26 +124,21 @@ class TeamProcessingRetryHandler(RetryHandler):
         config = RetryConfig(
             max_attempts=DefaultTimeouts.MAX_RETRY_ATTEMPTS,
             sleep_duration=PerformanceMetrics.RETRY_SLEEP_DURATION,
-            use_exponential_backoff=True
+            use_exponential_backoff=True,
         )
         super().__init__(config)
 
     async def execute_team_processing(
-        self,
-        team_operation: Callable[[], Any],
-        team_info: dict,
-        complexity_level: str
+        self, team_operation: Callable[[], Any], team_info: dict, complexity_level: str
     ) -> Any:
         """Execute team processing with specialized retry logic."""
         context_info = {
             "complexity": complexity_level,
             "team": team_info.get("name", "unknown"),
             "agents": team_info.get("member_count", 0),
-            "leader": team_info.get("leader_model", "unknown")
+            "leader": team_info.get("leader_model", "unknown"),
         }
 
         return await self.execute_with_retry(
-            team_operation,
-            "MULTI-AGENT TEAM PROCESSING",
-            context_info
+            team_operation, "MULTI-AGENT TEAM PROCESSING", context_info
         )

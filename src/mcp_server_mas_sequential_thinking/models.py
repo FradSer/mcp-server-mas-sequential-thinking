@@ -70,8 +70,8 @@ class ThoughtData(BaseModel):
     )
     total_thoughts: int = Field(
         ...,
-        ge=ValidationLimits.MIN_TOTAL_THOUGHTS,
-        description="Estimated total thoughts (minimum 5)",
+        ge=1,
+        description="Estimated total thoughts",
     )
     next_needed: bool = Field(..., description="Whether another thought is needed")
 

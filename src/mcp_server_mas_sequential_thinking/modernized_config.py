@@ -69,7 +69,7 @@ class ModelConfig:
         if self.provider_class == Claude:
             return self.provider_class(
                 id=self.team_model_id,
-                cache_system_prompt=True  # Enable Anthropic prompt caching
+                cache_system_prompt=True,  # Enable Anthropic prompt caching
             )
         return self.provider_class(id=self.team_model_id)
 
@@ -79,7 +79,7 @@ class ModelConfig:
         if self.provider_class == Claude:
             return self.provider_class(
                 id=self.agent_model_id,
-                cache_system_prompt=True  # Enable Anthropic prompt caching
+                cache_system_prompt=True,  # Enable Anthropic prompt caching
             )
         return self.provider_class(id=self.agent_model_id)
 

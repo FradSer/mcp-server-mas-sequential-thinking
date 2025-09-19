@@ -59,7 +59,6 @@ class ValidationLimits:
     MAX_BRANCHES_PER_SESSION = 50
     MAX_THOUGHTS_PER_BRANCH = 100
     GITHUB_TOKEN_LENGTH = 40
-    MIN_TOTAL_THOUGHTS = 5
     MIN_THOUGHT_NUMBER = 1
 
 
@@ -71,14 +70,14 @@ class DefaultTimeouts:
     MULTI_AGENT_TIMEOUT_MULTIPLIER = 2.0  # Multiply timeout for multi-agent
 
     # Adaptive timeout strategy (v0.5.1+)
-    ADAPTIVE_BASE_DEEPSEEK = 90.0       # Base timeout for Deepseek with adaptive scaling
-    ADAPTIVE_BASE_GROQ = 20.0           # Base timeout for Groq
-    ADAPTIVE_BASE_OPENAI = 45.0         # Base timeout for OpenAI
-    ADAPTIVE_BASE_DEFAULT = 30.0        # Default base timeout
+    ADAPTIVE_BASE_DEEPSEEK = 90.0  # Base timeout for Deepseek with adaptive scaling
+    ADAPTIVE_BASE_GROQ = 20.0  # Base timeout for Groq
+    ADAPTIVE_BASE_OPENAI = 45.0  # Base timeout for OpenAI
+    ADAPTIVE_BASE_DEFAULT = 30.0  # Default base timeout
 
     # Maximum timeouts (safety ceiling)
-    MAX_TIMEOUT_DEEPSEEK = 300.0        # 5 minutes absolute maximum for Deepseek
-    MAX_TIMEOUT_DEFAULT = 180.0         # 3 minutes maximum for others
+    MAX_TIMEOUT_DEEPSEEK = 300.0  # 5 minutes absolute maximum for Deepseek
+    MAX_TIMEOUT_DEFAULT = 180.0  # 3 minutes maximum for others
 
     # Complexity multipliers for adaptive timeouts
     COMPLEXITY_SIMPLE_MULTIPLIER = 1.0
@@ -87,8 +86,8 @@ class DefaultTimeouts:
     COMPLEXITY_HIGHLY_COMPLEX_MULTIPLIER = 3.0
 
     # Retry configuration
-    RETRY_EXPONENTIAL_BASE = 1.5        # Exponential backoff base
-    MAX_RETRY_ATTEMPTS = 2              # Maximum retry attempts
+    RETRY_EXPONENTIAL_BASE = 1.5  # Exponential backoff base
+    MAX_RETRY_ATTEMPTS = 2  # Maximum retry attempts
 
     SESSION_CLEANUP_DAYS = 30
     RECENT_SESSION_KEEP_COUNT = 100
@@ -160,8 +159,6 @@ class PerformanceMetrics:
     SEPARATOR_LENGTH = 50
 
 
-
-
 class ProcessingDefaults:
     """Default values for thought processing."""
 
@@ -196,7 +193,6 @@ class ThoughtProcessingLimits:
     """Limits for thought processing workflow."""
 
     MIN_THOUGHT_SEQUENCE = 1
-    MIN_TOTAL_THOUGHTS = 5
     MAX_TEAM_DELEGATION_COUNT = 2
     ANALYSIS_TIME_LIMIT_SECONDS = 5
     MIN_PROCESSING_STEPS = 1

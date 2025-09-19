@@ -36,7 +36,9 @@ class MetricsLogger:
         """Initialize metrics logger with configuration."""
         self.config = config or MetricsConfig()
 
-    def log_section_header(self, title: str, separator_length: Optional[int] = None) -> None:
+    def log_section_header(
+        self, title: str, separator_length: Optional[int] = None
+    ) -> None:
         """Log a section header with consistent formatting."""
         length = separator_length or self.config.separator_length
         self._log_with_level(title, self.config.log_level)
@@ -66,7 +68,7 @@ class MetricsLogger:
         processing_time: float,
         total_time: float,
         confidence: float,
-        final_response: str
+        final_response: str,
     ) -> None:
         """Log comprehensive completion summary."""
         # Completion info
@@ -76,7 +78,7 @@ class MetricsLogger:
             "Specialists": specialists_count,
             "Processing time": f"{processing_time:.3f}s",
             "Total time": f"{total_time:.3f}s",
-            "Confidence": confidence
+            "Confidence": confidence,
         }
         self.log_metrics_block("💫 COMPLETION SUMMARY:", completion_info)
 
@@ -92,7 +94,7 @@ class MetricsLogger:
             "Strategy used": strategy,
             "Processing time": f"{processing_time:.3f}s",
             "Total time": f"{total_time:.3f}s",
-            "Response length": f"{len(final_response)} chars"
+            "Response length": f"{len(final_response)} chars",
         }
         self.log_metrics_block("🎯 PROCESSING COMPLETE:", final_summary)
         self.log_separator(FieldLengthLimits.SEPARATOR_LENGTH)
@@ -102,7 +104,7 @@ class MetricsLogger:
         team_details = {
             "Team": f"{team_info.get('name', 'unknown')} ({team_info.get('member_count', 0)} agents)",
             "Leader": f"{team_info.get('leader_class', 'unknown')} (model: {team_info.get('leader_model', 'unknown')})",
-            "Members": team_info.get('member_names', 'unknown')
+            "Members": team_info.get("member_names", "unknown"),
         }
         self.log_metrics_block("🏢 MULTI-AGENT TEAM CALL:", team_details)
 
@@ -112,10 +114,7 @@ class MetricsLogger:
         if len(input_prompt) > max_preview:
             preview += "..."
 
-        input_info = {
-            "Input length": f"{len(input_prompt)} chars",
-            "Preview": preview
-        }
+        input_info = {"Input length": f"{len(input_prompt)} chars", "Preview": preview}
         self.log_metrics_block("📥 INPUT DETAILS:", input_info)
 
     def log_output_details(self, response_content: str, processing_time: float) -> None:
@@ -123,15 +122,12 @@ class MetricsLogger:
         output_info = {
             "Response length": f"{len(response_content)} chars",
             "Processing time": f"{processing_time:.3f}s",
-            "Success": "✅"
+            "Success": "✅",
         }
         self.log_metrics_block("📤 OUTPUT DETAILS:", output_info)
 
     def _calculate_performance_metrics(
-        self,
-        processing_time: float,
-        strategy: str,
-        final_response: str
+        self, processing_time: float, strategy: str, final_response: str
     ) -> Dict[str, Any]:
         """Calculate performance metrics for logging."""
         # Calculate efficiency score
@@ -144,7 +140,7 @@ class MetricsLogger:
             "Execution Consistency": execution_consistency,
             "Efficiency Score": efficiency_score,
             "Response Length": f"{len(final_response)} chars",
-            "Strategy Executed": strategy
+            "Strategy Executed": strategy,
         }
 
     def _calculate_efficiency_score(self, processing_time: float) -> float:
@@ -154,7 +150,7 @@ class MetricsLogger:
         else:
             return max(
                 PerformanceMetrics.MINIMUM_EFFICIENCY_SCORE,
-                PerformanceMetrics.EFFICIENCY_TIME_THRESHOLD / processing_time
+                PerformanceMetrics.EFFICIENCY_TIME_THRESHOLD / processing_time,
             )
 
     def _calculate_execution_consistency(self, success: bool) -> float:
@@ -218,14 +214,16 @@ class PerformanceTracker:
             return {"status": "no_data"}
 
         avg_time = sum(self.processing_times) / len(self.processing_times)
-        success_rate = self.success_count / self.total_attempts if self.total_attempts > 0 else 0
+        success_rate = (
+            self.success_count / self.total_attempts if self.total_attempts > 0 else 0
+        )
 
         return {
             "average_processing_time": f"{avg_time:.3f}s",
             "success_rate": f"{success_rate:.1%}",
             "total_attempts": self.total_attempts,
             "min_time": f"{min(self.processing_times):.3f}s",
-            "max_time": f"{max(self.processing_times):.3f}s"
+            "max_time": f"{max(self.processing_times):.3f}s",
         }
 
     def log_performance_summary(self) -> None:

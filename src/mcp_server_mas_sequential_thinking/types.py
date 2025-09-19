@@ -52,7 +52,9 @@ class CoordinationPlan:
     original_thought: str
 
     @classmethod
-    def from_routing_decision(cls, routing_decision, thought_data) -> 'CoordinationPlan':
+    def from_routing_decision(
+        cls, routing_decision, thought_data
+    ) -> "CoordinationPlan":
         """Create coordination plan from adaptive routing decision."""
 
         # Map ProcessingStrategy to ExecutionMode
@@ -67,11 +69,21 @@ class CoordinationPlan:
             "simple": ["general"],
             "moderate": ["planner", "analyzer"],
             "complex": ["planner", "researcher", "analyzer", "critic"],
-            "highly_complex": ["planner", "researcher", "analyzer", "critic", "synthesizer"],
+            "highly_complex": [
+                "planner",
+                "researcher",
+                "analyzer",
+                "critic",
+                "synthesizer",
+            ],
         }
 
-        execution_mode = strategy_to_mode.get(routing_decision.strategy.value, ExecutionMode.SINGLE_AGENT)
-        specialists = complexity_to_specialists.get(routing_decision.complexity_level.value, ["general"])
+        execution_mode = strategy_to_mode.get(
+            routing_decision.strategy.value, ExecutionMode.SINGLE_AGENT
+        )
+        specialists = complexity_to_specialists.get(
+            routing_decision.complexity_level.value, ["general"]
+        )
 
         return cls(
             strategy=routing_decision.strategy.value,
@@ -81,7 +93,10 @@ class CoordinationPlan:
             specialist_roles=specialists,
             team_size=len(specialists),
             coordination_strategy="adaptive_routing_based",
-            task_breakdown=[f"Process {thought_data.thought_type.value} thought", "Generate guidance"],
+            task_breakdown=[
+                f"Process {thought_data.thought_type.value} thought",
+                "Generate guidance",
+            ],
             expected_interactions=len(specialists),
             timeout_seconds=300.0,  # Default timeout
             reasoning=routing_decision.reasoning,
@@ -211,11 +226,13 @@ class ConfigurationProvider(Protocol):
 # Custom Exception Classes
 class ValidationError(ValueError):
     """Exception raised when data validation fails."""
+
     pass
 
 
 class ConfigurationError(Exception):
     """Exception raised when configuration is invalid."""
+
     pass
 
 
@@ -229,34 +246,41 @@ class ThoughtProcessingError(Exception):
 
 class TeamCreationError(Exception):
     """Exception raised when team creation fails."""
+
     pass
 
 
 class RoutingDecisionError(ThoughtProcessingError):
     """Error in adaptive routing decision making."""
+
     pass
 
 
 class CostOptimizationError(ThoughtProcessingError):
     """Error in cost optimization logic."""
+
     pass
 
 
 class PersistentStorageError(ThoughtProcessingError):
     """Error in persistent memory storage."""
+
     pass
 
 
 class ModelConfigurationError(ConfigurationError):
     """Error in model configuration."""
+
     pass
 
 
 class ProviderError(Exception):
     """Error related to LLM providers."""
+
     pass
 
 
 class AgentCreationError(Exception):
     """Error in agent creation."""
+
     pass

@@ -31,14 +31,14 @@ class ResponseExtractor:
             return response
 
         # Handle RunOutput from Agno framework
-        if hasattr(response, 'content'):
+        if hasattr(response, "content"):
             content = response.content
             if isinstance(content, str):
                 return content
             elif isinstance(content, dict):
                 # Extract from dict-based content
                 return ResponseExtractor._extract_from_dict(content)
-            elif hasattr(content, '__str__'):
+            elif hasattr(content, "__str__"):
                 return str(content)
 
         # Handle dictionary responses
@@ -46,7 +46,7 @@ class ResponseExtractor:
             return ResponseExtractor._extract_from_dict(response)
 
         # Handle objects with text/message attributes
-        for attr in ['text', 'message', 'result', 'output']:
+        for attr in ["text", "message", "result", "output"]:
             if hasattr(response, attr):
                 value = getattr(response, attr)
                 if isinstance(value, str):
@@ -60,16 +60,16 @@ class ResponseExtractor:
     def _extract_from_dict(content_dict: dict) -> str:
         """Extract content from dictionary-based responses."""
         # Common content keys in order of preference
-        content_keys = ['content', 'text', 'message', 'result', 'output', 'response']
+        content_keys = ["content", "text", "message", "result", "output", "response"]
 
         for key in content_keys:
             if key in content_dict:
                 value = content_dict[key]
                 if isinstance(value, str):
                     return value
-                elif isinstance(value, dict) and 'result' in value:
+                elif isinstance(value, dict) and "result" in value:
                     # Handle nested result structures
-                    return str(value['result'])
+                    return str(value["result"])
 
         # If no standard key found, try to get first string value
         for value in content_dict.values():
@@ -91,7 +91,7 @@ class ResponseProcessor:
         self,
         response: Any,
         processing_time: Optional[float] = None,
-        context: str = "processing"
+        context: str = "processing",
     ) -> ProcessedResponse:
         """Process response with extraction, validation, and logging."""
         content = self.extractor.extract_content(response)
@@ -106,14 +106,14 @@ class ResponseProcessor:
             "context": context,
             "response_type": type(response).__name__,
             "content_length": len(content),
-            "has_content": bool(content.strip())
+            "has_content": bool(content.strip()),
         }
 
         processed = ProcessedResponse(
             content=content,
             raw_response=response,
             processing_time=processing_time,
-            metadata=metadata
+            metadata=metadata,
         )
 
         self._log_response_details(processed, context)
@@ -145,8 +145,8 @@ class ResponseFormatter:
         content = processed.content.strip()
 
         # Ensure content ends with appropriate punctuation
-        if content and not content.endswith(('.', '!', '?', ':', ';')):
-            content += '.'
+        if content and not content.endswith((".", "!", "?", ":", ";")):
+            content += "."
 
         return content
 
@@ -156,5 +156,5 @@ class ResponseFormatter:
         return {
             "content": processed.content,
             "metadata": processed.metadata,
-            "processing_time": processed.processing_time
+            "processing_time": processed.processing_time,
         }

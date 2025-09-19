@@ -163,11 +163,6 @@ class TestValidationLimits:
         assert ValidationLimits.MIN_THOUGHT_NUMBER == 1
         assert isinstance(ValidationLimits.MIN_THOUGHT_NUMBER, int)
 
-    def test_min_total_thoughts(self):
-        """RED: Test minimum total thoughts constant."""
-        assert ValidationLimits.MIN_TOTAL_THOUGHTS == 5
-        assert isinstance(ValidationLimits.MIN_TOTAL_THOUGHTS, int)
-
     def test_all_limits_are_positive(self):
         """RED: Test all validation limits are positive integers."""
         limits = [
@@ -177,7 +172,6 @@ class TestValidationLimits:
             ValidationLimits.MAX_BRANCHES_PER_SESSION,
             ValidationLimits.MAX_THOUGHTS_PER_BRANCH,
             ValidationLimits.MIN_THOUGHT_NUMBER,
-            ValidationLimits.MIN_TOTAL_THOUGHTS,
         ]
         for limit in limits:
             assert limit > 0, f"Limit should be positive: {limit}"

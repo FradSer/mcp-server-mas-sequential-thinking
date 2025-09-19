@@ -88,12 +88,12 @@ def sequential_thinking_prompt(problem: str, context: str = "") -> list[dict]:
         raise ValueError(f"Input validation failed: {e}")
 
     user_prompt = f"""Initiate sequential thinking for: {problem}
-{f'Context: {context}' if context else ''}"""
+{f"Context: {context}" if context else ""}"""
 
     assistant_guide = f"""Starting sequential thinking process for: {problem}
 
 Process Guidelines:
-1. Estimate at least {ThoughtProcessingLimits.MIN_TOTAL_THOUGHTS} total thoughts initially
+1. Estimate appropriate number of total thoughts based on problem complexity
 2. Begin with: "Plan comprehensive analysis for: {problem}"
 3. Use revisions (isRevision=True) to improve previous thoughts  
 4. Use branching (branchFromThought, branchId) for alternative approaches
@@ -143,7 +143,7 @@ async def sequentialthinking(
     Args:
         thought: Content of the thinking step (required)
         thought_number: Sequence number starting from {ThoughtProcessingLimits.MIN_THOUGHT_SEQUENCE} (≥{ThoughtProcessingLimits.MIN_THOUGHT_SEQUENCE})
-        total_thoughts: Estimated total thoughts required (≥{ThoughtProcessingLimits.MIN_TOTAL_THOUGHTS})
+        total_thoughts: Estimated total thoughts required (≥1)
         next_needed: Whether another thought step follows this one
         is_revision: Whether this thought revises a previous thought
         revises_thought: Thought number being revised (requires is_revision=True)

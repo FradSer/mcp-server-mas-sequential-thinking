@@ -28,7 +28,9 @@ class TestAgentFactory:
         role = "Test Role"
         instructions = ["instruction1", "instruction2"]
 
-        with patch('src.mcp_server_mas_sequential_thinking.agno_workflow_router.Agent') as mock_agent_class:
+        with patch(
+            "src.mcp_server_mas_sequential_thinking.agno_workflow_router.Agent"
+        ) as mock_agent_class:
             mock_agent_instance = Mock()
             mock_agent_class.return_value = mock_agent_instance
 
@@ -40,13 +42,15 @@ class TestAgentFactory:
                 role=role,
                 model=self.mock_model,
                 tools=[ReasoningTools],
-                instructions=instructions
+                instructions=instructions,
             )
             assert agent == mock_agent_instance
 
     def test_create_agent_with_empty_instructions(self):
         """测试创建包含空指令列表的代理"""
-        with patch('src.mcp_server_mas_sequential_thinking.agno_workflow_router.Agent') as mock_agent_class:
+        with patch(
+            "src.mcp_server_mas_sequential_thinking.agno_workflow_router.Agent"
+        ) as mock_agent_class:
             mock_agent_instance = Mock()
             mock_agent_class.return_value = mock_agent_instance
 
@@ -54,11 +58,11 @@ class TestAgentFactory:
 
             mock_agent_class.assert_called_once()
             args, kwargs = mock_agent_class.call_args
-            assert kwargs['instructions'] == []
+            assert kwargs["instructions"] == []
 
     def test_create_planner_basic_complexity(self):
         """测试创建基础复杂度的规划师代理"""
-        with patch.object(AgentFactory, 'create_agent') as mock_create:
+        with patch.object(AgentFactory, "create_agent") as mock_create:
             mock_agent = Mock()
             mock_create.return_value = mock_agent
 
@@ -79,7 +83,7 @@ class TestAgentFactory:
 
     def test_create_planner_advanced_complexity(self):
         """测试创建高级复杂度的规划师代理"""
-        with patch.object(AgentFactory, 'create_agent') as mock_create:
+        with patch.object(AgentFactory, "create_agent") as mock_create:
             mock_agent = Mock()
             mock_create.return_value = mock_agent
 
@@ -95,7 +99,7 @@ class TestAgentFactory:
 
     def test_create_analyzer_basic_complexity(self):
         """测试创建基础复杂度的分析师代理"""
-        with patch.object(AgentFactory, 'create_agent') as mock_create:
+        with patch.object(AgentFactory, "create_agent") as mock_create:
             mock_agent = Mock()
             mock_create.return_value = mock_agent
 
@@ -112,7 +116,7 @@ class TestAgentFactory:
 
     def test_create_analyzer_advanced_complexity(self):
         """测试创建高级复杂度的分析师代理"""
-        with patch.object(AgentFactory, 'create_agent') as mock_create:
+        with patch.object(AgentFactory, "create_agent") as mock_create:
             mock_agent = Mock()
             mock_create.return_value = mock_agent
 
@@ -126,7 +130,7 @@ class TestAgentFactory:
 
     def test_create_researcher(self):
         """测试创建研究员代理"""
-        with patch.object(AgentFactory, 'create_agent') as mock_create:
+        with patch.object(AgentFactory, "create_agent") as mock_create:
             mock_agent = Mock()
             mock_create.return_value = mock_agent
 
@@ -139,11 +143,14 @@ class TestAgentFactory:
             assert args[1] == "Information Gatherer"
 
             instructions = args[3]
-            assert "research" in " ".join(instructions).lower() or "information" in " ".join(instructions).lower()
+            assert (
+                "research" in " ".join(instructions).lower()
+                or "information" in " ".join(instructions).lower()
+            )
 
     def test_create_critic(self):
         """测试创建评论家代理"""
-        with patch.object(AgentFactory, 'create_agent') as mock_create:
+        with patch.object(AgentFactory, "create_agent") as mock_create:
             mock_agent = Mock()
             mock_create.return_value = mock_agent
 
@@ -156,11 +163,14 @@ class TestAgentFactory:
             assert args[1] == "Quality Controller"
 
             instructions = args[3]
-            assert "critic" in " ".join(instructions).lower() or "quality" in " ".join(instructions).lower()
+            assert (
+                "critic" in " ".join(instructions).lower()
+                or "quality" in " ".join(instructions).lower()
+            )
 
     def test_create_synthesizer(self):
         """测试创建综合器代理"""
-        with patch.object(AgentFactory, 'create_agent') as mock_create:
+        with patch.object(AgentFactory, "create_agent") as mock_create:
             mock_agent = Mock()
             mock_create.return_value = mock_agent
 
@@ -173,20 +183,23 @@ class TestAgentFactory:
             assert args[1] == "Response Coordinator"
 
             instructions = args[3]
-            assert "synthesize" in " ".join(instructions).lower() or "integrate" in " ".join(instructions).lower()
+            assert (
+                "synthesize" in " ".join(instructions).lower()
+                or "integrate" in " ".join(instructions).lower()
+            )
 
     def test_all_agent_types_use_reasoning_tools(self):
         """测试所有代理类型都使用ReasoningTools"""
         agent_methods = [
-            ('create_planner', [self.mock_model]),
-            ('create_analyzer', [self.mock_model]),
-            ('create_researcher', [self.mock_model]),
-            ('create_critic', [self.mock_model]),
-            ('create_synthesizer', [self.mock_model])
+            ("create_planner", [self.mock_model]),
+            ("create_analyzer", [self.mock_model]),
+            ("create_researcher", [self.mock_model]),
+            ("create_critic", [self.mock_model]),
+            ("create_synthesizer", [self.mock_model]),
         ]
 
         for method_name, args in agent_methods:
-            with patch.object(AgentFactory, 'create_agent') as mock_create:
+            with patch.object(AgentFactory, "create_agent") as mock_create:
                 method = getattr(AgentFactory, method_name)
                 method(*args)
 
@@ -203,7 +216,9 @@ class TestAgentFactoryIntegration:
 
     def test_agent_factory_creates_different_agents(self):
         """测试工厂能创建不同类型的代理"""
-        with patch('src.mcp_server_mas_sequential_thinking.agno_workflow_router.Agent') as mock_agent_class:
+        with patch(
+            "src.mcp_server_mas_sequential_thinking.agno_workflow_router.Agent"
+        ) as mock_agent_class:
             # 每次调用返回不同的mock实例
             mock_instances = [Mock(), Mock(), Mock()]
             mock_agent_class.side_effect = mock_instances
@@ -223,15 +238,20 @@ class TestAgentFactoryIntegration:
             AgentFactory.create_analyzer,
             AgentFactory.create_researcher,
             AgentFactory.create_critic,
-            AgentFactory.create_synthesizer
+            AgentFactory.create_synthesizer,
         ]
 
-        with patch('src.mcp_server_mas_sequential_thinking.agno_workflow_router.Agent') as mock_agent_class:
+        with patch(
+            "src.mcp_server_mas_sequential_thinking.agno_workflow_router.Agent"
+        ) as mock_agent_class:
             mock_agent_class.return_value = Mock()
 
             for method in factory_methods:
                 # 所有方法都应该接受model参数
-                if method in [AgentFactory.create_planner, AgentFactory.create_analyzer]:
+                if method in [
+                    AgentFactory.create_planner,
+                    AgentFactory.create_analyzer,
+                ]:
                     # 这些方法还支持complexity_level参数
                     agent = method(self.mock_model, "basic")
                 else:
@@ -249,7 +269,7 @@ class TestAgentFactoryEdgeCases:
         """测试使用无效复杂度级别创建规划师"""
         mock_model = Mock()
 
-        with patch.object(AgentFactory, 'create_agent') as mock_create:
+        with patch.object(AgentFactory, "create_agent") as mock_create:
             mock_create.return_value = Mock()
 
             # 应该处理无效的复杂度级别（使用默认值或抛出异常）
@@ -265,7 +285,7 @@ class TestAgentFactoryEdgeCases:
         """测试使用无效复杂度级别创建分析师"""
         mock_model = Mock()
 
-        with patch.object(AgentFactory, 'create_agent') as mock_create:
+        with patch.object(AgentFactory, "create_agent") as mock_create:
             mock_create.return_value = Mock()
 
             try:
@@ -278,7 +298,9 @@ class TestAgentFactoryEdgeCases:
         """测试使用None模型创建代理"""
         # 这应该能够处理或至少不崩溃
         try:
-            with patch('src.mcp_server_mas_sequential_thinking.agno_workflow_router.Agent') as mock_agent_class:
+            with patch(
+                "src.mcp_server_mas_sequential_thinking.agno_workflow_router.Agent"
+            ) as mock_agent_class:
                 mock_agent_class.return_value = Mock()
 
                 agent = AgentFactory.create_agent("Test", "Role", None, ["instruction"])
@@ -290,11 +312,11 @@ class TestAgentFactoryEdgeCases:
     def test_factory_methods_are_class_methods(self):
         """测试工厂方法确实是类方法"""
         # 验证我们可以直接从类调用方法，而不需要实例
-        assert hasattr(AgentFactory, 'create_planner')
-        assert hasattr(AgentFactory, 'create_analyzer')
-        assert hasattr(AgentFactory, 'create_researcher')
-        assert hasattr(AgentFactory, 'create_critic')
-        assert hasattr(AgentFactory, 'create_synthesizer')
+        assert hasattr(AgentFactory, "create_planner")
+        assert hasattr(AgentFactory, "create_analyzer")
+        assert hasattr(AgentFactory, "create_researcher")
+        assert hasattr(AgentFactory, "create_critic")
+        assert hasattr(AgentFactory, "create_synthesizer")
 
         # 验证它们是类方法或静态方法
         assert callable(AgentFactory.create_planner)
@@ -307,11 +329,14 @@ class TestAgentFactoryPerformance:
         """测试工厂方法的效率（不应该有不必要的开销）"""
         mock_model = Mock()
 
-        with patch('src.mcp_server_mas_sequential_thinking.agno_workflow_router.Agent') as mock_agent_class:
+        with patch(
+            "src.mcp_server_mas_sequential_thinking.agno_workflow_router.Agent"
+        ) as mock_agent_class:
             mock_agent_class.return_value = Mock()
 
             # 调用工厂方法不应该创建额外的对象或进行昂贵的操作
             import time
+
             start_time = time.time()
 
             for _ in range(100):

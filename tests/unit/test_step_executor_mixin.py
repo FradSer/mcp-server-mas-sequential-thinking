@@ -9,7 +9,9 @@ import pytest
 from unittest.mock import Mock, patch
 from typing import Dict, Any, List, Optional
 
-from src.mcp_server_mas_sequential_thinking.agno_workflow_router import StepExecutorMixin
+from src.mcp_server_mas_sequential_thinking.agno_workflow_router import (
+    StepExecutorMixin,
+)
 from agno.workflow.types import StepOutput
 
 
@@ -38,15 +40,10 @@ class TestStepExecutorMixin:
         """测试使用会话状态创建步骤输出"""
         content = "Processing with session state"
         strategy = "multi_agent"
-        session_state = {
-            "current_complexity_score": 75.5,
-            "other_data": "test"
-        }
+        session_state = {"current_complexity_score": 75.5, "other_data": "test"}
 
         result = self.mixin._create_step_output(
-            content=content,
-            strategy=strategy,
-            session_state=session_state
+            content=content, strategy=strategy, session_state=session_state
         )
 
         assert result.content["complexity"] == 75.5
@@ -59,9 +56,7 @@ class TestStepExecutorMixin:
         specialists = ["planner", "analyzer", "critic"]
 
         result = self.mixin._create_step_output(
-            content=content,
-            strategy=strategy,
-            specialists=specialists
+            content=content, strategy=strategy, specialists=specialists
         )
 
         assert result.content["specialists"] == specialists
@@ -74,10 +69,7 @@ class TestStepExecutorMixin:
         error_msg = "Connection timeout"
 
         result = self.mixin._create_step_output(
-            content=content,
-            strategy=strategy,
-            success=False,
-            error=error_msg
+            content=content, strategy=strategy, success=False, error=error_msg
         )
 
         assert result.success is False
@@ -90,9 +82,7 @@ class TestStepExecutorMixin:
         strategy = "test_strategy"
 
         result = self.mixin._create_step_output(
-            content=content,
-            strategy=strategy,
-            session_state=None
+            content=content, strategy=strategy, session_state=None
         )
 
         assert result.content["complexity"] == 0
@@ -119,7 +109,7 @@ class TestStepExecutorMixin:
         """测试更新已有数据的会话状态"""
         session_state = {
             "existing_key": "existing_value",
-            "processing_strategy": "old_strategy"
+            "processing_strategy": "old_strategy",
         }
         strategy = "hybrid"
         completed_key = "hybrid_completed"
@@ -198,7 +188,9 @@ class TestStepExecutorMixinIntegration:
         """测试完整的工作流程模拟"""
 
         class MockWorkflowStep(StepExecutorMixin):
-            def execute(self, content: str, session_state: Optional[Dict[str, Any]] = None):
+            def execute(
+                self, content: str, session_state: Optional[Dict[str, Any]] = None
+            ):
                 try:
                     # 模拟处理
                     if content == "error_case":
@@ -206,9 +198,7 @@ class TestStepExecutorMixinIntegration:
 
                     # 更新会话状态
                     self._update_session_state(
-                        session_state,
-                        "test_strategy",
-                        "test_completed"
+                        session_state, "test_strategy", "test_completed"
                     )
 
                     # 返回成功结果
@@ -216,7 +206,7 @@ class TestStepExecutorMixinIntegration:
                         content=f"Processed: {content}",
                         strategy="test_strategy",
                         session_state=session_state,
-                        specialists=["test_specialist"]
+                        specialists=["test_specialist"],
                     )
 
                 except Exception as e:
@@ -257,7 +247,7 @@ class TestStepExecutorMixinEdgeCases:
             success=True,
             session_state=session_state,
             error=error_msg,
-            specialists=specialists
+            specialists=specialists,
         )
 
         assert result.content["result"] == content
@@ -301,9 +291,7 @@ class TestStepExecutorMixinEdgeCases:
         mixin = StepExecutorMixin()
 
         result = mixin._create_step_output(
-            content="type test",
-            strategy="validation",
-            session_state={"score": 42.5}
+            content="type test", strategy="validation", session_state={"score": 42.5}
         )
 
         # 验证数据类型

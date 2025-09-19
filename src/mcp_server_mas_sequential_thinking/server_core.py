@@ -25,7 +25,7 @@ from .constants import (
     DefaultTimeouts,
     ProcessingDefaults,
     FieldLengthLimits,
-    PerformanceMetrics
+    PerformanceMetrics,
 )
 from .retry_handler import RetryHandler, TeamProcessingRetryHandler
 from .response_processor import ResponseProcessor, ResponseExtractor
@@ -49,7 +49,9 @@ class LoggingMixin:
     """Mixin class providing common logging utilities with reduced duplication."""
 
     @staticmethod
-    def _log_section_header(title: str, separator_length: int = PerformanceMetrics.SEPARATOR_LENGTH) -> None:
+    def _log_section_header(
+        title: str, separator_length: int = PerformanceMetrics.SEPARATOR_LENGTH
+    ) -> None:
         """Log a formatted section header."""
         logger.info(f"{title}")
 
@@ -73,17 +75,23 @@ class LoggingMixin:
     @staticmethod
     def _calculate_efficiency_score(processing_time: float) -> float:
         """Calculate efficiency score using standard metrics."""
-        return (PerformanceMetrics.PERFECT_EFFICIENCY_SCORE
-                if processing_time < PerformanceMetrics.EFFICIENCY_TIME_THRESHOLD
-                else max(PerformanceMetrics.MINIMUM_EFFICIENCY_SCORE,
-                        PerformanceMetrics.EFFICIENCY_TIME_THRESHOLD / processing_time))
+        return (
+            PerformanceMetrics.PERFECT_EFFICIENCY_SCORE
+            if processing_time < PerformanceMetrics.EFFICIENCY_TIME_THRESHOLD
+            else max(
+                PerformanceMetrics.MINIMUM_EFFICIENCY_SCORE,
+                PerformanceMetrics.EFFICIENCY_TIME_THRESHOLD / processing_time,
+            )
+        )
 
     @staticmethod
     def _calculate_execution_consistency(success_indicator: bool) -> float:
         """Calculate execution consistency using standard metrics."""
-        return (PerformanceMetrics.PERFECT_EXECUTION_CONSISTENCY
-                if success_indicator
-                else PerformanceMetrics.DEFAULT_EXECUTION_CONSISTENCY)
+        return (
+            PerformanceMetrics.PERFECT_EXECUTION_CONSISTENCY
+            if success_indicator
+            else PerformanceMetrics.DEFAULT_EXECUTION_CONSISTENCY
+        )
 
 
 @dataclass(frozen=True, slots=True)
@@ -218,7 +226,9 @@ class ServerState:
             EnvironmentInitializer(),
             TeamInitializer(),
         ]
-        self._team_initializer = self._initializers[ProcessingDefaults.TEAM_INITIALIZER_INDEX]
+        self._team_initializer = self._initializers[
+            ProcessingDefaults.TEAM_INITIALIZER_INDEX
+        ]
 
     async def initialize(self, config: ServerConfig) -> None:
         """Initialize all server components."""
@@ -266,8 +276,12 @@ class ThoughtProcessor(LoggingMixin):
     """Handles thought processing with optimized performance and error handling."""
 
     __slots__ = (
-        "_session", "_agno_router",
-        "_retry_handler", "_response_processor", "_metrics_logger", "_performance_tracker"
+        "_session",
+        "_agno_router",
+        "_retry_handler",
+        "_response_processor",
+        "_metrics_logger",
+        "_performance_tracker",
     )
 
     def __init__(self, session: SessionMemory) -> None:
@@ -317,39 +331,51 @@ class ThoughtProcessor(LoggingMixin):
         # Always use Agno-compliant workflow processing
         return await self._process_with_agno_workflow(thought_data, start_time)
 
-    async def _process_with_agno_workflow(self, thought_data: ThoughtData, start_time: float) -> str:
+    async def _process_with_agno_workflow(
+        self, thought_data: ThoughtData, start_time: float
+    ) -> str:
         """Process thought using Agno-compliant workflow."""
         input_prompt = self._build_context_prompt(thought_data)
         self._log_context_building(thought_data, input_prompt)
 
         # Execute Agno workflow
-        workflow_result: WorkflowResult = await self._agno_router.process_thought_workflow(
-            thought_data, input_prompt
+        workflow_result: WorkflowResult = (
+            await self._agno_router.process_thought_workflow(thought_data, input_prompt)
         )
 
         final_response = self._format_response(workflow_result.content, thought_data)
         total_time = time.time() - start_time
 
         # Log workflow completion with Agno-specific metrics
-        self._log_workflow_completion(thought_data, workflow_result, total_time, final_response)
+        self._log_workflow_completion(
+            thought_data, workflow_result, total_time, final_response
+        )
 
         return final_response
 
-
-    def _log_input_details(self, input_prompt: str, context_description: str = "input") -> None:
+    def _log_input_details(
+        self, input_prompt: str, context_description: str = "input"
+    ) -> None:
         """Log input details with consistent formatting."""
         logger.info(f"  Input length: {len(input_prompt)} chars")
         logger.info(f"  Full {context_description}:\\n{input_prompt}")
-        logger.info(f"  {'='*PerformanceMetrics.SEPARATOR_LENGTH}")
+        logger.info(f"  {'=' * PerformanceMetrics.SEPARATOR_LENGTH}")
 
-    def _log_output_details(self, response_content: str, processing_time: float, context_description: str = "response") -> None:
+    def _log_output_details(
+        self,
+        response_content: str,
+        processing_time: float,
+        context_description: str = "response",
+    ) -> None:
         """Log output details with consistent formatting."""
         logger.info(f"  Processing time: {processing_time:.3f}s")
         logger.info(f"  Output length: {len(response_content)} chars")
         logger.info(f"  Full {context_description}:\\n{response_content}")
-        logger.info(f"  {'='*PerformanceMetrics.SEPARATOR_LENGTH}")
+        logger.info(f"  {'=' * PerformanceMetrics.SEPARATOR_LENGTH}")
 
-    def _create_simple_agent(self, processing_type: str = "thought", use_markdown: bool = False) -> Agent:
+    def _create_simple_agent(
+        self, processing_type: str = "thought", use_markdown: bool = False
+    ) -> Agent:
         """Create a simple agent for single-thought processing."""
         from agno.agent import Agent
 
@@ -365,26 +391,34 @@ class ThoughtProcessor(LoggingMixin):
                 f"You are processing a {processing_type} efficiently.",
                 "Provide a focused, clear response.",
                 "Include guidance for the next step.",
-                "Be concise but helpful."
+                "Be concise but helpful.",
             ],
-            markdown=use_markdown
+            markdown=use_markdown,
         )
 
-    async def _create_coordination_plan(self, thought_data: ThoughtData) -> tuple[CoordinationPlan, float]:
+    async def _create_coordination_plan(
+        self, thought_data: ThoughtData
+    ) -> tuple[CoordinationPlan, float]:
         """Create coordination plan from routing decision with timing."""
         coordination_start = time.time()
         routing_decision = self._router.route_thought(thought_data)
-        coordination_plan = CoordinationPlan.from_routing_decision(routing_decision, thought_data)
+        coordination_plan = CoordinationPlan.from_routing_decision(
+            routing_decision, thought_data
+        )
         coordination_time = time.time() - coordination_start
 
         self._log_coordination_plan(coordination_plan, coordination_time)
         return coordination_plan, coordination_time
 
-    def _log_coordination_plan(self, coordination_plan: CoordinationPlan, coordination_time: float) -> None:
+    def _log_coordination_plan(
+        self, coordination_plan: CoordinationPlan, coordination_time: float
+    ) -> None:
         """Log detailed coordination plan analysis."""
         logger.info(f"🎯 COORDINATION PLAN:")
         logger.info(f"  Strategy: {coordination_plan.strategy}")
-        logger.info(f"  Complexity: {coordination_plan.complexity_level} (score: {coordination_plan.complexity_score:.1f}/100)")
+        logger.info(
+            f"  Complexity: {coordination_plan.complexity_level} (score: {coordination_plan.complexity_score:.1f}/100)"
+        )
         logger.info(f"  Execution mode: {coordination_plan.execution_mode.value}")
         logger.info(f"  Specialists: {coordination_plan.specialist_roles}")
         logger.info(f"  Team size: {coordination_plan.team_size}")
@@ -394,22 +428,33 @@ class ThoughtProcessor(LoggingMixin):
         logger.info(f"  Confidence: {coordination_plan.confidence:.2f}")
         logger.debug(f"  Reasoning: {coordination_plan.reasoning}")
 
-    async def _execute_with_timing(self, input_prompt: str, coordination_plan: CoordinationPlan) -> tuple[str, float]:
+    async def _execute_with_timing(
+        self, input_prompt: str, coordination_plan: CoordinationPlan
+    ) -> tuple[str, float]:
         """Execute coordination plan with timing and logging."""
         processing_start = time.time()
 
         logger.info(f"📋 EXECUTING COORDINATION PLAN:")
         logger.info(f"  Mode: {coordination_plan.execution_mode.value}")
         logger.info(f"  Task breakdown: {coordination_plan.task_breakdown}")
-        logger.info(f"  Expected interactions: {coordination_plan.expected_interactions}")
+        logger.info(
+            f"  Expected interactions: {coordination_plan.expected_interactions}"
+        )
 
-        response = await self._execute_coordination_plan(input_prompt, coordination_plan)
+        response = await self._execute_coordination_plan(
+            input_prompt, coordination_plan
+        )
         processing_time = time.time() - processing_start
 
         return response, processing_time
 
-    def _log_workflow_completion(self, thought_data: ThoughtData, workflow_result: WorkflowResult,
-                                total_time: float, final_response: str) -> None:
+    def _log_workflow_completion(
+        self,
+        thought_data: ThoughtData,
+        workflow_result: WorkflowResult,
+        total_time: float,
+        final_response: str,
+    ) -> None:
         """Log workflow completion with Agno-specific metrics."""
         # Basic completion info
         completion_metrics = {
@@ -419,25 +464,35 @@ class ThoughtProcessor(LoggingMixin):
             "Step": workflow_result.step_name,
             "Processing time": f"{workflow_result.processing_time:.3f}s",
             "Total time": f"{total_time:.3f}s",
-            "Response length": f"{len(final_response)} chars"
+            "Response length": f"{len(final_response)} chars",
         }
         self._log_metrics_block("🎯 AGNO WORKFLOW COMPLETION:", completion_metrics)
         self._log_separator()
 
         # Performance metrics
-        execution_consistency = self._calculate_execution_consistency(workflow_result.strategy_used != "error_fallback")
-        efficiency_score = self._calculate_efficiency_score(workflow_result.processing_time)
+        execution_consistency = self._calculate_execution_consistency(
+            workflow_result.strategy_used != "error_fallback"
+        )
+        efficiency_score = self._calculate_efficiency_score(
+            workflow_result.processing_time
+        )
 
         performance_metrics = {
             "Execution Consistency": execution_consistency,
             "Efficiency Score": efficiency_score,
             "Response Length": f"{len(final_response)} chars",
-            "Strategy Executed": workflow_result.strategy_used
+            "Strategy Executed": workflow_result.strategy_used,
         }
         self._log_metrics_block("📊 WORKFLOW PERFORMANCE METRICS:", performance_metrics)
 
-    def _log_completion_summary(self, thought_data: ThoughtData, coordination_plan: CoordinationPlan,
-                               processing_time: float, total_time: float, final_response: str) -> None:
+    def _log_completion_summary(
+        self,
+        thought_data: ThoughtData,
+        coordination_plan: CoordinationPlan,
+        processing_time: float,
+        total_time: float,
+        final_response: str,
+    ) -> None:
         """Log performance metrics and completion summary using centralized logger."""
         self._metrics_logger.log_completion_summary(
             thought_data=thought_data,
@@ -446,7 +501,7 @@ class ThoughtProcessor(LoggingMixin):
             processing_time=processing_time,
             total_time=total_time,
             confidence=coordination_plan.confidence,
-            final_response=final_response
+            final_response=final_response,
         )
 
         # Record performance metrics for tracking
@@ -459,14 +514,18 @@ class ThoughtProcessor(LoggingMixin):
             "Type": thought_data.thought_type.value,
             "Content": thought_data.thought,
             "Next needed": thought_data.next_needed,
-            "Needs more": thought_data.needs_more
+            "Needs more": thought_data.needs_more,
         }
 
         # Add conditional fields
         if thought_data.is_revision:
-            basic_info["Is revision"] = f"True (revises thought #{thought_data.revises_thought})"
+            basic_info["Is revision"] = (
+                f"True (revises thought #{thought_data.revises_thought})"
+            )
         if thought_data.branch_from:
-            basic_info["Branch from"] = f"#{thought_data.branch_from} (ID: {thought_data.branch_id})"
+            basic_info["Branch from"] = (
+                f"#{thought_data.branch_from} (ID: {thought_data.branch_id})"
+            )
 
         basic_info["Raw data"] = thought_data.format_for_log()
 
@@ -486,28 +545,40 @@ class ThoughtProcessor(LoggingMixin):
         """Log detailed routing analysis information."""
         logger.info(f"🧠 ROUTING ANALYSIS:")
         logger.info(f"  Strategy: {routing_decision.strategy.value}")
-        logger.info(f"  Complexity: {routing_decision.complexity_level.value} (score: {routing_decision.complexity_score:.1f}/100)")
-        logger.info(f"  Estimated tokens: {routing_decision.estimated_token_usage[0]}-{routing_decision.estimated_token_usage[1]}")
+        logger.info(
+            f"  Complexity: {routing_decision.complexity_level.value} (score: {routing_decision.complexity_score:.1f}/100)"
+        )
+        logger.info(
+            f"  Estimated tokens: {routing_decision.estimated_token_usage[0]}-{routing_decision.estimated_token_usage[1]}"
+        )
         logger.info(f"  Estimated cost: ${routing_decision.estimated_cost:.6f}")
         logger.info(f"  Routing time: {routing_time:.3f}s")
 
         if routing_decision.specialist_recommendations:
-            logger.info(f"  Recommended specialists: {', '.join(routing_decision.specialist_recommendations)}")
+            logger.info(
+                f"  Recommended specialists: {', '.join(routing_decision.specialist_recommendations)}"
+            )
         logger.debug(f"  Reasoning: {routing_decision.reasoning}")
 
-    def _log_context_building(self, thought_data: ThoughtData, input_prompt: str) -> None:
+    def _log_context_building(
+        self, thought_data: ThoughtData, input_prompt: str
+    ) -> None:
         """Log context building details."""
         logger.info(f"📝 CONTEXT BUILDING:")
 
         if thought_data.is_revision and thought_data.revises_thought:
             logger.info(f"  Type: Revision of thought #{thought_data.revises_thought}")
             try:
-                original = self._session.find_thought_content(thought_data.revises_thought)
+                original = self._session.find_thought_content(
+                    thought_data.revises_thought
+                )
                 logger.info(f"  Original thought: {original}")
             except:
                 logger.info(f"  Original thought: [not found]")
         elif thought_data.branch_from and thought_data.branch_id:
-            logger.info(f"  Type: Branch '{thought_data.branch_id}' from thought #{thought_data.branch_from}")
+            logger.info(
+                f"  Type: Branch '{thought_data.branch_id}' from thought #{thought_data.branch_from}"
+            )
             try:
                 origin = self._session.find_thought_content(thought_data.branch_from)
                 logger.info(f"  Branch origin: {origin}")
@@ -522,12 +593,16 @@ class ThoughtProcessor(LoggingMixin):
         logger.info(f"  Built prompt:\n{input_prompt}")
         logger.info(f"  {'=' * FieldLengthLimits.SEPARATOR_LENGTH}")
 
-    async def _execute_processing_strategy(self, input_prompt: str, routing_decision) -> tuple[str, str, float]:
+    async def _execute_processing_strategy(
+        self, input_prompt: str, routing_decision
+    ) -> tuple[str, str, float]:
         """Execute processing strategy and return response, strategy used, and processing time."""
         processing_start = time.time()
 
         if routing_decision.strategy == ProcessingStrategy.SINGLE_AGENT:
-            response = await self._execute_single_agent_processing(input_prompt, routing_decision)
+            response = await self._execute_single_agent_processing(
+                input_prompt, routing_decision
+            )
             strategy_used = "single_agent"
         else:
             response = await self._execute_team_processing_with_retries(
@@ -538,7 +613,13 @@ class ThoughtProcessor(LoggingMixin):
         processing_time = time.time() - processing_start
         return response, strategy_used, processing_time
 
-    def _log_performance_metrics(self, thought_data: ThoughtData, strategy_used: str, processing_time: float, total_time: float) -> None:
+    def _log_performance_metrics(
+        self,
+        thought_data: ThoughtData,
+        strategy_used: str,
+        processing_time: float,
+        total_time: float,
+    ) -> None:
         """Log performance metrics for the processing."""
         logger.info(
             f"Thought #{thought_data.thought_number} completed: "
@@ -547,7 +628,14 @@ class ThoughtProcessor(LoggingMixin):
             f"total_time={total_time:.3f}s"
         )
 
-    def _log_processing_completion(self, thought_data: ThoughtData, strategy_used: str, processing_time: float, total_time: float, final_response: str) -> None:
+    def _log_processing_completion(
+        self,
+        thought_data: ThoughtData,
+        strategy_used: str,
+        processing_time: float,
+        total_time: float,
+        final_response: str,
+    ) -> None:
         """Log final processing completion summary."""
         logger.info(f"🎯 PROCESSING COMPLETE:")
         logger.info(f"  Thought #{thought_data.thought_number} processed successfully")
@@ -557,10 +645,14 @@ class ThoughtProcessor(LoggingMixin):
         logger.info(f"  Response length: {len(final_response)} chars")
         logger.info(f"  {'=' * FieldLengthLimits.SEPARATOR_LENGTH}")
 
-    async def _execute_coordination_plan(self, input_prompt: str, plan: CoordinationPlan) -> str:
+    async def _execute_coordination_plan(
+        self, input_prompt: str, plan: CoordinationPlan
+    ) -> str:
         """Execute thought processing based on coordination plan (unified approach)."""
 
-        logger.info(f"🎯 Executing {plan.execution_mode.value} with {plan.specialist_roles}")
+        logger.info(
+            f"🎯 Executing {plan.execution_mode.value} with {plan.specialist_roles}"
+        )
 
         try:
             if plan.execution_mode == ExecutionMode.SINGLE_AGENT:
@@ -583,11 +675,15 @@ class ThoughtProcessor(LoggingMixin):
 
     async def _execute_single_agent_simple(self, input_prompt: str) -> str:
         """Execute simple single-agent processing."""
-        simple_agent = self._create_simple_agent(processing_type="thought", use_markdown=False)
+        simple_agent = self._create_simple_agent(
+            processing_type="thought", use_markdown=False
+        )
 
         logger.info(f"🤖 SINGLE-AGENT CALL:")
         logger.info(f"  Agent: {simple_agent.name} ({simple_agent.role})")
-        logger.info(f"  Model: {getattr(simple_agent.model, 'id', 'unknown')} ({simple_agent.model.__class__.__name__})")
+        logger.info(
+            f"  Model: {getattr(simple_agent.model, 'id', 'unknown')} ({simple_agent.model.__class__.__name__})"
+        )
         self._log_input_details(input_prompt)
 
         start_time = time.time()
@@ -602,7 +698,9 @@ class ThoughtProcessor(LoggingMixin):
 
         return response_content
 
-    async def _execute_selective_team(self, input_prompt: str, plan: CoordinationPlan) -> str:
+    async def _execute_selective_team(
+        self, input_prompt: str, plan: CoordinationPlan
+    ) -> str:
         """Execute selective team processing (hybrid approach)."""
         # For now, delegate to full team but log as selective
         logger.info(f"🏢 SELECTIVE TEAM CALL:")
@@ -613,7 +711,9 @@ class ThoughtProcessor(LoggingMixin):
         # For now, use existing team without timeout
         return await self._execute_full_team_unlimited(input_prompt, plan)
 
-    async def _execute_full_team_unlimited(self, input_prompt: str, plan: CoordinationPlan) -> str:
+    async def _execute_full_team_unlimited(
+        self, input_prompt: str, plan: CoordinationPlan
+    ) -> str:
         """Execute full team processing without timeout restrictions."""
         return await self._execute_team_processing_with_retries(
             input_prompt, plan.complexity_level
@@ -660,15 +760,19 @@ class ThoughtProcessor(LoggingMixin):
             "name": team.name,
             "member_count": len(team.members),
             "leader_class": team.model.__class__.__name__,
-            "leader_model": getattr(team.model, 'id', 'unknown'),
-            "member_names": ', '.join([m.name for m in team.members])
+            "leader_model": getattr(team.model, "id", "unknown"),
+            "member_names": ", ".join([m.name for m in team.members]),
         }
 
-    async def _execute_single_agent_processing(self, input_prompt: str, routing_decision) -> str:
+    async def _execute_single_agent_processing(
+        self, input_prompt: str, routing_decision
+    ) -> str:
         """Execute single-agent processing for simple thoughts without timeout restrictions."""
         try:
             # Create a lightweight agent for single processing
-            simple_agent = self._create_simple_agent(processing_type="simple thought", use_markdown=True)
+            simple_agent = self._create_simple_agent(
+                processing_type="simple thought", use_markdown=True
+            )
 
             # Create a simple response without multi-agent overhead
             simplified_prompt = f"""Process this thought efficiently:
@@ -680,7 +784,9 @@ Provide a focused response with clear guidance for the next step."""
             # ENHANCED LOGGING: Log single agent call details
             logger.info(f"🤖 SINGLE-AGENT CALL:")
             logger.info(f"  Agent: {simple_agent.name} ({simple_agent.role})")
-            logger.info(f"  Model: {getattr(simple_agent.model, 'id', 'unknown')} ({simple_agent.model.__class__.__name__})")
+            logger.info(
+                f"  Model: {getattr(simple_agent.model, 'id', 'unknown')} ({simple_agent.model.__class__.__name__})"
+            )
             self._log_input_details(simplified_prompt)
 
             start_time = time.time()
@@ -695,7 +801,9 @@ Provide a focused response with clear guidance for the next step."""
             logger.info(f"✅ SINGLE-AGENT RESPONSE:")
             self._log_output_details(response_content, processing_time)
 
-            logger.info(f"Single-agent processing completed (saved ~{routing_decision.estimated_cost:.4f}$ vs multi-agent)")
+            logger.info(
+                f"Single-agent processing completed (saved ~{routing_decision.estimated_cost:.4f}$ vs multi-agent)"
+            )
             return response_content
 
         except Exception as e:
@@ -711,9 +819,9 @@ Provide a focused response with clear guidance for the next step."""
 
         # Add context using pattern matching with optimized string building
         match thought_data:
-            case ThoughtData(
-                is_revision=True, revises_thought=revision_num
-            ) if revision_num:
+            case ThoughtData(is_revision=True, revises_thought=revision_num) if (
+                revision_num
+            ):
                 original = self._session.find_thought_content(revision_num)
                 context = f'**REVISION of Thought #{revision_num}** (Original: "{original}")\n'
                 return f"{base}{context}{content}"
@@ -802,8 +910,6 @@ def create_validated_thought_data(
         )
     except ValidationError as e:
         raise ValueError(f"Invalid thought data: {e}") from e
-
-
 
 
 # Global server state with workflow support

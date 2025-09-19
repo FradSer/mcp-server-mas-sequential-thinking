@@ -29,8 +29,10 @@ from .constants import DatabaseConstants, DefaultSettings
 
 logger = logging.getLogger(__name__)
 
+
 class Base(DeclarativeBase):
     """Base class for SQLAlchemy models with modern typing support."""
+
     pass
 
 
@@ -188,7 +190,7 @@ class PersistentMemoryManager:
                 database_url,
                 pool_pre_ping=True,
                 pool_size=DatabaseConstants.CONNECTION_POOL_SIZE,
-                max_overflow=DatabaseConstants.CONNECTION_POOL_OVERFLOW
+                max_overflow=DatabaseConstants.CONNECTION_POOL_OVERFLOW,
             )
 
         # Create tables
@@ -199,7 +201,9 @@ class PersistentMemoryManager:
 
         logger.info(f"Persistent memory initialized with database: {database_url}")
 
-    def create_session(self, session_id: str, provider: str = DefaultSettings.DEFAULT_PROVIDER) -> None:
+    def create_session(
+        self, session_id: str, provider: str = DefaultSettings.DEFAULT_PROVIDER
+    ) -> None:
         """Create a new session record."""
         with self.SessionLocal() as db:
             existing = (
@@ -222,7 +226,9 @@ class PersistentMemoryManager:
         """Store a thought and return its database ID."""
         with self.SessionLocal() as db:
             session_record = self._ensure_session_exists(db, session_id)
-            thought_record = self._create_thought_record(session_id, thought_data, response, processing_metadata)
+            thought_record = self._create_thought_record(
+                session_id, thought_data, response, processing_metadata
+            )
 
             db.add(thought_record)
             self._update_session_stats(session_record, processing_metadata)
@@ -240,14 +246,18 @@ class PersistentMemoryManager:
         if not session_record:
             self.create_session(session_id)
             session_record = (
-                db.query(SessionRecord)
-                .filter(SessionRecord.id == session_id)
-                .first()
+                db.query(SessionRecord).filter(SessionRecord.id == session_id).first()
             )
 
         return session_record
 
-    def _create_thought_record(self, session_id: str, thought_data: ThoughtData, response: Optional[str], processing_metadata: Optional[Dict]) -> ThoughtRecord:
+    def _create_thought_record(
+        self,
+        session_id: str,
+        thought_data: ThoughtData,
+        response: Optional[str],
+        processing_metadata: Optional[Dict],
+    ) -> ThoughtRecord:
         """Create a thought record with metadata."""
         thought_record = ThoughtRecord(
             session_id=session_id,
@@ -265,7 +275,9 @@ class PersistentMemoryManager:
 
         return thought_record
 
-    def _apply_processing_metadata(self, thought_record: ThoughtRecord, metadata: Dict) -> None:
+    def _apply_processing_metadata(
+        self, thought_record: ThoughtRecord, metadata: Dict
+    ) -> None:
         """Apply processing metadata to thought record."""
         if strategy := metadata.get("strategy"):
             thought_record.processing_strategy = str(strategy)  # type: ignore[assignment]
@@ -283,7 +295,9 @@ class PersistentMemoryManager:
         thought_record.specialist_used = metadata.get("specialists", [])
         thought_record.processed_at = datetime.utcnow()  # type: ignore[assignment]
 
-    def _update_session_stats(self, session_record: SessionRecord, processing_metadata: Optional[Dict]) -> None:
+    def _update_session_stats(
+        self, session_record: SessionRecord, processing_metadata: Optional[Dict]
+    ) -> None:
         """Update session statistics."""
         if session_record:
             session_record.total_thoughts += 1  # type: ignore[assignment]
@@ -291,7 +305,9 @@ class PersistentMemoryManager:
             if processing_metadata and processing_metadata.get("actual_cost"):
                 session_record.total_cost += float(processing_metadata["actual_cost"])  # type: ignore[assignment]
 
-    def _handle_branching(self, db: Session, session_id: str, thought_data: ThoughtData) -> None:
+    def _handle_branching(
+        self, db: Session, session_id: str, thought_data: ThoughtData
+    ) -> None:
         """Handle branch record creation and updates."""
         if not thought_data.branch_id:
             return
@@ -407,7 +423,9 @@ class PersistentMemoryManager:
 
             total_thoughts = len(thought_stats)
             # Explicit type casting to resolve SQLAlchemy Column type issues
-            total_cost: float = float(sum(float(t.actual_cost or 0) for t in thought_stats))
+            total_cost: float = float(
+                sum(float(t.actual_cost or 0) for t in thought_stats)
+            )
             total_tokens: int = int(sum(int(t.token_usage or 0) for t in thought_stats))
             avg_processing_time = sum(
                 t.processing_time or 0 for t in thought_stats
@@ -473,7 +491,8 @@ class PersistentMemoryManager:
                 ) / existing.thought_count
                 if not success:
                     existing.success_rate = (  # type: ignore[assignment]
-                        float(existing.success_rate) * (existing.thought_count - thought_count)
+                        float(existing.success_rate)
+                        * (existing.thought_count - thought_count)
                     ) / existing.thought_count
             else:
                 # Create new record
@@ -495,6 +514,7 @@ class PersistentMemoryManager:
         """Run database optimization tasks."""
         with self.SessionLocal() as db:
             from sqlalchemy import text
+
             if self.engine.dialect.name == "sqlite":
                 db.execute(text("VACUUM"))
                 db.execute(text("ANALYZE"))

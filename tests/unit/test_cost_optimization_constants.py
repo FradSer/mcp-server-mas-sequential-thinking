@@ -17,10 +17,10 @@ class TestCostOptimizationConstants:
     def test_quality_scoring_weights_sum_to_one(self):
         """测试质量评分权重总和为1.0"""
         total_weight = (
-            CostOptimizationConstants.QUALITY_WEIGHT +
-            CostOptimizationConstants.COST_WEIGHT +
-            CostOptimizationConstants.SPEED_WEIGHT +
-            CostOptimizationConstants.RELIABILITY_WEIGHT
+            CostOptimizationConstants.QUALITY_WEIGHT
+            + CostOptimizationConstants.COST_WEIGHT
+            + CostOptimizationConstants.SPEED_WEIGHT
+            + CostOptimizationConstants.RELIABILITY_WEIGHT
         )
 
         assert abs(total_weight - 1.0) < 0.0001  # 允许浮点数精度误差
@@ -38,7 +38,7 @@ class TestCostOptimizationConstants:
             CostOptimizationConstants.QUALITY_WEIGHT,
             CostOptimizationConstants.COST_WEIGHT,
             CostOptimizationConstants.SPEED_WEIGHT,
-            CostOptimizationConstants.RELIABILITY_WEIGHT
+            CostOptimizationConstants.RELIABILITY_WEIGHT,
         ]
 
         for weight in weights:
@@ -60,7 +60,7 @@ class TestCostOptimizationConstants:
             CostOptimizationConstants.COST_EPSILON,
             CostOptimizationConstants.DEFAULT_COST_ESTIMATE,
             CostOptimizationConstants.SPEED_NORMALIZATION_BASE,
-            CostOptimizationConstants.SPEED_THRESHOLD
+            CostOptimizationConstants.SPEED_THRESHOLD,
         ]
 
         for factor in factors:
@@ -70,7 +70,10 @@ class TestCostOptimizationConstants:
         """测试质量评分边界值"""
         assert CostOptimizationConstants.MIN_QUALITY_SCORE == 0.0
         assert CostOptimizationConstants.MAX_QUALITY_SCORE == 1.0
-        assert CostOptimizationConstants.MIN_QUALITY_SCORE < CostOptimizationConstants.MAX_QUALITY_SCORE
+        assert (
+            CostOptimizationConstants.MIN_QUALITY_SCORE
+            < CostOptimizationConstants.MAX_QUALITY_SCORE
+        )
 
     def test_budget_utilization_thresholds_order(self):
         """测试预算使用阈值的顺序关系"""
@@ -105,8 +108,10 @@ class TestCostOptimizationConstants:
         assert CostOptimizationConstants.OLD_QUALITY_WEIGHT == 0.9
 
         # 验证权重关系
-        assert (CostOptimizationConstants.QUALITY_UPDATE_WEIGHT +
-                CostOptimizationConstants.OLD_QUALITY_WEIGHT) == 1.0
+        assert (
+            CostOptimizationConstants.QUALITY_UPDATE_WEIGHT
+            + CostOptimizationConstants.OLD_QUALITY_WEIGHT
+        ) == 1.0
 
     def test_usage_analysis_thresholds(self):
         """测试使用分析阈值"""
@@ -143,7 +148,7 @@ class TestCostOptimizationConstants:
             CostOptimizationConstants.DEEPSEEK_CONTEXT_LENGTH,
             CostOptimizationConstants.GITHUB_CONTEXT_LENGTH,
             CostOptimizationConstants.OPENROUTER_CONTEXT_LENGTH,
-            CostOptimizationConstants.OLLAMA_CONTEXT_LENGTH
+            CostOptimizationConstants.OLLAMA_CONTEXT_LENGTH,
         ]
 
         for length in context_lengths:
@@ -155,7 +160,7 @@ class TestCostOptimizationConstants:
         response_times = [
             CostOptimizationConstants.GROQ_RESPONSE_TIME,
             CostOptimizationConstants.OPENROUTER_RESPONSE_TIME,
-            CostOptimizationConstants.OLLAMA_RESPONSE_TIME
+            CostOptimizationConstants.OLLAMA_RESPONSE_TIME,
         ]
 
         for time in response_times:
@@ -185,7 +190,9 @@ class TestCostOptimizationConstantsIntegration:
         speed_component = 0.7 * CostOptimizationConstants.SPEED_WEIGHT
         reliability_component = 0.95 * CostOptimizationConstants.RELIABILITY_WEIGHT
 
-        total_score = quality_component + cost_component + speed_component + reliability_component
+        total_score = (
+            quality_component + cost_component + speed_component + reliability_component
+        )
 
         # 总分应该在合理范围内
         assert 0 <= total_score <= 1
@@ -217,7 +224,7 @@ class TestCostOptimizationConstantsIntegration:
         quality_scores = [
             CostOptimizationConstants.GROQ_QUALITY_SCORE,
             CostOptimizationConstants.DEEPSEEK_QUALITY_SCORE,
-            CostOptimizationConstants.OLLAMA_QUALITY_SCORE
+            CostOptimizationConstants.OLLAMA_QUALITY_SCORE,
         ]
 
         for score in quality_scores:
@@ -229,7 +236,7 @@ class TestCostOptimizationConstantsIntegration:
             CostOptimizationConstants.DEEPSEEK_CONTEXT_LENGTH,
             CostOptimizationConstants.GITHUB_CONTEXT_LENGTH,
             CostOptimizationConstants.OPENROUTER_CONTEXT_LENGTH,
-            CostOptimizationConstants.OLLAMA_CONTEXT_LENGTH
+            CostOptimizationConstants.OLLAMA_CONTEXT_LENGTH,
         ]
 
         for length in context_lengths:
@@ -250,7 +257,7 @@ class TestCostOptimizationConstantsEdgeCases:
         # 应该能安全执行除法
         result = 1.0 / safe_divisor
         assert result > 0
-        assert not float('inf') == result
+        assert not float("inf") == result
 
     def test_normalization_factor_scaling(self):
         """测试归一化因子的缩放效果"""
@@ -269,8 +276,14 @@ class TestCostOptimizationConstantsEdgeCases:
         high = CostOptimizationConstants.HIGH_BUDGET_UTILIZATION
 
         # 测试边界值
-        boundary_values = [moderate - 0.001, moderate, moderate + 0.001,
-                          high - 0.001, high, high + 0.001]
+        boundary_values = [
+            moderate - 0.001,
+            moderate,
+            moderate + 0.001,
+            high - 0.001,
+            high,
+            high + 0.001,
+        ]
 
         for value in boundary_values:
             # 所有边界值都应该在0-1范围内
@@ -284,8 +297,14 @@ class TestCostOptimizationConstantsEdgeCases:
         assert isinstance(CostOptimizationConstants.GROQ_CONTEXT_LENGTH, int)
 
         # 验证一些关键关系保持不变
-        assert CostOptimizationConstants.MIN_QUALITY_SCORE < CostOptimizationConstants.MAX_QUALITY_SCORE
-        assert CostOptimizationConstants.COST_EPSILON < CostOptimizationConstants.COST_NORMALIZATION_FACTOR
+        assert (
+            CostOptimizationConstants.MIN_QUALITY_SCORE
+            < CostOptimizationConstants.MAX_QUALITY_SCORE
+        )
+        assert (
+            CostOptimizationConstants.COST_EPSILON
+            < CostOptimizationConstants.COST_NORMALIZATION_FACTOR
+        )
 
     def test_provider_specific_value_ranges(self):
         """测试提供商特定值的合理范围"""

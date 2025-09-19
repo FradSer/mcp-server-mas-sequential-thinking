@@ -23,7 +23,9 @@ class TestLoggingMixin:
 
     def test_log_section_header_with_default_length(self):
         """测试带默认分隔符长度的区段标题记录"""
-        with patch('src.mcp_server_mas_sequential_thinking.server_core.logger') as mock_logger:
+        with patch(
+            "src.mcp_server_mas_sequential_thinking.server_core.logger"
+        ) as mock_logger:
             title = "🎯 TEST SECTION"
 
             self.logging_mixin._log_section_header(title)
@@ -32,7 +34,9 @@ class TestLoggingMixin:
 
     def test_log_section_header_with_custom_length(self):
         """测试带自定义分隔符长度的区段标题记录"""
-        with patch('src.mcp_server_mas_sequential_thinking.server_core.logger') as mock_logger:
+        with patch(
+            "src.mcp_server_mas_sequential_thinking.server_core.logger"
+        ) as mock_logger:
             title = "🎯 CUSTOM SECTION"
             custom_length = 50
 
@@ -42,13 +46,15 @@ class TestLoggingMixin:
 
     def test_log_metrics_block_with_mixed_types(self):
         """测试记录包含混合数据类型的指标块"""
-        with patch('src.mcp_server_mas_sequential_thinking.server_core.logger') as mock_logger:
+        with patch(
+            "src.mcp_server_mas_sequential_thinking.server_core.logger"
+        ) as mock_logger:
             title = "📊 PERFORMANCE METRICS"
             metrics = {
                 "Efficiency Score": 0.85,  # float
                 "Strategy": "multi_agent",  # string
-                "Token Count": 1500,       # int
-                "Custom Object": {"nested": "value"}  # other
+                "Token Count": 1500,  # int
+                "Custom Object": {"nested": "value"},  # other
             }
 
             self.logging_mixin._log_metrics_block(title, metrics)
@@ -59,7 +65,7 @@ class TestLoggingMixin:
                 ("  Efficiency Score: 0.85",),
                 ("  Strategy: multi_agent",),
                 ("  Token Count: 1500",),
-                ("  Custom Object: {'nested': 'value'}",)
+                ("  Custom Object: {'nested': 'value'}",),
             ]
 
             assert mock_logger.info.call_count == 5
@@ -69,7 +75,9 @@ class TestLoggingMixin:
 
     def test_log_metrics_block_empty_metrics(self):
         """测试记录空指标块"""
-        with patch('src.mcp_server_mas_sequential_thinking.server_core.logger') as mock_logger:
+        with patch(
+            "src.mcp_server_mas_sequential_thinking.server_core.logger"
+        ) as mock_logger:
             title = "📊 EMPTY METRICS"
             metrics = {}
 
@@ -80,7 +88,9 @@ class TestLoggingMixin:
 
     def test_log_separator_default_length(self):
         """测试默认长度分隔符记录"""
-        with patch('src.mcp_server_mas_sequential_thinking.server_core.logger') as mock_logger:
+        with patch(
+            "src.mcp_server_mas_sequential_thinking.server_core.logger"
+        ) as mock_logger:
             self.logging_mixin._log_separator()
 
             expected_separator = f"  {'=' * PerformanceMetrics.SEPARATOR_LENGTH}"
@@ -88,7 +98,9 @@ class TestLoggingMixin:
 
     def test_log_separator_custom_length(self):
         """测试自定义长度分隔符记录"""
-        with patch('src.mcp_server_mas_sequential_thinking.server_core.logger') as mock_logger:
+        with patch(
+            "src.mcp_server_mas_sequential_thinking.server_core.logger"
+        ) as mock_logger:
             custom_length = 30
 
             self.logging_mixin._log_separator(custom_length)
@@ -112,7 +124,7 @@ class TestLoggingMixin:
 
         expected_score = max(
             PerformanceMetrics.MINIMUM_EFFICIENCY_SCORE,
-            PerformanceMetrics.EFFICIENCY_TIME_THRESHOLD / slow_time
+            PerformanceMetrics.EFFICIENCY_TIME_THRESHOLD / slow_time,
         )
         assert score == expected_score
 
@@ -124,7 +136,7 @@ class TestLoggingMixin:
 
         expected_score = max(
             PerformanceMetrics.MINIMUM_EFFICIENCY_SCORE,
-            PerformanceMetrics.EFFICIENCY_TIME_THRESHOLD / boundary_time
+            PerformanceMetrics.EFFICIENCY_TIME_THRESHOLD / boundary_time,
         )
         assert score == expected_score
 
@@ -168,7 +180,7 @@ class TestLoggingMixinIntegration:
                 metrics = {
                     "Processing Time": 2.5,
                     "Strategy": "test_strategy",
-                    "Success": True
+                    "Success": True,
                 }
                 self._log_metrics_block("📊 METRICS", metrics)
 
@@ -179,7 +191,9 @@ class TestLoggingMixinIntegration:
 
                 return efficiency, consistency
 
-        with patch('src.mcp_server_mas_sequential_thinking.server_core.logger') as mock_logger:
+        with patch(
+            "src.mcp_server_mas_sequential_thinking.server_core.logger"
+        ) as mock_logger:
             processor = MockProcessor()
             efficiency, consistency = processor.process_with_logging()
 
@@ -195,12 +209,11 @@ class TestLoggingMixinEdgeCases:
 
     def test_log_metrics_with_none_values(self):
         """测试处理包含None值的指标"""
-        with patch('src.mcp_server_mas_sequential_thinking.server_core.logger') as mock_logger:
+        with patch(
+            "src.mcp_server_mas_sequential_thinking.server_core.logger"
+        ) as mock_logger:
             mixin = LoggingMixin()
-            metrics = {
-                "Valid Metric": 1.0,
-                "None Metric": None
-            }
+            metrics = {"Valid Metric": 1.0, "None Metric": None}
 
             mixin._log_metrics_block("TEST METRICS", metrics)
 

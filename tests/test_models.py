@@ -30,7 +30,7 @@ class TestThoughtData:
         assert thought_data.total_thoughts == 10
 
     def test_total_thoughts_invalid_values(self):
-        """Test that total_thoughts rejects values < 5."""
+        """Test that total_thoughts rejects values < 1."""
         # This should fail - value of 0
         with pytest.raises(ValidationError):
             ThoughtData(
@@ -40,14 +40,13 @@ class TestThoughtData:
                 next_needed=True,
             )
 
-        # This should fail - value of 4
-        with pytest.raises(ValidationError):
-            ThoughtData(
-                thought="Test thought",
-                thought_number=1,
-                total_thoughts=4,  # Below minimum
-                next_needed=True,
-            )
+        # This should work now - value of 3 is valid
+        ThoughtData(
+            thought="Test thought",
+            thought_number=1,
+            total_thoughts=3,  # Now valid
+            next_needed=True,
+        )
 
         # This should fail - negative value
         with pytest.raises(ValidationError):

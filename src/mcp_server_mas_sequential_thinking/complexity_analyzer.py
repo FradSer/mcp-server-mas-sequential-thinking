@@ -54,13 +54,15 @@ class TextAnalyzer(ABC):
 class LanguageDetector:
     """Detects and analyzes language characteristics of text."""
 
-    CHINESE_RANGE = ('\u4e00', '\u9fff')
+    CHINESE_RANGE = ("\u4e00", "\u9fff")
     CHINESE_WORD_RATIO = ComplexityAnalysisConstants.CHINESE_WORD_RATIO
 
     def analyze_language(self, text: str) -> LanguageMetrics:
         """Analyze language characteristics and word counts."""
         # Count Chinese characters
-        chinese_chars = len([c for c in text if self.CHINESE_RANGE[0] <= c <= self.CHINESE_RANGE[1]])
+        chinese_chars = len(
+            [c for c in text if self.CHINESE_RANGE[0] <= c <= self.CHINESE_RANGE[1]]
+        )
 
         # Count space-separated words (primarily English)
         space_words = text.split()
@@ -72,7 +74,11 @@ class LanguageDetector:
         # Determine language type
         threshold = ComplexityAnalysisConstants.CHINESE_DOMINANCE_THRESHOLD
         if chinese_chars > len(text) * threshold:
-            language_type = LanguageType.CHINESE if chinese_chars > len(space_words) * 3 else LanguageType.MIXED
+            language_type = (
+                LanguageType.CHINESE
+                if chinese_chars > len(space_words) * 3
+                else LanguageType.MIXED
+            )
         else:
             language_type = LanguageType.ENGLISH
 
@@ -81,7 +87,7 @@ class LanguageDetector:
             word_count=total_words,
             character_count=len(text),
             chinese_char_count=chinese_chars,
-            estimated_words=estimated_chinese_words
+            estimated_words=estimated_chinese_words,
         )
 
 
@@ -89,21 +95,18 @@ class SentenceAnalyzer(TextAnalyzer):
     """Analyzes sentence structure and patterns."""
 
     SENTENCE_PATTERNS = {
-        'sentence_endings': re.compile(r"[.!?。！？]+"),
-        'questions': re.compile(r"[?？]")
+        "sentence_endings": re.compile(r"[.!?。！？]+"),
+        "questions": re.compile(r"[?？]"),
     }
 
     def analyze(self, text: str) -> Dict[str, int]:
         """Analyze sentence structure."""
-        sentences = self.SENTENCE_PATTERNS['sentence_endings'].split(text)
+        sentences = self.SENTENCE_PATTERNS["sentence_endings"].split(text)
         valid_sentences = [s for s in sentences if s.strip()]
 
-        questions = len(self.SENTENCE_PATTERNS['questions'].findall(text))
+        questions = len(self.SENTENCE_PATTERNS["questions"].findall(text))
 
-        return {
-            'sentence_count': len(valid_sentences),
-            'question_count': questions
-        }
+        return {"sentence_count": len(valid_sentences), "question_count": questions}
 
 
 class TechnicalTermAnalyzer(TextAnalyzer):
@@ -111,23 +114,67 @@ class TechnicalTermAnalyzer(TextAnalyzer):
 
     TECHNICAL_TERMS = [
         # Programming and development
-        "algorithm", "api", "database", "framework", "architecture",
-        "implementation", "optimization", "performance", "scalability",
-        "integration", "authentication", "authorization", "encryption",
-
+        "algorithm",
+        "api",
+        "database",
+        "framework",
+        "architecture",
+        "implementation",
+        "optimization",
+        "performance",
+        "scalability",
+        "integration",
+        "authentication",
+        "authorization",
+        "encryption",
         # System and infrastructure
-        "system", "process", "design", "model", "structure", "protocol",
-        "interface", "deployment", "configuration", "monitoring",
-
+        "system",
+        "process",
+        "design",
+        "model",
+        "structure",
+        "protocol",
+        "interface",
+        "deployment",
+        "configuration",
+        "monitoring",
         # Analysis and data
-        "analysis", "data", "analytics", "metrics", "statistics",
-        "correlation", "patterns", "trends", "insights", "visualization",
-
+        "analysis",
+        "data",
+        "analytics",
+        "metrics",
+        "statistics",
+        "correlation",
+        "patterns",
+        "trends",
+        "insights",
+        "visualization",
         # Chinese technical terms
-        "算法", "接口", "数据库", "框架", "架构", "实现", "优化",
-        "性能", "可扩展性", "集成", "认证", "授权", "加密",
-        "系统", "流程", "设计", "模型", "结构", "协议",
-        "部署", "配置", "监控", "分析", "数据", "指标"
+        "算法",
+        "接口",
+        "数据库",
+        "框架",
+        "架构",
+        "实现",
+        "优化",
+        "性能",
+        "可扩展性",
+        "集成",
+        "认证",
+        "授权",
+        "加密",
+        "系统",
+        "流程",
+        "设计",
+        "模型",
+        "结构",
+        "协议",
+        "部署",
+        "配置",
+        "监控",
+        "分析",
+        "数据",
+        "指标",
     ]
 
     def analyze(self, text: str) -> Dict[str, int]:
@@ -135,62 +182,151 @@ class TechnicalTermAnalyzer(TextAnalyzer):
         text_lower = text.lower()
         technical_count = sum(1 for term in self.TECHNICAL_TERMS if term in text_lower)
 
-        return {'technical_terms': technical_count}
+        return {"technical_terms": technical_count}
 
 
 class ResearchAnalyzer(TextAnalyzer):
     """Analyzes research-related indicators."""
 
     RESEARCH_INDICATORS = [
-        "research", "study", "investigate", "explore", "examine",
-        "analyze", "evaluate", "assess", "compare", "review",
-        "survey", "experiment", "hypothesis", "methodology", "findings",
-        "conclusion", "evidence", "data", "statistics", "correlation",
+        "research",
+        "study",
+        "investigate",
+        "explore",
+        "examine",
+        "analyze",
+        "evaluate",
+        "assess",
+        "compare",
+        "review",
+        "survey",
+        "experiment",
+        "hypothesis",
+        "methodology",
+        "findings",
+        "conclusion",
+        "evidence",
+        "data",
+        "statistics",
+        "correlation",
         # Chinese research terms
-        "研究", "调研", "探索", "分析", "评估", "比较", "调查",
-        "实验", "假设", "方法", "发现", "结论", "证据", "数据"
+        "研究",
+        "调研",
+        "探索",
+        "分析",
+        "评估",
+        "比较",
+        "调查",
+        "实验",
+        "假设",
+        "方法",
+        "发现",
+        "结论",
+        "证据",
+        "数据",
     ]
 
     def analyze(self, text: str) -> Dict[str, int]:
         """Count research indicators in text."""
         text_lower = text.lower()
-        research_count = sum(1 for indicator in self.RESEARCH_INDICATORS if indicator in text_lower)
+        research_count = sum(
+            1 for indicator in self.RESEARCH_INDICATORS if indicator in text_lower
+        )
 
-        return {'research_indicators': research_count}
+        return {"research_indicators": research_count}
 
 
 class BranchingAnalyzer(TextAnalyzer):
     """Analyzes branching and decision-making patterns."""
 
     BRANCHING_INDICATORS = [
-        "branch", "alternative", "option", "choice", "decision",
-        "if", "else", "either", "or", "instead", "alternatively",
-        "consider", "evaluate", "compare", "contrast", "versus",
+        "branch",
+        "alternative",
+        "option",
+        "choice",
+        "decision",
+        "if",
+        "else",
+        "either",
+        "or",
+        "instead",
+        "alternatively",
+        "consider",
+        "evaluate",
+        "compare",
+        "contrast",
+        "versus",
         # Chinese branching terms
-        "分支", "选择", "决策", "如果", "否则", "或者", "替代",
-        "考虑", "评估", "比较", "对比"
+        "分支",
+        "选择",
+        "决策",
+        "如果",
+        "否则",
+        "或者",
+        "替代",
+        "考虑",
+        "评估",
+        "比较",
+        "对比",
     ]
 
     def analyze(self, text: str) -> Dict[str, int]:
         """Count branching indicators in text."""
         text_lower = text.lower()
-        branching_count = sum(1 for indicator in self.BRANCHING_INDICATORS if indicator in text_lower)
+        branching_count = sum(
+            1 for indicator in self.BRANCHING_INDICATORS if indicator in text_lower
+        )
 
-        return {'branching_references': branching_count}
+        return {"branching_references": branching_count}
 
 
 class AnalysisDepthAnalyzer(TextAnalyzer):
     """Analyzes logical depth and reasoning complexity."""
 
     LOGICAL_CONNECTORS = {
-        'causal': ["because", "therefore", "consequently", "thus", "hence",
-                  "因为", "所以", "因此", "由于", "既然"],
-        'contrast': ["however", "nevertheless", "nonetheless", "although",
-                    "然而", "但是", "不过", "虽然", "尽管"],
-        'addition': ["moreover", "furthermore", "additionally", "besides",
-                    "而且", "并且", "另外", "此外"],
-        'conditional': ["if", "unless", "provided", "assuming",
-                       "如果", "假如", "除非", "假设"]
+        "causal": [
+            "because",
+            "therefore",
+            "consequently",
+            "thus",
+            "hence",
+            "因为",
+            "所以",
+            "因此",
+            "由于",
+            "既然",
+        ],
+        "contrast": [
+            "however",
+            "nevertheless",
+            "nonetheless",
+            "although",
+            "然而",
+            "但是",
+            "不过",
+            "虽然",
+            "尽管",
+        ],
+        "addition": [
+            "moreover",
+            "furthermore",
+            "additionally",
+            "besides",
+            "而且",
+            "并且",
+            "另外",
+            "此外",
+        ],
+        "conditional": [
+            "if",
+            "unless",
+            "provided",
+            "assuming",
+            "如果",
+            "假如",
+            "除非",
+            "假设",
+        ],
     }
 
     def analyze(self, text: str) -> Dict[str, int]:
@@ -201,7 +337,7 @@ class AnalysisDepthAnalyzer(TextAnalyzer):
         for category, connectors in self.LOGICAL_CONNECTORS.items():
             total_depth += sum(text_lower.count(connector) for connector in connectors)
 
-        return {'analysis_depth': total_depth}
+        return {"analysis_depth": total_depth}
 
 
 class ComplexityAnalyzer:
@@ -211,11 +347,11 @@ class ComplexityAnalyzer:
         """Initialize all analyzer components."""
         self.language_detector = LanguageDetector()
         self.analyzers = {
-            'sentence': SentenceAnalyzer(),
-            'technical': TechnicalTermAnalyzer(),
-            'research': ResearchAnalyzer(),
-            'branching': BranchingAnalyzer(),
-            'analysis_depth': AnalysisDepthAnalyzer()
+            "sentence": SentenceAnalyzer(),
+            "technical": TechnicalTermAnalyzer(),
+            "research": ResearchAnalyzer(),
+            "branching": BranchingAnalyzer(),
+            "analysis_depth": AnalysisDepthAnalyzer(),
         }
 
     def analyze_features(self, thought_data: ThoughtData) -> TextFeatures:
@@ -233,16 +369,18 @@ class ComplexityAnalyzer:
         # Handle branching context bonus
         if thought_data.branch_from is not None:
             bonus = ComplexityAnalysisConstants.BRANCHING_CONTEXT_BONUS
-            features['branching_references'] = features.get('branching_references', 0) + bonus
+            features["branching_references"] = (
+                features.get("branching_references", 0) + bonus
+            )
 
         return TextFeatures(
             language_metrics=language_metrics,
-            sentence_count=features.get('sentence_count', 0),
-            question_count=features.get('question_count', 0),
-            technical_terms=features.get('technical_terms', 0),
-            research_indicators=features.get('research_indicators', 0),
-            branching_references=features.get('branching_references', 0),
-            analysis_depth=features.get('analysis_depth', 0)
+            sentence_count=features.get("sentence_count", 0),
+            question_count=features.get("question_count", 0),
+            technical_terms=features.get("technical_terms", 0),
+            research_indicators=features.get("research_indicators", 0),
+            branching_references=features.get("branching_references", 0),
+            analysis_depth=features.get("analysis_depth", 0),
         )
 
     def get_complexity_insights(self, features: TextFeatures) -> Dict[str, str]:
@@ -272,19 +410,21 @@ class ComplexityAnalyzer:
             insights.append("Complex decision-making content")
 
         return {
-            'language_type': lang_type.value,
-            'complexity_level': self._determine_complexity_level(features),
-            'insights': '; '.join(insights) if insights else 'Standard content complexity'
+            "language_type": lang_type.value,
+            "complexity_level": self._determine_complexity_level(features),
+            "insights": "; ".join(insights)
+            if insights
+            else "Standard content complexity",
         }
 
     def _determine_complexity_level(self, features: TextFeatures) -> str:
         """Determine overall complexity level based on features."""
         score = (
-            features.language_metrics.word_count / 10 +
-            features.technical_terms * 2 +
-            features.research_indicators * 2 +
-            features.analysis_depth +
-            features.branching_references
+            features.language_metrics.word_count / 10
+            + features.technical_terms * 2
+            + features.research_indicators * 2
+            + features.analysis_depth
+            + features.branching_references
         )
 
         if score < 10:

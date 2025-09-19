@@ -166,7 +166,10 @@ class TestProtocols:
     def test_agent_factory_protocol(self):
         """RED: Test AgentFactory protocol defines required methods."""
         mock_factory = Mock()
-        mock_factory.create_team_agents.return_value = {"agent1": Mock(), "agent2": Mock()}
+        mock_factory.create_team_agents.return_value = {
+            "agent1": Mock(),
+            "agent2": Mock(),
+        }
 
         # Should be able to use as AgentFactory type
         factory: AgentFactory = mock_factory
@@ -245,6 +248,7 @@ class TestTypeAliases:
 
     def test_type_aliases_in_function_signatures(self):
         """RED: Test type aliases can be used in function signatures."""
+
         def process_thought(thought_number: ThoughtNumber, branch_id: BranchId) -> str:
             return f"Processing thought {thought_number} in branch {branch_id}"
 
@@ -281,6 +285,7 @@ class TestTypeCompatibility:
 
     def test_protocol_duck_typing(self):
         """RED: Test protocols work with duck typing."""
+
         class MockModelProvider:
             def __init__(self):
                 self.id = "mock-model"
