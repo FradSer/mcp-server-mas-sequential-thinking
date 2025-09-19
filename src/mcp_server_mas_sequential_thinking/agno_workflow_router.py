@@ -121,31 +121,34 @@ class StepExecutorMixin:
                            session_state: Optional[Dict[str, Any]] = None, error: Optional[str] = None,
                            specialists: Optional[List[str]] = None) -> StepOutput:
         """Create standardized StepOutput with common fields."""
-        additional_data = {
+        # Create enriched content with metadata
+        enriched_content = {
+            "result": content,
             "strategy": strategy,
             "complexity": session_state.get("current_complexity_score", 0) if session_state else 0
         }
         if specialists:
-            additional_data["specialists"] = specialists
+            enriched_content["specialists"] = specialists
 
         return StepOutput(
-            content=content,
+            content=enriched_content,
             success=success,
-            additional_data=additional_data,
-            error=error
+            error=error,
+            step_name=f"{strategy}_processing"
         )
 
     @staticmethod
     def _update_session_state(session_state: Optional[Dict[str, Any]], strategy: str, completed_key: str) -> None:
         """Update session state with completion tracking."""
-        if session_state:
+        if session_state is not None:
             session_state[completed_key] = True
             session_state["processing_strategy"] = strategy
 
     @staticmethod
     def _handle_execution_error(error: Exception, strategy: str) -> StepOutput:
         """Handle execution errors with standardized error response."""
-        error_msg = f"{strategy.title()} processing failed: {str(error)}"
+        formatted_strategy = strategy.replace("_", " ").capitalize()
+        error_msg = f"{formatted_strategy} processing failed: {str(error)}"
         return StepOutput(
             content=error_msg,
             success=False,

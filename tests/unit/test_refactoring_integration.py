@@ -361,3 +361,245 @@ class TestBackwardCompatibility:
         assert hasattr(session, 'find_thought_content')
         assert hasattr(session, 'get_branch_summary')
         assert hasattr(session, 'get_current_branch_id')
+
+
+class TestRefactoredComponentsIntegration:
+    """Test integration of newly refactored components (LoggingMixin, AgentFactory, StepExecutorMixin)."""
+
+    def test_logging_mixin_with_cost_optimization_constants(self):
+        """Test LoggingMixin uses CostOptimizationConstants correctly."""
+        from src.mcp_server_mas_sequential_thinking.server_core import LoggingMixin
+        from src.mcp_server_mas_sequential_thinking.constants import CostOptimizationConstants
+
+        mixin = LoggingMixin()
+
+        # Test efficiency score calculation with constants
+        fast_time = 30.0  # Below threshold
+        slow_time = 120.0  # Above threshold
+
+        fast_score = mixin._calculate_efficiency_score(fast_time)
+        slow_score = mixin._calculate_efficiency_score(slow_time)
+
+        # Fast processing should get perfect score
+        assert fast_score == 1.0
+        # Slow processing should get reduced score
+        assert slow_score < 1.0
+        assert slow_score >= 0.5  # Minimum efficiency score
+
+    def test_agent_factory_creates_functional_agents(self):
+        """Test AgentFactory creates agents that can be used in workflows."""
+        from src.mcp_server_mas_sequential_thinking.agno_workflow_router import AgentFactory
+        from unittest.mock import Mock
+
+        # Mock model for agent creation
+        mock_model = Mock()
+        mock_model.id = "test-model"
+
+        # Test creating different types of agents
+        with patch('src.mcp_server_mas_sequential_thinking.agno_workflow_router.Agent') as mock_agent_class:
+            mock_agent = Mock()
+            mock_agent_class.return_value = mock_agent
+
+            # Create agents of different types
+            planner = AgentFactory.create_planner(mock_model, "basic")
+            analyzer = AgentFactory.create_analyzer(mock_model, "advanced")
+            researcher = AgentFactory.create_researcher(mock_model)
+            critic = AgentFactory.create_critic(mock_model)
+            synthesizer = AgentFactory.create_synthesizer(mock_model)
+
+            # All should be valid agent instances
+            assert planner == mock_agent
+            assert analyzer == mock_agent
+            assert researcher == mock_agent
+            assert critic == mock_agent
+            assert synthesizer == mock_agent
+
+            # Factory should have been called for each agent
+            assert mock_agent_class.call_count == 5
+
+    def test_step_executor_mixin_with_cost_optimization_constants(self):
+        """Test StepExecutorMixin integrates with CostOptimizationConstants for session state."""
+        from src.mcp_server_mas_sequential_thinking.agno_workflow_router import StepExecutorMixin
+        from src.mcp_server_mas_sequential_thinking.constants import CostOptimizationConstants
+
+        # Test step output creation with complexity from session state
+        session_state = {
+            "current_complexity_score": 75.5,
+            "provider": "deepseek",
+            "estimated_cost": CostOptimizationConstants.DEFAULT_COST_ESTIMATE
+        }
+
+        result = StepExecutorMixin._create_step_output(
+            content="Integration test result",
+            strategy="multi_agent",
+            session_state=session_state,
+            specialists=["planner", "analyzer"]
+        )
+
+        # Verify integration
+        assert result.content["result"] == "Integration test result"
+        assert result.content["strategy"] == "multi_agent"
+        assert result.content["complexity"] == 75.5
+        assert result.content["specialists"] == ["planner", "analyzer"]
+        assert result.step_name == "multi_agent_processing"
+
+    def test_complete_workflow_integration(self):
+        """Test complete workflow using all refactored components together."""
+        from src.mcp_server_mas_sequential_thinking.agno_workflow_router import AgentFactory, StepExecutorMixin
+        from src.mcp_server_mas_sequential_thinking.server_core import LoggingMixin
+        from src.mcp_server_mas_sequential_thinking.constants import CostOptimizationConstants
+        from unittest.mock import Mock, patch
+
+        # Create a mock class that uses all mixins
+        class MockWorkflowProcessor(LoggingMixin, StepExecutorMixin):
+            def __init__(self, model):
+                self.model = model
+
+            def process_complex_request(self, content: str, complexity_score: float):
+                # Use AgentFactory to create agents
+                with patch('src.mcp_server_mas_sequential_thinking.agno_workflow_router.Agent') as mock_agent_class:
+                    mock_agent = Mock()
+                    mock_agent_class.return_value = mock_agent
+
+                    # Create agents using factory
+                    if complexity_score > CostOptimizationConstants.HIGH_BUDGET_UTILIZATION * 100:
+                        agents = [
+                            AgentFactory.create_planner(self.model, "advanced"),
+                            AgentFactory.create_analyzer(self.model, "advanced"),
+                            AgentFactory.create_researcher(self.model),
+                            AgentFactory.create_critic(self.model)
+                        ]
+                        strategy = "multi_agent"
+                    else:
+                        agents = [AgentFactory.create_planner(self.model, "basic")]
+                        strategy = "single_agent"
+
+                    # Create session state
+                    session_state = {
+                        "current_complexity_score": complexity_score,
+                        "agents_created": len(agents)
+                    }
+
+                    # Update session state using mixin
+                    self._update_session_state(session_state, strategy, f"{strategy}_completed")
+
+                    # Calculate efficiency (simulate processing time)
+                    processing_time = 45.0 if strategy == "single_agent" else 90.0
+                    efficiency_score = self._calculate_efficiency_score(processing_time)
+
+                    # Create step output using mixin
+                    result = self._create_step_output(
+                        content=f"Processed '{content}' using {strategy}",
+                        strategy=strategy,
+                        session_state=session_state,
+                        specialists=[agent.__class__.__name__ for agent in agents] if len(agents) > 1 else None
+                    )
+
+                    return result, efficiency_score, session_state
+
+        # Test the complete workflow
+        mock_model = Mock()
+        mock_model.id = "test-model"
+        processor = MockWorkflowProcessor(mock_model)
+
+        # Test high complexity scenario
+        result, efficiency, session = processor.process_complex_request(
+            "Complex analysis request",
+            85.0  # High complexity
+        )
+
+        # Verify all components worked together
+        assert result.content["result"] == "Processed 'Complex analysis request' using multi_agent"
+        assert result.content["strategy"] == "multi_agent"
+        assert result.content["complexity"] == 85.0
+        assert "specialists" in result.content
+        assert session["multi_agent_completed"] is True
+        assert session["processing_strategy"] == "multi_agent"
+        assert 0.0 <= efficiency <= 1.0
+
+        # Test low complexity scenario
+        result2, efficiency2, session2 = processor.process_complex_request(
+            "Simple task",
+            25.0  # Low complexity
+        )
+
+        assert result2.content["strategy"] == "single_agent"
+        assert session2["single_agent_completed"] is True
+
+    def test_constants_integration_across_modules(self):
+        """Test that CostOptimizationConstants are used consistently across modules."""
+        from src.mcp_server_mas_sequential_thinking.constants import (
+            CostOptimizationConstants,
+            QualityThresholds,
+            TokenCosts
+        )
+
+        # Test that related constants are consistent
+        # Quality thresholds should align with cost optimization thresholds
+        assert QualityThresholds.HIGH_BUDGET_UTILIZATION == CostOptimizationConstants.HIGH_BUDGET_UTILIZATION
+
+        # Test that token costs are reasonable for cost optimization
+        # Both represent cost per 1000 tokens, so they should be equal
+        assert TokenCosts.DEFAULT_COST_PER_1K == CostOptimizationConstants.DEFAULT_COST_ESTIMATE
+
+        # Test that cost optimization constants are in valid ranges
+        weights = [
+            CostOptimizationConstants.QUALITY_WEIGHT,
+            CostOptimizationConstants.COST_WEIGHT,
+            CostOptimizationConstants.SPEED_WEIGHT,
+            CostOptimizationConstants.RELIABILITY_WEIGHT
+        ]
+
+        # All weights should sum to 1.0
+        assert abs(sum(weights) - 1.0) < 0.0001
+
+        # All weights should be positive
+        for weight in weights:
+            assert weight > 0
+
+    def test_error_handling_integration(self):
+        """Test error handling works across all refactored components."""
+        from src.mcp_server_mas_sequential_thinking.agno_workflow_router import StepExecutorMixin
+
+        # Test error handling with different strategies
+        test_error = ValueError("Integration test error")
+
+        strategies = ["single_agent", "multi_agent", "hybrid", "parallel_analysis"]
+
+        for strategy in strategies:
+            result = StepExecutorMixin._handle_execution_error(test_error, strategy)
+
+            # Error result should be properly formatted
+            assert result.success is False
+            assert result.error == "Integration test error"
+            assert strategy.replace("_", " ").capitalize() in result.content
+            assert "processing failed" in result.content
+
+    def test_performance_metrics_integration(self):
+        """Test performance metrics work with logging and cost optimization."""
+        from src.mcp_server_mas_sequential_thinking.server_core import LoggingMixin
+        from src.mcp_server_mas_sequential_thinking.constants import PerformanceMetrics, CostOptimizationConstants
+
+        mixin = LoggingMixin()
+
+        # Test efficiency calculation with performance constants
+        threshold_time = PerformanceMetrics.EFFICIENCY_TIME_THRESHOLD
+
+        # Time exactly at threshold
+        score_at_threshold = mixin._calculate_efficiency_score(threshold_time)
+        expected_score = max(
+            PerformanceMetrics.MINIMUM_EFFICIENCY_SCORE,
+            PerformanceMetrics.EFFICIENCY_TIME_THRESHOLD / threshold_time
+        )
+        assert score_at_threshold == expected_score
+
+        # Perfect efficiency for fast processing
+        fast_score = mixin._calculate_efficiency_score(30.0)
+        assert fast_score == PerformanceMetrics.PERFECT_EFFICIENCY_SCORE
+
+        # Test execution consistency
+        success_consistency = mixin._calculate_execution_consistency(True)
+        failure_consistency = mixin._calculate_execution_consistency(False)
+
+        assert success_consistency == PerformanceMetrics.PERFECT_EXECUTION_CONSISTENCY
+        assert failure_consistency == PerformanceMetrics.DEFAULT_EXECUTION_CONSISTENCY
