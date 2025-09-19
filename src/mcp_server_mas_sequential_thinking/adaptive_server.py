@@ -24,13 +24,11 @@ class AdaptiveThoughtProcessor:
         enable_adaptive_routing: bool = True,
         enable_cost_optimization: bool = True,
         enable_persistent_memory: bool = True,
-        use_agno_workflow: bool = False,
         session_id: Optional[str] = None,
     ):
         self.enable_adaptive_routing = enable_adaptive_routing
         self.enable_cost_optimization = enable_cost_optimization
         self.enable_persistent_memory = enable_persistent_memory
-        self.use_agno_workflow = use_agno_workflow
 
         # Generate session ID if not provided
         self.session_id = (
@@ -50,8 +48,7 @@ class AdaptiveThoughtProcessor:
             f"Adaptive processor initialized - "
             f"routing: {enable_adaptive_routing}, "
             f"cost_opt: {enable_cost_optimization}, "
-            f"memory: {enable_persistent_memory}, "
-            f"workflow: {self.use_agno_workflow}"
+            f"memory: {enable_persistent_memory}"
         )
 
     def _initialize_components(self) -> None:

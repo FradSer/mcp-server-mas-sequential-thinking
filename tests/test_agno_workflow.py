@@ -279,60 +279,11 @@ class TestWorkflowIntegration:
             mock_create_team.return_value = mock_team
             session = SessionMemory(mock_team)
 
-        # Create processor with workflow enabled
-        processor = ThoughtProcessor(session, use_agno_workflow=True)
+        # Create processor (always uses Agno workflow)
+        processor = ThoughtProcessor(session)
 
         # Verify workflow router is initialized
-        assert processor._use_workflow is True
         assert processor._agno_router is not None
-        assert processor._router is None
-
-    @pytest.mark.asyncio
-    async def test_thought_processor_legacy_mode(self):
-        """Test ThoughtProcessor in legacy mode."""
-        from src.mcp_server_mas_sequential_thinking.server_core import ThoughtProcessor
-        from src.mcp_server_mas_sequential_thinking.session import SessionMemory
-
-        # Create mock session
-        mock_team = Mock()
-        mock_team.name = "TestTeam"
-
-        with patch('src.mcp_server_mas_sequential_thinking.unified_team.create_team_by_type') as mock_create_team:
-            mock_create_team.return_value = mock_team
-            session = SessionMemory(mock_team)
-
-        # Create processor with workflow disabled (legacy mode)
-        processor = ThoughtProcessor(session, use_agno_workflow=False)
-
-        # Verify legacy router is initialized
-        assert processor._use_workflow is False
-        assert processor._agno_router is None
-        assert processor._router is not None
 
 
-class TestEnvironmentConfiguration:
-    """Test environment-based configuration."""
 
-    @patch.dict('os.environ', {'USE_AGNO_WORKFLOW': 'true'})
-    def test_workflow_enabled_true(self):
-        """Test workflow enabled via environment variable."""
-        from src.mcp_server_mas_sequential_thinking.server_core import get_workflow_enabled
-        assert get_workflow_enabled() is True
-
-    @patch.dict('os.environ', {'USE_AGNO_WORKFLOW': 'false'})
-    def test_workflow_enabled_false(self):
-        """Test workflow disabled via environment variable."""
-        from src.mcp_server_mas_sequential_thinking.server_core import get_workflow_enabled
-        assert get_workflow_enabled() is False
-
-    @patch.dict('os.environ', {}, clear=True)
-    def test_workflow_enabled_default(self):
-        """Test workflow default value (disabled)."""
-        from src.mcp_server_mas_sequential_thinking.server_core import get_workflow_enabled
-        assert get_workflow_enabled() is False
-
-    @patch.dict('os.environ', {'USE_AGNO_WORKFLOW': '1'})
-    def test_workflow_enabled_numeric(self):
-        """Test workflow enabled with numeric value."""
-        from src.mcp_server_mas_sequential_thinking.server_core import get_workflow_enabled
-        assert get_workflow_enabled() is True

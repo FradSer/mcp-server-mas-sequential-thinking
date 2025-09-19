@@ -30,7 +30,7 @@ from .constants import (
 from .retry_handler import RetryHandler, TeamProcessingRetryHandler
 from .response_processor import ResponseProcessor, ResponseExtractor
 from .metrics_logger import MetricsLogger, PerformanceTracker
-from .adaptive_routing import AdaptiveRouter, ComplexityLevel, ProcessingStrategy
+from .adaptive_routing import ComplexityLevel, ProcessingStrategy
 from .agno_workflow_router import AgnoWorkflowRouter, WorkflowResult
 from .types import (
     ProcessingMetadata,
@@ -266,13 +266,12 @@ class ThoughtProcessor(LoggingMixin):
     """Handles thought processing with optimized performance and error handling."""
 
     __slots__ = (
-        "_session", "_router", "_agno_router", "_use_workflow",
+        "_session", "_agno_router",
         "_retry_handler", "_response_processor", "_metrics_logger", "_performance_tracker"
     )
 
-    def __init__(self, session: SessionMemory, use_agno_workflow: bool = False) -> None:
+    def __init__(self, session: SessionMemory) -> None:
         self._session = session
-        self._use_workflow = use_agno_workflow
 
         # Initialize utilities
         self._retry_handler = TeamProcessingRetryHandler()
@@ -280,25 +279,14 @@ class ThoughtProcessor(LoggingMixin):
         self._metrics_logger = MetricsLogger()
         self._performance_tracker = PerformanceTracker()
 
-        if use_agno_workflow:
-            self._initialize_agno_workflow()
-        else:
-            self._initialize_legacy_routing()
+        # Initialize Agno workflow (only option)
+        self._initialize_agno_workflow()
 
     def _initialize_agno_workflow(self) -> None:
         """Initialize Agno-compliant workflow router."""
-        logger.info("Initializing Agno-compliant Workflow Router (Workflow + Router pattern)")
+        logger.info("Initializing Agno Workflow Router")
         self._agno_router = AgnoWorkflowRouter()
-        self._router = None
-        logger.info("✅ Agno Workflow Router ready - standard routing activated")
-
-    def _initialize_legacy_routing(self) -> None:
-        """Initialize legacy adaptive router."""
-        logger.info("Initializing Legacy Adaptive Router (complexity analysis + strategy selection)")
-        self._router = AdaptiveRouter()
-        self._agno_router = None
-        logger.warning("⚠️  Using legacy AdaptiveRouter - consider migrating to Agno workflow")
-        logger.info("✅ Legacy Adaptive Router ready - custom routing activated")
+        logger.info("✅ Agno Workflow Router ready")
 
     def _extract_response_content(self, response) -> str:
         """Extract clean content from Agno RunOutput objects."""
@@ -326,12 +314,8 @@ class ThoughtProcessor(LoggingMixin):
         self._log_thought_data(thought_data)
         self._session.add_thought(thought_data)
 
-        if self._use_workflow:
-            # Use Agno-compliant workflow processing
-            return await self._process_with_agno_workflow(thought_data, start_time)
-        else:
-            # Use legacy adaptive routing (deprecated)
-            return await self._process_with_legacy_router(thought_data, start_time)
+        # Always use Agno-compliant workflow processing
+        return await self._process_with_agno_workflow(thought_data, start_time)
 
     async def _process_with_agno_workflow(self, thought_data: ThoughtData, start_time: float) -> str:
         """Process thought using Agno-compliant workflow."""
@@ -351,19 +335,6 @@ class ThoughtProcessor(LoggingMixin):
 
         return final_response
 
-    async def _process_with_legacy_router(self, thought_data: ThoughtData, start_time: float) -> str:
-        """Process thought using legacy adaptive router (deprecated)."""
-        coordination_plan, coordination_time = await self._create_coordination_plan(thought_data)
-        input_prompt = self._build_context_prompt(thought_data)
-        self._log_context_building(thought_data, input_prompt)
-
-        response, processing_time = await self._execute_with_timing(input_prompt, coordination_plan)
-        final_response = self._format_response(response, thought_data)
-
-        total_time = time.time() - start_time
-        self._log_completion_summary(thought_data, coordination_plan, processing_time, total_time, final_response)
-
-        return final_response
 
     def _log_input_details(self, input_prompt: str, context_description: str = "input") -> None:
         """Log input details with consistent formatting."""
@@ -833,11 +804,6 @@ def create_validated_thought_data(
         raise ValueError(f"Invalid thought data: {e}") from e
 
 
-# Global configuration
-def get_workflow_enabled() -> bool:
-    """Check if Agno workflow routing is enabled."""
-    import os
-    return os.getenv("USE_AGNO_WORKFLOW", "false").lower() in ("true", "1", "yes", "on")
 
 
 # Global server state with workflow support
@@ -855,10 +821,7 @@ async def get_thought_processor() -> ThoughtProcessor:
             _server_state = ServerState()
             await _server_state.initialize(config)
 
-        # Check workflow configuration
-        use_workflow = get_workflow_enabled()
-        logger.info(f"Initializing ThoughtProcessor with workflow={use_workflow}")
-
-        _thought_processor = ThoughtProcessor(_server_state.session, use_agno_workflow=use_workflow)
+        logger.info("Initializing ThoughtProcessor with Agno workflow")
+        _thought_processor = ThoughtProcessor(_server_state.session)
 
     return _thought_processor
