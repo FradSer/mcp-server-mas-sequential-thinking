@@ -27,6 +27,9 @@ from .constants import (
     FieldLengthLimits,
     PerformanceMetrics
 )
+from .retry_handler import RetryHandler, TeamProcessingRetryHandler
+from .response_processor import ResponseProcessor, ResponseExtractor
+from .metrics_logger import MetricsLogger, PerformanceTracker
 from .adaptive_routing import AdaptiveRouter, ComplexityLevel, ProcessingStrategy
 from .agno_workflow_router import AgnoWorkflowRouter, WorkflowResult
 from .types import (
@@ -262,39 +265,44 @@ class ServerState:
 class ThoughtProcessor(LoggingMixin):
     """Handles thought processing with optimized performance and error handling."""
 
-    __slots__ = ("_session", "_router", "_agno_router", "_use_workflow")  # Memory optimization
+    __slots__ = (
+        "_session", "_router", "_agno_router", "_use_workflow",
+        "_retry_handler", "_response_processor", "_metrics_logger", "_performance_tracker"
+    )
 
     def __init__(self, session: SessionMemory, use_agno_workflow: bool = False) -> None:
         self._session = session
         self._use_workflow = use_agno_workflow
 
-        if use_agno_workflow:
-            # AGNO WORKFLOW: Standard Agno Router + Workflow pattern
-            logger.info("Initializing Agno-compliant Workflow Router (Workflow + Router pattern)")
-            self._agno_router = AgnoWorkflowRouter()
-            self._router = None  # Legacy router disabled
-            logger.info("✅ Agno Workflow Router ready - standard routing activated")
-        else:
-            # LEGACY ADAPTIVE ROUTING: Custom routing system (deprecated)
-            logger.info("Initializing Legacy Adaptive Router (complexity analysis + strategy selection)")
-            self._router = AdaptiveRouter()
-            self._agno_router = None
-            logger.warning("⚠️  Using legacy AdaptiveRouter - consider migrating to Agno workflow")
-            logger.info("✅ Legacy Adaptive Router ready - custom routing activated")
+        # Initialize utilities
+        self._retry_handler = TeamProcessingRetryHandler()
+        self._response_processor = ResponseProcessor()
+        self._metrics_logger = MetricsLogger()
+        self._performance_tracker = PerformanceTracker()
 
+        if use_agno_workflow:
+            self._initialize_agno_workflow()
+        else:
+            self._initialize_legacy_routing()
+
+    def _initialize_agno_workflow(self) -> None:
+        """Initialize Agno-compliant workflow router."""
+        logger.info("Initializing Agno-compliant Workflow Router (Workflow + Router pattern)")
+        self._agno_router = AgnoWorkflowRouter()
+        self._router = None
+        logger.info("✅ Agno Workflow Router ready - standard routing activated")
+
+    def _initialize_legacy_routing(self) -> None:
+        """Initialize legacy adaptive router."""
+        logger.info("Initializing Legacy Adaptive Router (complexity analysis + strategy selection)")
+        self._router = AdaptiveRouter()
+        self._agno_router = None
+        logger.warning("⚠️  Using legacy AdaptiveRouter - consider migrating to Agno workflow")
+        logger.info("✅ Legacy Adaptive Router ready - custom routing activated")
 
     def _extract_response_content(self, response) -> str:
         """Extract clean content from Agno RunOutput objects."""
-        if hasattr(response, 'content') and response.content:
-            return str(response.content)
-        elif hasattr(response, 'messages') and response.messages:
-            # Extract from last assistant message
-            for msg in reversed(response.messages):
-                if hasattr(msg, 'role') and msg.role == 'assistant' and hasattr(msg, 'content'):
-                    return str(msg.content)
-            return str(response)
-        else:
-            return str(response)
+        return ResponseExtractor.extract_content(response)
 
     async def process_thought(self, thought_data: ThoughtData) -> str:
         """Process a thought through the team with comprehensive error handling."""
@@ -459,40 +467,19 @@ class ThoughtProcessor(LoggingMixin):
 
     def _log_completion_summary(self, thought_data: ThoughtData, coordination_plan: CoordinationPlan,
                                processing_time: float, total_time: float, final_response: str) -> None:
-        """Log performance metrics and completion summary."""
-        # Completion summary
-        completion_info = {
-            f"Thought #{thought_data.thought_number}": "completed",
-            "Strategy": coordination_plan.execution_mode.value,
-            "Specialists": len(coordination_plan.specialist_roles),
-            "Processing time": f"{processing_time:.3f}s",
-            "Total time": f"{total_time:.3f}s",
-            "Confidence": coordination_plan.confidence
-        }
-        self._log_metrics_block("💫 COMPLETION SUMMARY:", completion_info)
+        """Log performance metrics and completion summary using centralized logger."""
+        self._metrics_logger.log_completion_summary(
+            thought_data=thought_data,
+            strategy=coordination_plan.execution_mode.value,
+            specialists_count=len(coordination_plan.specialist_roles),
+            processing_time=processing_time,
+            total_time=total_time,
+            confidence=coordination_plan.confidence,
+            final_response=final_response
+        )
 
-        # Performance metrics
-        execution_consistency = self._calculate_execution_consistency(bool(coordination_plan.execution_mode.value))
-        efficiency_score = self._calculate_efficiency_score(processing_time)
-
-        performance_metrics = {
-            "Execution Consistency": execution_consistency,
-            "Efficiency Score": efficiency_score,
-            "Response Length": f"{len(final_response)} chars",
-            "Strategy Executed": coordination_plan.execution_mode.value
-        }
-        self._log_metrics_block("📊 PERFORMANCE METRICS:", performance_metrics)
-
-        # Final processing summary
-        final_summary = {
-            f"Thought #{thought_data.thought_number}": "processed successfully",
-            "Strategy used": coordination_plan.execution_mode.value,
-            "Processing time": f"{processing_time:.3f}s",
-            "Total time": f"{total_time:.3f}s",
-            "Response length": f"{len(final_response)} chars"
-        }
-        self._log_metrics_block("🎯 PROCESSING COMPLETE:", final_summary)
-        self._log_separator(FieldLengthLimits.SEPARATOR_LENGTH)
+        # Record performance metrics for tracking
+        self._performance_tracker.record_processing(processing_time, True)
 
     def _log_thought_data(self, thought_data: ThoughtData) -> None:
         """Log comprehensive thought data information."""
@@ -674,51 +661,37 @@ class ThoughtProcessor(LoggingMixin):
     async def _execute_team_processing_with_retries(
         self, input_prompt: str, complexity_level: ComplexityLevel
     ) -> str:
-        """Execute team processing without timeout restrictions (for coordination plan)."""
-        max_retries = DefaultTimeouts.MAX_RETRY_ATTEMPTS
-        last_exception = None
+        """Execute team processing using centralized retry handler."""
+        team_info = self._get_team_info()
+        self._metrics_logger.log_team_details(team_info)
+        self._metrics_logger.log_input_details(input_prompt)
 
-        for retry_count in range(max_retries + 1):
-            try:
-                logger.info(
-                    f"Processing attempt {retry_count + 1}/{max_retries + 1}: "
-                    f"complexity={complexity_level.value}"
-                )
+        async def team_operation():
+            start_time = time.time()
+            response = await self._session.team.arun(input_prompt)
+            processing_time = time.time() - start_time
 
-                # ENHANCED LOGGING: Log multi-agent team call details
-                team = self._session.team
-                logger.info(f"🏢 MULTI-AGENT TEAM CALL:")
-                logger.info(f"  Team: {team.name} ({len(team.members)} agents)")
-                logger.info(f"  Leader: {team.model.__class__.__name__} (model: {getattr(team.model, 'id', 'unknown')})")
-                logger.info(f"  Members: {', '.join([m.name for m in team.members])}")
-                self._log_input_details(input_prompt)
+            processed_response = self._response_processor.process_response(
+                response, processing_time, "MULTI-AGENT TEAM"
+            )
 
-                start_time = time.time()
-                # REMOVED: All timeout restrictions for unlimited processing time
-                response = await self._session.team.arun(input_prompt)
-                processing_time = time.time() - start_time
+            self._performance_tracker.record_processing(processing_time, True)
+            return processed_response.content
 
-                # HOTFIX: Properly extract content from Agno RunOutput
-                response_content = self._extract_response_content(response)
+        return await self._retry_handler.execute_team_processing(
+            team_operation, team_info, complexity_level.value
+        )
 
-                logger.info(f"✅ MULTI-AGENT RESPONSE:")
-                self._log_output_details(response_content, processing_time)
-
-                return response_content
-
-            except Exception as e:
-                last_exception = e
-                logger.error(f"Processing error on attempt {retry_count + 1}: {e}")
-
-                if retry_count < max_retries:
-                    logger.info(f"Retrying... ({retry_count + 1}/{max_retries})")
-                    await asyncio.sleep(PerformanceMetrics.RETRY_SLEEP_DURATION)  # Brief pause before retry
-                else:
-                    logger.error(f"All retry attempts exhausted")
-                    raise ThoughtProcessingError(f"Team processing failed after {max_retries + 1} attempts: {e}") from e
-
-        # This should never be reached, but just in case
-        raise ThoughtProcessingError("Unexpected error in retry logic") from last_exception
+    def _get_team_info(self) -> dict:
+        """Extract team information for logging and retry handling."""
+        team = self._session.team
+        return {
+            "name": team.name,
+            "member_count": len(team.members),
+            "leader_class": team.model.__class__.__name__,
+            "leader_model": getattr(team.model, 'id', 'unknown'),
+            "member_names": ', '.join([m.name for m in team.members])
+        }
 
     async def _execute_single_agent_processing(self, input_prompt: str, routing_decision) -> str:
         """Execute single-agent processing for simple thoughts without timeout restrictions."""
