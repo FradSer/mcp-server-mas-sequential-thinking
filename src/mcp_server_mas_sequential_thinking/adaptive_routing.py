@@ -8,6 +8,7 @@ from typing import Dict, List, Optional, Tuple
 from abc import ABC, abstractmethod
 
 from .models import ThoughtData
+from .complexity_analyzer import ComplexityAnalyzer, TextFeatures
 
 logger = logging.getLogger(__name__)
 

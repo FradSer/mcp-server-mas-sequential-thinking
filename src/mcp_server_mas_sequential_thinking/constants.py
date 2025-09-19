@@ -315,6 +315,35 @@ class CostOptimizationConstants:
     OLLAMA_CONTEXT_LENGTH = 8192
 
 
+class ComplexityAnalysisConstants:
+    """Constants for complexity analysis calculations."""
+
+    # Language detection
+    CHINESE_WORD_RATIO = 2  # Estimate Chinese words as characters / 2
+    CHINESE_DOMINANCE_THRESHOLD = 0.3  # Chinese chars > 30% of text
+
+    # Complexity scoring weights (extracted from adaptive_routing.py)
+    WORD_COUNT_WEIGHT = 0.15
+    SENTENCE_WEIGHT = 0.10
+    QUESTION_WEIGHT = 0.15
+    TECHNICAL_TERM_WEIGHT = 0.20
+    BRANCHING_WEIGHT = 0.15
+    RESEARCH_WEIGHT = 0.15
+    ANALYSIS_DEPTH_WEIGHT = 0.10
+
+    # Complexity level thresholds
+    SIMPLE_THRESHOLD = 25.0
+    MODERATE_THRESHOLD = 50.0
+    COMPLEX_THRESHOLD = 75.0
+
+    # Branching bonus for actual branch context
+    BRANCHING_CONTEXT_BONUS = 2
+
+    # Text analysis limits
+    MAX_PREVIEW_LENGTH = 200
+    MIN_SENTENCE_LENGTH = 3
+
+
 class ProcessingStrategy(Enum):
     """Processing strategy enumeration."""
 
