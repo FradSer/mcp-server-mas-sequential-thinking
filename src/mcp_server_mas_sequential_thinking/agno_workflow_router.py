@@ -450,16 +450,22 @@ class AgnoWorkflowRouter(StepExecutorMixin):
 
                 # Handle dictionary with 'result' key (common wrapper)
                 if isinstance(obj, dict):
-                    if 'result' in obj:
-                        return extract_clean_content(obj['result'], depth + 1)
-                    elif 'content' in obj:
-                        return extract_clean_content(obj['content'], depth + 1)
+                    if "result" in obj:
+                        return extract_clean_content(obj["result"], depth + 1)
+                    elif "content" in obj:
+                        return extract_clean_content(obj["content"], depth + 1)
                     else:
                         # Try to find any meaningful string content in the dict
                         for key, value in obj.items():
                             if isinstance(value, str) and len(value.strip()) > 10:
                                 # Skip technical keys, prefer content-like keys
-                                if key.lower() in ['message', 'text', 'response', 'output', 'answer']:
+                                if key.lower() in [
+                                    "message",
+                                    "text",
+                                    "response",
+                                    "output",
+                                    "answer",
+                                ]:
                                     return value.strip()
                         # Fallback to any string content
                         for value in obj.values():
@@ -491,22 +497,38 @@ class AgnoWorkflowRouter(StepExecutorMixin):
                     content = obj.strip()
 
                     # Remove object representations - more comprehensive patterns
-                    if any(content.startswith(pattern) for pattern in [
-                        "RunOutput(", "TeamRunOutput(", "StepOutput(", "WorkflowResult(",
-                        "{'result':", '{"result":', "{'content':", '{"content":'
-                    ]):
+                    if any(
+                        content.startswith(pattern)
+                        for pattern in [
+                            "RunOutput(",
+                            "TeamRunOutput(",
+                            "StepOutput(",
+                            "WorkflowResult(",
+                            "{'result':",
+                            '{"result":',
+                            "{'content':",
+                            '{"content":',
+                        ]
+                    ):
                         # Try multiple extraction patterns
                         patterns = [
                             (r"content='([^']*)'", 1),  # Single quotes
                             (r'content="([^"]*)"', 1),  # Double quotes
-                            (r"content=([^,)]*)", 1),   # No quotes
-                            (r"'result':\s*'([^']*)'", 1),  # Result in dict with single quotes
-                            (r'"result":\s*"([^"]*)"', 1),  # Result in dict with double quotes
-                            (r"'([^']{20,})'", 1),      # Any long string in single quotes
-                            (r'"([^"]{20,})"', 1),      # Any long string in double quotes
+                            (r"content=([^,)]*)", 1),  # No quotes
+                            (
+                                r"'result':\s*'([^']*)'",
+                                1,
+                            ),  # Result in dict with single quotes
+                            (
+                                r'"result":\s*"([^"]*)"',
+                                1,
+                            ),  # Result in dict with double quotes
+                            (r"'([^']{20,})'", 1),  # Any long string in single quotes
+                            (r'"([^"]{20,})"', 1),  # Any long string in double quotes
                         ]
 
                         import re
+
                         for pattern, group in patterns:
                             match = re.search(pattern, content)
                             if match:
@@ -516,9 +538,13 @@ class AgnoWorkflowRouter(StepExecutorMixin):
 
                         # If patterns fail, try to find any meaningful text content
                         # Remove obvious object syntax
-                        cleaned = re.sub(r'[{}()"\']', ' ', content)
-                        cleaned = re.sub(r'\b(RunOutput|TeamRunOutput|StepOutput|content|result|success|error)\b', ' ', cleaned)
-                        cleaned = re.sub(r'\s+', ' ', cleaned).strip()
+                        cleaned = re.sub(r'[{}()"\']', " ", content)
+                        cleaned = re.sub(
+                            r"\b(RunOutput|TeamRunOutput|StepOutput|content|result|success|error)\b",
+                            " ",
+                            cleaned,
+                        )
+                        cleaned = re.sub(r"\s+", " ", cleaned).strip()
 
                         if len(cleaned) > 20:
                             return cleaned
@@ -528,9 +554,10 @@ class AgnoWorkflowRouter(StepExecutorMixin):
 
                 # Fallback - convert to string and clean
                 result = str(obj).strip()
-                if len(result) > 20 and not any(result.startswith(pattern) for pattern in [
-                    "RunOutput(", "TeamRunOutput(", "StepOutput(", "<"
-                ]):
+                if len(result) > 20 and not any(
+                    result.startswith(pattern)
+                    for pattern in ["RunOutput(", "TeamRunOutput(", "StepOutput(", "<"]
+                ):
                     return result
 
                 return "Processing completed successfully"
@@ -543,7 +570,9 @@ class AgnoWorkflowRouter(StepExecutorMixin):
 
             # Log successful extraction for debugging
             logger.info(f"✅ Content extracted successfully: {len(content)} characters")
-            logger.debug(f"📝 Content preview: {content[:100]}{'...' if len(content) > 100 else ''}")
+            logger.debug(
+                f"📝 Content preview: {content[:100]}{'...' if len(content) > 100 else ''}"
+            )
 
             # Get metadata from session_state (set by selector)
             complexity_score = session_state.get("current_complexity_score", 0.0)
@@ -663,7 +692,9 @@ class AgnoWorkflowRouter(StepExecutorMixin):
 
                 logger.info("🤖 HYBRID TEAM EXECUTION:")
                 logger.info(f"  📥 Input: {thought_content[:100]}...")
-                logger.info(f"  👥 Team members: {[member.name for member in hybrid_team.members]}")
+                logger.info(
+                    f"  👥 Team members: {[member.name for member in hybrid_team.members]}"
+                )
 
                 # Run the team with session_state
                 logger.info("  🚀 Starting hybrid team processing...")
@@ -673,8 +704,10 @@ class AgnoWorkflowRouter(StepExecutorMixin):
 
                 logger.info("  ✅ Hybrid team completed successfully")
                 logger.info(f"  📊 Result type: {type(result).__name__}")
-                if hasattr(result, 'content'):
-                    logger.info(f"  📏 Content length: {len(str(result.content))} chars")
+                if hasattr(result, "content"):
+                    logger.info(
+                        f"  📏 Content length: {len(str(result.content))} chars"
+                    )
 
                 # Track performance in session_state
                 self._update_session_state(

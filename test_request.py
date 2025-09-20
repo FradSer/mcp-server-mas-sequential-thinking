@@ -6,6 +6,7 @@ import os
 from src.mcp_server_mas_sequential_thinking.main import sequentialthinking
 from src.mcp_server_mas_sequential_thinking.server_core import create_server_lifespan
 
+
 async def test_user_request():
     """Test the exact user request that was failing."""
 
@@ -14,7 +15,7 @@ async def test_user_request():
         "thought": "如果生命终将结束，我们为什么要活着？",
         "thought_number": 1,
         "total_thoughts": 3,
-        "next_needed": True
+        "next_needed": True,
     }
 
     print("🧪 Testing MCP Server with user input...")
@@ -26,6 +27,7 @@ async def test_user_request():
         async with create_server_lifespan() as server_state:
             # Set global server state (like in main.py)
             import src.mcp_server_mas_sequential_thinking.main as main_module
+
             main_module._server_state = server_state
 
             print("✅ Server initialized successfully")
@@ -49,8 +51,10 @@ async def test_user_request():
     except Exception as e:
         print(f"❌ FAILED: {e}")
         import traceback
+
         traceback.print_exc()
         return None
+
 
 if __name__ == "__main__":
     # Set minimal environment for testing
