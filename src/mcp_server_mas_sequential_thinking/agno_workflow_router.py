@@ -345,6 +345,8 @@ class AgnoWorkflowRouter(StepExecutorMixin):
         Router selectors only receive StepInput, not session_state.
         """
         try:
+            logger.info("🧭 WORKFLOW ROUTING ANALYSIS:")
+
             # Extract thought content from StepInput
             if isinstance(step_input.input, dict):
                 thought_content = step_input.input.get("thought", "")
@@ -354,6 +356,9 @@ class AgnoWorkflowRouter(StepExecutorMixin):
                 thought_content = str(step_input.input)
                 thought_number = 1  # Default fallback
                 total_thoughts = 1  # Default fallback
+
+            logger.info(f"  📝 Input: {thought_content[:100]}{'...' if len(thought_content) > 100 else ''}")
+            logger.info(f"  🔢 Progress: {thought_number}/{total_thoughts}")
 
             # Perform complexity analysis (no caching in selector)
             thought_data = ThoughtData(
@@ -367,27 +372,36 @@ class AgnoWorkflowRouter(StepExecutorMixin):
                 needsMoreThoughts=False,
             )
 
+            logger.info("  🔍 Analyzing complexity...")
             complexity_metrics = self.complexity_analyzer.analyze(thought_data)
             complexity_score = complexity_metrics.complexity_score
             complexity_level = self._determine_complexity_level(complexity_score)
+
+            logger.info(f"  📊 Complexity Score: {complexity_score:.1f}")
+            logger.info(f"  📈 Complexity Level: {complexity_level.value}")
 
             # Determine strategy
             if complexity_level == ComplexityLevel.SIMPLE:
                 strategy = "single_agent"
                 selected_step = self.single_agent_step
+                logger.info("  🤖 Route: Single Agent (Efficient processing)")
             elif complexity_level == ComplexityLevel.MODERATE:
                 strategy = "hybrid"
                 selected_step = self.hybrid_team_step
+                logger.info("  🤝 Route: Hybrid Team (Balanced processing)")
             elif complexity_level == ComplexityLevel.COMPLEX:
                 strategy = "multi_agent"
                 selected_step = self.full_team_step
+                logger.info("  👥 Route: Full Team (Comprehensive processing)")
             else:  # HIGHLY_COMPLEX
                 strategy = "parallel_analysis"
                 selected_step = self.parallel_analysis_step
+                logger.info("  ⚡ Route: Parallel Analysis (Maximum processing)")
 
+            logger.info("🎯 ROUTING DECISION:")
             logger.info(
-                f"Workflow routing: score={complexity_score:.1f}, "
-                f"strategy={strategy}, thought={thought_number}/{total_thoughts}"
+                f"  ✅ Selected: {strategy} (score={complexity_score:.1f}, "
+                f"thought={thought_number}/{total_thoughts})"
             )
 
             return [selected_step]
@@ -419,6 +433,12 @@ class AgnoWorkflowRouter(StepExecutorMixin):
         start_time = time.time()
 
         try:
+            logger.info("🚀 AGNO WORKFLOW INITIALIZATION:")
+            logger.info(f"  📝 Thought: {thought_data.thought[:100]}{'...' if len(thought_data.thought) > 100 else ''}")
+            logger.info(f"  🔢 Thought Number: {thought_data.thoughtNumber}/{thought_data.totalThoughts}")
+            logger.info(f"  📋 Context Length: {len(context_prompt)} chars")
+            logger.info(f"  ⏰ Start Time: {time.strftime('%H:%M:%S', time.localtime(start_time))}")
+
             # Prepare workflow input as dictionary (Agno standard)
             workflow_input = {
                 "thought": thought_data.thought,
@@ -427,6 +447,10 @@ class AgnoWorkflowRouter(StepExecutorMixin):
                 "context": context_prompt,
             }
 
+            logger.info("📦 WORKFLOW INPUT PREPARATION:")
+            logger.info(f"  📊 Input Keys: {list(workflow_input.keys())}")
+            logger.info(f"  📏 Input Size: {len(str(workflow_input))} chars")
+
             # Initialize session_state for metadata tracking
             session_state = {
                 "start_time": start_time,
@@ -434,14 +458,20 @@ class AgnoWorkflowRouter(StepExecutorMixin):
                 "total_thoughts": thought_data.totalThoughts,
             }
 
+            logger.info("🎯 SESSION STATE SETUP:")
+            logger.info(f"  🔑 State Keys: {list(session_state.keys())}")
+            logger.info(f"  📈 Metadata: {session_state}")
+
             logger.info(
-                f"Executing Agno workflow for thought #{thought_data.thoughtNumber}"
+                f"▶️  EXECUTING Agno workflow for thought #{thought_data.thoughtNumber}"
             )
 
             # Execute Agno workflow with session_state
+            logger.info("🔄 WORKFLOW EXECUTION START...")
             result = await self.workflow.arun(
                 input=workflow_input, session_state=session_state
             )
+            logger.info("✅ WORKFLOW EXECUTION COMPLETED")
 
             processing_time = time.time() - start_time
 
@@ -566,21 +596,28 @@ class AgnoWorkflowRouter(StepExecutorMixin):
 
                 return "Processing completed successfully"
 
+            logger.info("🧹 CONTENT EXTRACTION PHASE:")
+            logger.info(f"  📊 Raw result type: {type(result).__name__}")
+            logger.info(f"  📏 Raw result length: {len(str(result))} chars")
+
             content = extract_clean_content(result)
 
             # Final validation - ensure content is clean
             if not isinstance(content, str):
                 content = str(content)
 
-            # Log successful extraction for debugging
-            logger.info(f"✅ Content extracted successfully: {len(content)} characters")
-            logger.debug(
-                f"📝 Content preview: {content[:100]}{'...' if len(content) > 100 else ''}"
-            )
+            logger.info("📋 CONTENT VALIDATION:")
+            logger.info(f"  ✅ Content extracted successfully: {len(content)} characters")
+            logger.info(f"  📝 Content preview: {content[:150]}{'...' if len(content) > 150 else ''}")
 
             # Get metadata from session_state (set by selector)
             complexity_score = session_state.get("current_complexity_score", 0.0)
             strategy_used = session_state.get("current_strategy", "unknown")
+
+            logger.info("📊 WORKFLOW RESULT COMPILATION:")
+            logger.info(f"  🎯 Strategy used: {strategy_used}")
+            logger.info(f"  📈 Complexity score: {complexity_score:.1f}")
+            logger.info(f"  ⏱️  Processing time: {processing_time:.3f}s")
 
             workflow_result = WorkflowResult(
                 content=content,
@@ -590,8 +627,9 @@ class AgnoWorkflowRouter(StepExecutorMixin):
                 step_name="workflow_execution",
             )
 
+            logger.info("🎉 WORKFLOW COMPLETION:")
             logger.info(
-                f"Workflow completed: strategy={strategy_used}, "
+                f"  ✅ Completed: strategy={strategy_used}, "
                 f"time={processing_time:.3f}s, score={complexity_score:.1f}"
             )
 
@@ -633,15 +671,51 @@ class AgnoWorkflowRouter(StepExecutorMixin):
         ) -> StepOutput:
             """Custom executor that ensures StepOutput compliance."""
             try:
-                # Extract thought content
-                thought_content = (
-                    step_input.input.get("thought", str(step_input.input))
-                    if isinstance(step_input.input, dict)
-                    else str(step_input.input)
+                logger.info("🤖 SINGLE AGENT EXECUTION:")
+
+                # Extract thought content and metadata
+                if isinstance(step_input.input, dict):
+                    thought_content = step_input.input.get("thought", str(step_input.input))
+                    thought_number = step_input.input.get("thought_number", 1)
+                    total_thoughts = step_input.input.get("total_thoughts", 1)
+                else:
+                    thought_content = str(step_input.input)
+                    thought_number = 1
+                    total_thoughts = 1
+
+                # Calculate complexity score for this execution
+                thought_data = ThoughtData(
+                    thought=thought_content,
+                    thoughtNumber=thought_number,
+                    totalThoughts=total_thoughts,
+                    nextThoughtNeeded=True,
+                    isRevision=False,
+                    branchFromThought=None,
+                    branchId=None,
+                    needsMoreThoughts=False,
                 )
+                complexity_metrics = self.complexity_analyzer.analyze(thought_data)
+                complexity_score = complexity_metrics.complexity_score
+
+                # Store metadata in session_state for result compilation
+                session_state["current_strategy"] = "single_agent"
+                session_state["current_complexity_score"] = complexity_score
+
+                logger.info(f"  📥 Input: {thought_content[:100]}...")
+                logger.info(f"  📊 Complexity Score: {complexity_score:.1f}")
+                logger.info(f"  📈 Strategy: single_agent")
+                logger.info(f"  🎯 Agent: {agent.name}")
+                logger.info(f"  🧠 Model: {agent.model}")
+                logger.info(f"  🚀 Starting single agent processing...")
 
                 # Run the agent with session_state
                 result = agent.run(input=thought_content, session_state=session_state)
+
+                logger.info("  ✅ Single agent completed successfully")
+                logger.info(f"  📊 Result type: {type(result).__name__}")
+                if hasattr(result, "content"):
+                    logger.info(f"  📏 Content length: {len(str(result.content))} chars")
+                    logger.info(f"  📝 Content preview: {str(result.content)[:200]}...")
 
                 # Track performance in session_state
                 self._update_session_state(
@@ -652,6 +726,7 @@ class AgnoWorkflowRouter(StepExecutorMixin):
                     content=result, strategy="single_agent", session_state=session_state
                 )
             except Exception as e:
+                logger.error(f"  ❌ Single agent execution failed: {e}")
                 return self._handle_execution_error(e, "single_agent")
 
         return Step(
@@ -687,18 +762,42 @@ class AgnoWorkflowRouter(StepExecutorMixin):
         ) -> StepOutput:
             """Custom executor that ensures StepOutput compliance."""
             try:
-                # Extract thought content
-                thought_content = (
-                    step_input.input.get("thought", str(step_input.input))
-                    if isinstance(step_input.input, dict)
-                    else str(step_input.input)
-                )
+                # Extract thought content and metadata
+                if isinstance(step_input.input, dict):
+                    thought_content = step_input.input.get("thought", str(step_input.input))
+                    thought_number = step_input.input.get("thought_number", 1)
+                    total_thoughts = step_input.input.get("total_thoughts", 1)
+                else:
+                    thought_content = str(step_input.input)
+                    thought_number = 1
+                    total_thoughts = 1
 
-                logger.info("🤖 HYBRID TEAM EXECUTION:")
+                # Calculate complexity score for this execution
+                thought_data = ThoughtData(
+                    thought=thought_content,
+                    thoughtNumber=thought_number,
+                    totalThoughts=total_thoughts,
+                    nextThoughtNeeded=True,
+                    isRevision=False,
+                    branchFromThought=None,
+                    branchId=None,
+                    needsMoreThoughts=False,
+                )
+                complexity_metrics = self.complexity_analyzer.analyze(thought_data)
+                complexity_score = complexity_metrics.complexity_score
+
+                # Store metadata in session_state for result compilation
+                session_state["current_strategy"] = "hybrid"
+                session_state["current_complexity_score"] = complexity_score
+
+                logger.info("🤝 HYBRID TEAM EXECUTION:")
                 logger.info(f"  📥 Input: {thought_content[:100]}...")
+                logger.info(f"  📊 Complexity Score: {complexity_score:.1f}")
+                logger.info(f"  📈 Strategy: hybrid")
                 logger.info(
                     f"  👥 Team members: {[member.name for member in hybrid_team.members]}"
                 )
+                logger.info(f"  🧠 Team model: {hybrid_team.model}")
 
                 # Run the team with session_state
                 logger.info("  🚀 Starting hybrid team processing...")
@@ -712,6 +811,7 @@ class AgnoWorkflowRouter(StepExecutorMixin):
                     logger.info(
                         f"  📏 Content length: {len(str(result.content))} chars"
                     )
+                    logger.info(f"  📝 Content preview: {str(result.content)[:200]}...")
 
                 # Track performance in session_state
                 self._update_session_state(
@@ -817,17 +917,53 @@ class AgnoWorkflowRouter(StepExecutorMixin):
         ) -> StepOutput:
             """Custom executor that ensures StepOutput compliance."""
             try:
-                # Extract thought content
-                thought_content = (
-                    step_input.input.get("thought", str(step_input.input))
-                    if isinstance(step_input.input, dict)
-                    else str(step_input.input)
+                # Extract thought content and metadata
+                if isinstance(step_input.input, dict):
+                    thought_content = step_input.input.get("thought", str(step_input.input))
+                    thought_number = step_input.input.get("thought_number", 1)
+                    total_thoughts = step_input.input.get("total_thoughts", 1)
+                else:
+                    thought_content = str(step_input.input)
+                    thought_number = 1
+                    total_thoughts = 1
+
+                # Calculate complexity score for this execution
+                thought_data = ThoughtData(
+                    thought=thought_content,
+                    thoughtNumber=thought_number,
+                    totalThoughts=total_thoughts,
+                    nextThoughtNeeded=True,
+                    isRevision=False,
+                    branchFromThought=None,
+                    branchId=None,
+                    needsMoreThoughts=False,
                 )
+                complexity_metrics = self.complexity_analyzer.analyze(thought_data)
+                complexity_score = complexity_metrics.complexity_score
+
+                # Store metadata in session_state for result compilation
+                session_state["current_strategy"] = "multi_agent"
+                session_state["current_complexity_score"] = complexity_score
+
+                logger.info("👥 FULL TEAM EXECUTION:")
+                logger.info(f"  📥 Input: {thought_content[:100]}...")
+                logger.info(f"  📊 Complexity Score: {complexity_score:.1f}")
+                logger.info(f"  📈 Strategy: multi_agent")
+                logger.info(f"  👥 Team name: {full_team.name}")
+                logger.info(f"  🎯 Team members: {[member.name for member in full_team.members]}")
+                logger.info(f"  🧠 Model: {full_team.model}")
+                logger.info("  🚀 Starting full team processing...")
 
                 # Run the full team with session_state
                 result = full_team.run(
                     input=thought_content, session_state=session_state
                 )
+
+                logger.info("  ✅ Full team completed successfully")
+                logger.info(f"  📊 Result type: {type(result).__name__}")
+                if hasattr(result, "content"):
+                    logger.info(f"  📏 Content length: {len(str(result.content))} chars")
+                    logger.info(f"  📝 Content preview: {str(result.content)[:200]}...")
 
                 # Track performance in session_state
                 session_state["full_team_completed"] = True
@@ -838,6 +974,7 @@ class AgnoWorkflowRouter(StepExecutorMixin):
                     success=True,
                 )
             except Exception as e:
+                logger.error(f"  ❌ Full team execution failed: {str(e)}")
                 return StepOutput(
                     content=f"Full team processing failed: {str(e)}",
                     success=False,
@@ -894,20 +1031,27 @@ class AgnoWorkflowRouter(StepExecutorMixin):
         def semantic_executor(step_input: StepInput, session_state: dict) -> StepOutput:
             """Semantic analysis executor."""
             try:
+                logger.info("🔍 SEMANTIC ANALYSIS:")
                 thought_content = (
                     step_input.input.get("thought", str(step_input.input))
                     if isinstance(step_input.input, dict)
                     else str(step_input.input)
                 )
+                logger.info(f"  📥 Input: {thought_content[:100]}...")
+                logger.info(f"  🎯 Analyzer: {semantic_analyzer.name}")
+                logger.info("  🚀 Starting semantic analysis...")
+
                 result = semantic_analyzer.run(
                     input=f"Perform semantic analysis of: {thought_content}",
                     session_state=session_state,
                 )
+                logger.info("  ✅ Semantic analysis completed")
                 return StepOutput(
                     content=result,
                     success=True,
                 )
             except Exception as e:
+                logger.error(f"  ❌ Semantic analysis failed: {str(e)}")
                 return StepOutput(
                     content=f"Semantic analysis failed: {str(e)}",
                     success=False,
@@ -919,20 +1063,27 @@ class AgnoWorkflowRouter(StepExecutorMixin):
         ) -> StepOutput:
             """Technical analysis executor."""
             try:
+                logger.info("🔧 TECHNICAL ANALYSIS:")
                 thought_content = (
                     step_input.input.get("thought", str(step_input.input))
                     if isinstance(step_input.input, dict)
                     else str(step_input.input)
                 )
+                logger.info(f"  📥 Input: {thought_content[:100]}...")
+                logger.info(f"  🎯 Analyzer: {technical_analyzer.name}")
+                logger.info("  🚀 Starting technical analysis...")
+
                 result = technical_analyzer.run(
                     input=f"Perform technical analysis of: {thought_content}",
                     session_state=session_state,
                 )
+                logger.info("  ✅ Technical analysis completed")
                 return StepOutput(
                     content=result,
                     success=True,
                 )
             except Exception as e:
+                logger.error(f"  ❌ Technical analysis failed: {str(e)}")
                 return StepOutput(
                     content=f"Technical analysis failed: {str(e)}",
                     success=False,
@@ -942,20 +1093,27 @@ class AgnoWorkflowRouter(StepExecutorMixin):
         def context_executor(step_input: StepInput, session_state: dict) -> StepOutput:
             """Contextual analysis executor."""
             try:
+                logger.info("🌐 CONTEXTUAL ANALYSIS:")
                 thought_content = (
                     step_input.input.get("thought", str(step_input.input))
                     if isinstance(step_input.input, dict)
                     else str(step_input.input)
                 )
+                logger.info(f"  📥 Input: {thought_content[:100]}...")
+                logger.info(f"  🎯 Analyzer: {context_analyzer.name}")
+                logger.info("  🚀 Starting contextual analysis...")
+
                 result = context_analyzer.run(
                     input=f"Perform contextual analysis of: {thought_content}",
                     session_state=session_state,
                 )
+                logger.info("  ✅ Contextual analysis completed")
                 return StepOutput(
                     content=result,
                     success=True,
                 )
             except Exception as e:
+                logger.error(f"  ❌ Contextual analysis failed: {str(e)}")
                 return StepOutput(
                     content=f"Contextual analysis failed: {str(e)}",
                     success=False,
