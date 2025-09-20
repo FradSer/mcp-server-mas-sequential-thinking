@@ -73,7 +73,7 @@ class MetricsLogger:
         """Log comprehensive completion summary."""
         # Completion info
         completion_info = {
-            f"Thought #{thought_data.thought_number}": "completed",
+            f"Thought #{thought_data.thoughtNumber}": "completed",
             "Strategy": strategy,
             "Specialists": specialists_count,
             "Processing time": f"{processing_time:.3f}s",
@@ -90,7 +90,7 @@ class MetricsLogger:
 
         # Final summary
         final_summary = {
-            f"Thought #{thought_data.thought_number}": "processed successfully",
+            f"Thought #{thought_data.thoughtNumber}": "processed successfully",
             "Strategy used": strategy,
             "Processing time": f"{processing_time:.3f}s",
             "Total time": f"{total_time:.3f}s",

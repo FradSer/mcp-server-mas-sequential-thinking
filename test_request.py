@@ -13,9 +13,13 @@ async def test_user_request():
     # Test data from user
     test_input = {
         "thought": "如果生命终将结束，我们为什么要活着？",
-        "thought_number": 1,
-        "total_thoughts": 3,
-        "next_needed": True,
+        "thoughtNumber": 1,
+        "totalThoughts": 3,
+        "nextThoughtNeeded": True,
+        "isRevision": False,
+        "branchFromThought": None,
+        "branchId": None,
+        "needsMoreThoughts": False,
     }
 
     print("🧪 Testing MCP Server with user input...")

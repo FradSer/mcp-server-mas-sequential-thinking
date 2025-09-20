@@ -19,21 +19,17 @@ class ThoughtType(Enum):
 def _validate_thought_relationships(data: dict) -> None:
     """Validate thought relationships with optimized validation logic."""
     # Extract values once with modern dict methods
-    is_revision = data.get("is_revision", False)
-    revises_thought = data.get("revises_thought")
-    branch_from = data.get("branch_from")
-    branch_id = data.get("branch_id")
-    current_number = data.get("thought_number")
+    is_revision = data.get("isRevision", False)
+    branch_from_thought = data.get("branchFromThought")
+    branch_id = data.get("branchId")
+    current_number = data.get("thoughtNumber")
 
     # Collect validation errors efficiently
     errors = []
 
     # Relationship validation with guard clauses
-    if revises_thought is not None and not is_revision:
-        errors.append("revises_thought requires is_revision=True")
-
-    if branch_id is not None and branch_from is None:
-        errors.append("branch_id requires branch_from to be set")
+    if branch_id is not None and branch_from_thought is None:
+        errors.append("branchId requires branchFromThought to be set")
 
     # Numeric validation with early exit
     if current_number is None:
@@ -42,11 +38,8 @@ def _validate_thought_relationships(data: dict) -> None:
         return
 
     # Validate numeric relationships
-    if revises_thought is not None and revises_thought >= current_number:
-        errors.append("revises_thought must be less than current thought_number")
-
-    if branch_from is not None and branch_from >= current_number:
-        errors.append("branch_from must be less than current thought_number")
+    if branch_from_thought is not None and branch_from_thought >= current_number:
+        errors.append("branchFromThought must be less than current thoughtNumber")
 
     if errors:
         raise ValueError("; ".join(errors))
@@ -63,43 +56,36 @@ class ThoughtData(BaseModel):
         min_length=FieldLengthLimits.MIN_STRING_LENGTH,
         description="Content of the thought",
     )
-    thought_number: ThoughtNumber = Field(
+    thoughtNumber: ThoughtNumber = Field(
         ...,
         ge=ValidationLimits.MIN_THOUGHT_NUMBER,
         description="Sequence number starting from 1",
     )
-    total_thoughts: int = Field(
+    totalThoughts: int = Field(
         ...,
         ge=1,
         description="Estimated total thoughts",
     )
-    next_needed: bool = Field(..., description="Whether another thought is needed")
+    nextThoughtNeeded: bool = Field(..., description="Whether another thought is needed")
 
-    # Optional workflow fields
-    is_revision: bool = Field(
-        False, description="Whether this revises a previous thought"
-    )
-    revises_thought: Optional[ThoughtNumber] = Field(
-        None,
-        ge=ValidationLimits.MIN_THOUGHT_NUMBER,
-        description="Thought number being revised",
-    )
-    branch_from: Optional[ThoughtNumber] = Field(
-        None,
+    # Required workflow fields
+    isRevision: bool = Field(..., description="Whether this revises a previous thought")
+    branchFromThought: Optional[ThoughtNumber] = Field(
+        ...,
         ge=ValidationLimits.MIN_THOUGHT_NUMBER,
         description="Thought number to branch from",
     )
-    branch_id: Optional[BranchId] = Field(None, description="Unique branch identifier")
-    needs_more: bool = Field(
-        False, description="Whether more thoughts are needed beyond estimate"
+    branchId: Optional[BranchId] = Field(..., description="Unique branch identifier")
+    needsMoreThoughts: bool = Field(
+        ..., description="Whether more thoughts are needed beyond estimate"
     )
 
     @property
     def thought_type(self) -> ThoughtType:
         """Determine the type of thought based on field values."""
-        if self.is_revision:
+        if self.isRevision:
             return ThoughtType.REVISION
-        elif self.branch_from is not None:
+        elif self.branchFromThought is not None:
             return ThoughtType.BRANCH
         return ThoughtType.STANDARD
 
@@ -116,15 +102,15 @@ class ThoughtData(BaseModel):
         # Use match statement for modern Python pattern matching
         match self.thought_type:
             case ThoughtType.REVISION:
-                prefix = f"Revision {self.thought_number}/{self.total_thoughts} (revising #{self.revises_thought})"
+                prefix = f"Revision {self.thoughtNumber}/{self.totalThoughts} (revising #{self.branchFromThought})"
             case ThoughtType.BRANCH:
-                prefix = f"Branch {self.thought_number}/{self.total_thoughts} (from #{self.branch_from}, ID: {self.branch_id})"
+                prefix = f"Branch {self.thoughtNumber}/{self.totalThoughts} (from #{self.branchFromThought}, ID: {self.branchId})"
             case _:  # ThoughtType.STANDARD
-                prefix = f"Thought {self.thought_number}/{self.total_thoughts}"
+                prefix = f"Thought {self.thoughtNumber}/{self.totalThoughts}"
 
         # Use multiline string formatting for better readability
         return (
             f"{prefix}\n"
             f"  Content: {self.thought}\n"
-            f"  Next: {self.next_needed}, More: {self.needs_more}"
+            f"  Next: {self.nextThoughtNeeded}, More: {self.needsMoreThoughts}"
         )

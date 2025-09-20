@@ -381,7 +381,7 @@ class BasicComplexityAnalyzer(ComplexityAnalyzer):
         )
 
         # Check for branching context
-        if thought_data.branch_from is not None:
+        if thought_data.branchFromThought is not None:
             branching_references += 2  # Bonus for actual branching
 
         return ComplexityMetrics(

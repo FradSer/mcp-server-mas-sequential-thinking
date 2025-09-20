@@ -312,7 +312,7 @@ class ThoughtProcessor(LoggingMixin):
             result = await self._process_thought_internal(thought_data)
             return result
         except Exception as e:
-            error_msg = f"Failed to process {thought_data.thought_type.value} thought #{thought_data.thought_number}: {e}"
+            error_msg = f"Failed to process {thought_data.thought_type.value} thought #{thought_data.thoughtNumber}: {e}"
             logger.error(error_msg, exc_info=True)
             metadata: ProcessingMetadata = {
                 "error_count": ProcessingDefaults.ERROR_COUNT_INITIAL,
@@ -458,7 +458,7 @@ class ThoughtProcessor(LoggingMixin):
         """Log workflow completion with Agno-specific metrics."""
         # Basic completion info
         completion_metrics = {
-            f"Thought #{thought_data.thought_number}": "processed successfully",
+            f"Thought #{thought_data.thoughtNumber}": "processed successfully",
             "Strategy": workflow_result.strategy_used,
             "Complexity Score": f"{workflow_result.complexity_score:.1f}/100",
             "Step": workflow_result.step_name,
@@ -510,21 +510,21 @@ class ThoughtProcessor(LoggingMixin):
     def _log_thought_data(self, thought_data: ThoughtData) -> None:
         """Log comprehensive thought data information."""
         basic_info = {
-            f"Thought #{thought_data.thought_number}": f"{thought_data.thought_number}/{thought_data.total_thoughts}",
+            f"Thought #{thought_data.thoughtNumber}": f"{thought_data.thoughtNumber}/{thought_data.totalThoughts}",
             "Type": thought_data.thought_type.value,
             "Content": thought_data.thought,
-            "Next needed": thought_data.next_needed,
-            "Needs more": thought_data.needs_more,
+            "Next needed": thought_data.nextThoughtNeeded,
+            "Needs more": thought_data.needsMoreThoughts,
         }
 
         # Add conditional fields
-        if thought_data.is_revision:
+        if thought_data.isRevision:
             basic_info["Is revision"] = (
-                f"True (revises thought #{thought_data.revises_thought})"
+                f"True (revises thought #{thought_data.branchFromThought})"
             )
-        if thought_data.branch_from:
+        if thought_data.branchFromThought:
             basic_info["Branch from"] = (
-                f"#{thought_data.branch_from} (ID: {thought_data.branch_id})"
+                f"#{thought_data.branchFromThought} (ID: {thought_data.branchId})"
             )
 
         basic_info["Raw data"] = thought_data.format_for_log()
@@ -566,26 +566,26 @@ class ThoughtProcessor(LoggingMixin):
         """Log context building details."""
         logger.info(f"📝 CONTEXT BUILDING:")
 
-        if thought_data.is_revision and thought_data.revises_thought:
-            logger.info(f"  Type: Revision of thought #{thought_data.revises_thought}")
+        if thought_data.isRevision and thought_data.branchFromThought:
+            logger.info(f"  Type: Revision of thought #{thought_data.branchFromThought}")
             try:
                 original = self._session.find_thought_content(
-                    thought_data.revises_thought
+                    thought_data.branchFromThought
                 )
                 logger.info(f"  Original thought: {original}")
             except:
                 logger.info(f"  Original thought: [not found]")
-        elif thought_data.branch_from and thought_data.branch_id:
+        elif thought_data.branchFromThought and thought_data.branchId:
             logger.info(
-                f"  Type: Branch '{thought_data.branch_id}' from thought #{thought_data.branch_from}"
+                f"  Type: Branch '{thought_data.branchId}' from thought #{thought_data.branchFromThought}"
             )
             try:
-                origin = self._session.find_thought_content(thought_data.branch_from)
+                origin = self._session.find_thought_content(thought_data.branchFromThought)
                 logger.info(f"  Branch origin: {origin}")
             except:
                 logger.info(f"  Branch origin: [not found]")
         else:
-            logger.info(f"  Type: Sequential thought #{thought_data.thought_number}")
+            logger.info(f"  Type: Sequential thought #{thought_data.thoughtNumber}")
 
         logger.info(f"  Session thoughts: {len(self._session.thought_history)} total")
         logger.info(f"  Input thought: {thought_data.thought}")
@@ -622,7 +622,7 @@ class ThoughtProcessor(LoggingMixin):
     ) -> None:
         """Log performance metrics for the processing."""
         logger.info(
-            f"Thought #{thought_data.thought_number} completed: "
+            f"Thought #{thought_data.thoughtNumber} completed: "
             f"strategy={strategy_used}, "
             f"processing_time={processing_time:.3f}s, "
             f"total_time={total_time:.3f}s"
@@ -638,7 +638,7 @@ class ThoughtProcessor(LoggingMixin):
     ) -> None:
         """Log final processing completion summary."""
         logger.info(f"🎯 PROCESSING COMPLETE:")
-        logger.info(f"  Thought #{thought_data.thought_number} processed successfully")
+        logger.info(f"  Thought #{thought_data.thoughtNumber} processed successfully")
         logger.info(f"  Strategy used: {strategy_used}")
         logger.info(f"  Processing time: {processing_time:.3f}s")
         logger.info(f"  Total time: {total_time:.3f}s")
@@ -814,19 +814,19 @@ Provide a focused response with clear guidance for the next step."""
     def _build_context_prompt(self, thought_data: ThoughtData) -> str:
         """Build context-aware input prompt with optimized string construction."""
         # Pre-calculate base components for efficiency
-        base = f"Process Thought #{thought_data.thought_number}:\n"
+        base = f"Process Thought #{thought_data.thoughtNumber}:\n"
         content = f'\nThought Content: "{thought_data.thought}"'
 
         # Add context using pattern matching with optimized string building
         match thought_data:
-            case ThoughtData(is_revision=True, revises_thought=revision_num) if (
+            case ThoughtData(isRevision=True, branchFromThought=revision_num) if (
                 revision_num
             ):
                 original = self._session.find_thought_content(revision_num)
                 context = f'**REVISION of Thought #{revision_num}** (Original: "{original}")\n'
                 return f"{base}{context}{content}"
 
-            case ThoughtData(branch_from=branch_from, branch_id=branch_id) if (
+            case ThoughtData(branchFromThought=branch_from, branchId=branch_id) if (
                 branch_from and branch_id
             ):
                 origin = self._session.find_thought_content(branch_from)
@@ -840,7 +840,7 @@ Provide a focused response with clear guidance for the next step."""
         """Format response with appropriate guidance."""
         guidance = (
             "\n\nGuidance: Look for revision/branch recommendations in the response. Formulate the next logical thought."
-            if thought_data.next_needed
+            if thought_data.nextThoughtNeeded
             else "\n\nThis is the final thought. Review the synthesis."
         )
 
@@ -849,7 +849,7 @@ Provide a focused response with clear guidance for the next step."""
         # ENHANCED LOGGING: Response formatting details
         logger.info(f"📤 RESPONSE FORMATTING:")
         logger.info(f"  Original content length: {len(content)} chars")
-        logger.info(f"  Next needed: {thought_data.next_needed}")
+        logger.info(f"  Next needed: {thought_data.nextThoughtNeeded}")
         logger.info(f"  Guidance added: {guidance.strip()}")
         logger.info(f"  Final response length: {len(final_response)} chars")
         logger.info(f"  Final response:\n{final_response}")
@@ -886,27 +886,25 @@ class ServerInitializationError(Exception):
 
 def create_validated_thought_data(
     thought: str,
-    thought_number: int,
-    total_thoughts: int,
-    next_needed: bool,
-    is_revision: bool = False,
-    revises_thought: Optional[int] = None,
-    branch_from: Optional[int] = None,
-    branch_id: Optional[str] = None,
-    needs_more: bool = False,
+    thoughtNumber: int,
+    totalThoughts: int,
+    nextThoughtNeeded: bool,
+    isRevision: bool,
+    branchFromThought: Optional[int],
+    branchId: Optional[str],
+    needsMoreThoughts: bool,
 ) -> ThoughtData:
     """Create and validate thought data with enhanced error reporting."""
     try:
         return ThoughtData(
             thought=thought.strip(),
-            thought_number=thought_number,
-            total_thoughts=total_thoughts,
-            next_needed=next_needed,
-            is_revision=is_revision,
-            revises_thought=revises_thought,
-            branch_from=branch_from,
-            branch_id=branch_id.strip() if branch_id else None,
-            needs_more=needs_more,
+            thoughtNumber=thoughtNumber,
+            totalThoughts=totalThoughts,
+            nextThoughtNeeded=nextThoughtNeeded,
+            isRevision=isRevision,
+            branchFromThought=branchFromThought,
+            branchId=branchId.strip() if branchId else None,
+            needsMoreThoughts=needsMoreThoughts,
         )
     except ValidationError as e:
         raise ValueError(f"Invalid thought data: {e}") from e

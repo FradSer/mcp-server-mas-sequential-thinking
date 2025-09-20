@@ -125,14 +125,13 @@ Ready to begin systematic analysis."""
 @mcp.tool()
 async def sequentialthinking(
     thought: str,
-    thought_number: int,
-    total_thoughts: int,
-    next_needed: bool,
-    is_revision: bool = False,
-    revises_thought: int | None = None,
-    branch_from: int | None = None,
-    branch_id: str | None = None,
-    needs_more: bool = False,
+    thoughtNumber: int,
+    totalThoughts: int,
+    nextThoughtNeeded: bool,
+    isRevision: bool,
+    branchFromThought: int | None,
+    branchId: str | None,
+    needsMoreThoughts: bool,
 ) -> str:
     """
     Advanced sequential thinking tool with multi-agent coordination.
@@ -142,14 +141,13 @@ async def sequentialthinking(
 
     Args:
         thought: Content of the thinking step (required)
-        thought_number: Sequence number starting from {ThoughtProcessingLimits.MIN_THOUGHT_SEQUENCE} (≥{ThoughtProcessingLimits.MIN_THOUGHT_SEQUENCE})
-        total_thoughts: Estimated total thoughts required (≥1)
-        next_needed: Whether another thought step follows this one
-        is_revision: Whether this thought revises a previous thought
-        revises_thought: Thought number being revised (requires is_revision=True)
-        branch_from: Thought number to branch from for alternative exploration
-        branch_id: Unique identifier for the branch (required if branch_from set)
-        needs_more: Whether more thoughts are needed beyond the initial estimate
+        thoughtNumber: Sequence number starting from {ThoughtProcessingLimits.MIN_THOUGHT_SEQUENCE} (≥{ThoughtProcessingLimits.MIN_THOUGHT_SEQUENCE})
+        totalThoughts: Estimated total thoughts required (≥1)
+        nextThoughtNeeded: Whether another thought step follows this one
+        isRevision: Whether this thought revises a previous thought
+        branchFromThought: Thought number to branch from for alternative exploration
+        branchId: Unique identifier for the branch (required if branchFromThought set)
+        needsMoreThoughts: Whether more thoughts are needed beyond the initial estimate
 
     Returns:
         Synthesized response from the multi-agent team with guidance for next steps
@@ -166,37 +164,36 @@ async def sequentialthinking(
         # Create and validate thought data using refactored function
         thought_data = create_validated_thought_data(
             thought=thought,
-            thought_number=thought_number,
-            total_thoughts=total_thoughts,
-            next_needed=next_needed,
-            is_revision=is_revision,
-            revises_thought=revises_thought,
-            branch_from=branch_from,
-            branch_id=branch_id,
-            needs_more=needs_more,
+            thoughtNumber=thoughtNumber,
+            totalThoughts=totalThoughts,
+            nextThoughtNeeded=nextThoughtNeeded,
+            isRevision=isRevision,
+            branchFromThought=branchFromThought,
+            branchId=branchId,
+            needsMoreThoughts=needsMoreThoughts,
         )
 
         # Process through team using global processor with workflow support
         processor = await get_thought_processor()
         result = await processor.process_thought(thought_data)
 
-        logger.info(f"Successfully processed thought #{thought_number}")
+        logger.info(f"Successfully processed thought #{thoughtNumber}")
         return result
 
     except ValidationError as e:
-        error_msg = f"Input validation failed for thought #{thought_number}: {e}"
+        error_msg = f"Input validation failed for thought #{thoughtNumber}: {e}"
         logger.error(error_msg)
         return f"Validation Error: {e}"
 
     except ThoughtProcessingError as e:
-        error_msg = f"Processing failed for thought #{thought_number}: {e}"
+        error_msg = f"Processing failed for thought #{thoughtNumber}: {e}"
         logger.error(error_msg)
         if hasattr(e, "metadata") and e.metadata:
             logger.error(f"Error metadata: {e.metadata}")
         return f"Processing Error: {e}"
 
     except Exception as e:
-        error_msg = f"Unexpected error processing thought #{thought_number}: {e}"
+        error_msg = f"Unexpected error processing thought #{thoughtNumber}: {e}"
         logger.exception(error_msg)
         return f"Unexpected Error: {e}"
 

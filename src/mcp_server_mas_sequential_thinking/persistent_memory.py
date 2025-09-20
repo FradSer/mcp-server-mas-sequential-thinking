@@ -105,13 +105,13 @@ class ThoughtRecord(Base):
         """Convert database record to ThoughtData model."""
         return ThoughtData(
             thought=str(self.thought),
-            thought_number=int(self.thought_number),
-            total_thoughts=int(self.total_thoughts),
-            next_needed=bool(self.next_needed),
-            branch_from=int(self.branch_from) if self.branch_from is not None else None,
-            branch_id=str(self.branch_id) if self.branch_id is not None else None,
+            thought_number=int(self.thoughtNumber),
+            total_thoughts=int(self.totalThoughts),
+            next_needed=bool(self.nextThoughtNeeded),
+            branch_from=int(self.branchFromThought) if self.branchFromThought is not None else None,
+            branch_id=str(self.branchId) if self.branchId is not None else None,
             is_revision=False,
-            revises_thought=None,
+            branchFromThought=None,
             needs_more=True,
         )
 
@@ -261,12 +261,12 @@ class PersistentMemoryManager:
         """Create a thought record with metadata."""
         thought_record = ThoughtRecord(
             session_id=session_id,
-            thought_number=thought_data.thought_number,
+            thought_number=thought_data.thoughtNumber,
             thought=thought_data.thought,
-            total_thoughts=thought_data.total_thoughts,
-            next_needed=thought_data.next_needed,
-            branch_from=thought_data.branch_from,
-            branch_id=thought_data.branch_id,
+            total_thoughts=thought_data.totalThoughts,
+            next_needed=thought_data.nextThoughtNeeded,
+            branch_from=thought_data.branchFromThought,
+            branch_id=thought_data.branchId,
             response=response,
         )
 
@@ -300,7 +300,7 @@ class PersistentMemoryManager:
     ) -> None:
         """Update session statistics."""
         if session_record:
-            session_record.total_thoughts += 1  # type: ignore[assignment]
+            session_record.totalThoughts += 1  # type: ignore[assignment]
             session_record.updated_at = datetime.utcnow()  # type: ignore[assignment]
             if processing_metadata and processing_metadata.get("actual_cost"):
                 session_record.total_cost += float(processing_metadata["actual_cost"])  # type: ignore[assignment]
@@ -309,14 +309,14 @@ class PersistentMemoryManager:
         self, db: Session, session_id: str, thought_data: ThoughtData
     ) -> None:
         """Handle branch record creation and updates."""
-        if not thought_data.branch_id:
+        if not thought_data.branchId:
             return
 
         branch_record = (
             db.query(BranchRecord)
             .filter(
                 BranchRecord.session_id == session_id,
-                BranchRecord.branch_id == thought_data.branch_id,
+                BranchRecord.branchId == thought_data.branchId,
             )
             .first()
         )
@@ -324,8 +324,8 @@ class PersistentMemoryManager:
         if not branch_record:
             branch_record = BranchRecord(
                 session_id=session_id,
-                branch_id=thought_data.branch_id,
-                parent_thought=thought_data.branch_from,
+                branch_id=thought_data.branchId,
+                parent_thought=thought_data.branchFromThought,
             )
             db.add(branch_record)
 
@@ -339,7 +339,7 @@ class PersistentMemoryManager:
             query = (
                 db.query(ThoughtRecord)
                 .filter(ThoughtRecord.session_id == session_id)
-                .order_by(ThoughtRecord.thought_number)
+                .order_by(ThoughtRecord.thoughtNumber)
             )
 
             if limit:
@@ -356,7 +356,7 @@ class PersistentMemoryManager:
                 db.query(ThoughtRecord)
                 .filter(
                     ThoughtRecord.session_id == session_id,
-                    ThoughtRecord.thought_number == thought_number,
+                    ThoughtRecord.thoughtNumber == thought_number,
                 )
                 .first()
             )
@@ -370,9 +370,9 @@ class PersistentMemoryManager:
                 db.query(ThoughtRecord)
                 .filter(
                     ThoughtRecord.session_id == session_id,
-                    ThoughtRecord.branch_id == branch_id,
+                    ThoughtRecord.branchId == branch_id,
                 )
-                .order_by(ThoughtRecord.thought_number)
+                .order_by(ThoughtRecord.thoughtNumber)
                 .all()
             )
 

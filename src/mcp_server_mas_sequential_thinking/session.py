@@ -32,11 +32,11 @@ class SessionMemory:
 
         # Update data structures atomically
         self.thought_history.append(thought)
-        self._thought_cache[thought.thought_number] = thought
+        self._thought_cache[thought.thoughtNumber] = thought
 
         # Handle branching with optimized setdefault pattern
-        if thought.branch_from is not None and thought.branch_id is not None:
-            self.branches.setdefault(thought.branch_id, []).append(thought)
+        if thought.branchFromThought is not None and thought.branchId is not None:
+            self.branches.setdefault(thought.branchId, []).append(thought)
 
     def _validate_session_limits(self, thought: ThoughtData) -> None:
         """Validate session limits with early exit optimization."""
@@ -47,7 +47,7 @@ class SessionMemory:
             )
 
         # Branch-specific validations only if needed
-        if not thought.branch_id:
+        if not thought.branchId:
             return
 
         # Check total branch limit
@@ -58,11 +58,11 @@ class SessionMemory:
 
         # Check individual branch limit
         if (
-            thought.branch_id in self.branches
-            and len(self.branches[thought.branch_id]) >= self.MAX_THOUGHTS_PER_BRANCH
+            thought.branchId in self.branches
+            and len(self.branches[thought.branchId]) >= self.MAX_THOUGHTS_PER_BRANCH
         ):
             raise ValueError(
-                f"Branch '{thought.branch_id}' exceeds maximum {self.MAX_THOUGHTS_PER_BRANCH} thoughts"
+                f"Branch '{thought.branchId}' exceeds maximum {self.MAX_THOUGHTS_PER_BRANCH} thoughts"
             )
 
     def find_thought_content(self, thought_number: ThoughtNumber) -> str:
@@ -79,4 +79,4 @@ class SessionMemory:
 
     def get_current_branch_id(self, thought: ThoughtData) -> str:
         """Get the current branch ID for a thought with improved logic."""
-        return thought.branch_id or "main"
+        return thought.branchId or "main"

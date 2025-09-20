@@ -348,8 +348,8 @@ class AgnoWorkflowRouter(StepExecutorMixin):
             # Extract thought content from StepInput
             if isinstance(step_input.input, dict):
                 thought_content = step_input.input.get("thought", "")
-                thought_number = step_input.input.get("thought_number", 1)
-                total_thoughts = step_input.input.get("total_thoughts", 1)
+                thought_number = step_input.input.get("thoughtNumber", 1)
+                total_thoughts = step_input.input.get("totalThoughts", 1)
             else:
                 thought_content = str(step_input.input)
                 thought_number = 1  # Default fallback
@@ -358,9 +358,13 @@ class AgnoWorkflowRouter(StepExecutorMixin):
             # Perform complexity analysis (no caching in selector)
             thought_data = ThoughtData(
                 thought=thought_content,
-                thought_number=thought_number,
-                total_thoughts=total_thoughts,
-                next_needed=True,
+                thoughtNumber=thought_number,
+                totalThoughts=total_thoughts,
+                nextThoughtNeeded=True,
+                isRevision=False,
+                branchFromThought=None,
+                branchId=None,
+                needsMoreThoughts=False,
             )
 
             complexity_metrics = self.complexity_analyzer.analyze(thought_data)
@@ -418,20 +422,20 @@ class AgnoWorkflowRouter(StepExecutorMixin):
             # Prepare workflow input as dictionary (Agno standard)
             workflow_input = {
                 "thought": thought_data.thought,
-                "thought_number": thought_data.thought_number,
-                "total_thoughts": thought_data.total_thoughts,
+                "thought_number": thought_data.thoughtNumber,
+                "total_thoughts": thought_data.totalThoughts,
                 "context": context_prompt,
             }
 
             # Initialize session_state for metadata tracking
             session_state = {
                 "start_time": start_time,
-                "thought_number": thought_data.thought_number,
-                "total_thoughts": thought_data.total_thoughts,
+                "thought_number": thought_data.thoughtNumber,
+                "total_thoughts": thought_data.totalThoughts,
             }
 
             logger.info(
-                f"Executing Agno workflow for thought #{thought_data.thought_number}"
+                f"Executing Agno workflow for thought #{thought_data.thoughtNumber}"
             )
 
             # Execute Agno workflow with session_state

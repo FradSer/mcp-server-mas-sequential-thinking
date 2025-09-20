@@ -367,7 +367,7 @@ class ComplexityAnalyzer:
             features.update(analyzer.analyze(text))
 
         # Handle branching context bonus
-        if thought_data.branch_from is not None:
+        if thought_data.branchFromThought is not None:
             bonus = ComplexityAnalysisConstants.BRANCHING_CONTEXT_BONUS
             features["branching_references"] = (
                 features.get("branching_references", 0) + bonus
