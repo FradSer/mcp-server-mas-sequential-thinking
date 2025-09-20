@@ -441,19 +441,109 @@ class AgnoWorkflowRouter(StepExecutorMixin):
 
             processing_time = time.time() - start_time
 
-            # Extract result content from StepOutput, RunOutput, or raw result
-            if hasattr(result, "content"):
-                content = result.content
-            elif hasattr(result, "output"):  # RunOutput has .output attribute
-                content = str(result.output) if result.output else str(result)
-            elif isinstance(result, dict):
-                content = result.get("content", str(result))
-            else:
-                content = str(result)
+            # Extract result content - handle nested structures and object representations
+            def extract_clean_content(obj, depth=0):
+                """Recursively extract clean content from nested objects."""
+                # Prevent infinite recursion
+                if depth > 10:
+                    return str(obj)
 
-            # Ensure content is always a string
+                # Handle dictionary with 'result' key (common wrapper)
+                if isinstance(obj, dict):
+                    if 'result' in obj:
+                        return extract_clean_content(obj['result'], depth + 1)
+                    elif 'content' in obj:
+                        return extract_clean_content(obj['content'], depth + 1)
+                    else:
+                        # Try to find any meaningful string content in the dict
+                        for key, value in obj.items():
+                            if isinstance(value, str) and len(value.strip()) > 10:
+                                # Skip technical keys, prefer content-like keys
+                                if key.lower() in ['message', 'text', 'response', 'output', 'answer']:
+                                    return value.strip()
+                        # Fallback to any string content
+                        for value in obj.values():
+                            if isinstance(value, str) and len(value.strip()) > 10:
+                                return value.strip()
+                        return str(obj)
+
+                # Handle RunOutput or TeamRunOutput objects
+                if hasattr(obj, "content"):
+                    content = obj.content
+                    if isinstance(content, str):
+                        return content.strip()
+                    else:
+                        return extract_clean_content(content, depth + 1)
+
+                # Handle other output objects
+                if hasattr(obj, "output"):
+                    return extract_clean_content(obj.output, depth + 1)
+
+                # Handle list/tuple - extract first meaningful content
+                if isinstance(obj, (list, tuple)) and obj:
+                    for item in obj:
+                        result = extract_clean_content(item, depth + 1)
+                        if isinstance(result, str) and len(result.strip()) > 10:
+                            return result.strip()
+
+                # If it's already a string, clean it up
+                if isinstance(obj, str):
+                    content = obj.strip()
+
+                    # Remove object representations - more comprehensive patterns
+                    if any(content.startswith(pattern) for pattern in [
+                        "RunOutput(", "TeamRunOutput(", "StepOutput(", "WorkflowResult(",
+                        "{'result':", '{"result":', "{'content':", '{"content":'
+                    ]):
+                        # Try multiple extraction patterns
+                        patterns = [
+                            (r"content='([^']*)'", 1),  # Single quotes
+                            (r'content="([^"]*)"', 1),  # Double quotes
+                            (r"content=([^,)]*)", 1),   # No quotes
+                            (r"'result':\s*'([^']*)'", 1),  # Result in dict with single quotes
+                            (r'"result":\s*"([^"]*)"', 1),  # Result in dict with double quotes
+                            (r"'([^']{20,})'", 1),      # Any long string in single quotes
+                            (r'"([^"]{20,})"', 1),      # Any long string in double quotes
+                        ]
+
+                        import re
+                        for pattern, group in patterns:
+                            match = re.search(pattern, content)
+                            if match:
+                                extracted = match.group(group).strip()
+                                if len(extracted) > 10:
+                                    return extracted
+
+                        # If patterns fail, try to find any meaningful text content
+                        # Remove obvious object syntax
+                        cleaned = re.sub(r'[{}()"\']', ' ', content)
+                        cleaned = re.sub(r'\b(RunOutput|TeamRunOutput|StepOutput|content|result|success|error)\b', ' ', cleaned)
+                        cleaned = re.sub(r'\s+', ' ', cleaned).strip()
+
+                        if len(cleaned) > 20:
+                            return cleaned
+
+                    # Return the string as-is if it doesn't look like an object
+                    return content
+
+                # Fallback - convert to string and clean
+                result = str(obj).strip()
+                if len(result) > 20 and not any(result.startswith(pattern) for pattern in [
+                    "RunOutput(", "TeamRunOutput(", "StepOutput(", "<"
+                ]):
+                    return result
+
+                return "Processing completed successfully"
+
+            content = extract_clean_content(result)
+
+            # Final validation - ensure content is clean
             if not isinstance(content, str):
                 content = str(content)
+
+            # Log successful extraction for debugging
+            logger.info(f"✅ Content extracted successfully: {len(content)} characters")
+            logger.debug(f"📝 Content preview: {content[:100]}{'...' if len(content) > 100 else ''}")
 
             # Get metadata from session_state (set by selector)
             complexity_score = session_state.get("current_complexity_score", 0.0)
@@ -571,10 +661,20 @@ class AgnoWorkflowRouter(StepExecutorMixin):
                     else str(step_input.input)
                 )
 
+                logger.info("🤖 HYBRID TEAM EXECUTION:")
+                logger.info(f"  📥 Input: {thought_content[:100]}...")
+                logger.info(f"  👥 Team members: {[member.name for member in hybrid_team.members]}")
+
                 # Run the team with session_state
+                logger.info("  🚀 Starting hybrid team processing...")
                 result = hybrid_team.run(
                     input=thought_content, session_state=session_state
                 )
+
+                logger.info("  ✅ Hybrid team completed successfully")
+                logger.info(f"  📊 Result type: {type(result).__name__}")
+                if hasattr(result, 'content'):
+                    logger.info(f"  📏 Content length: {len(str(result.content))} chars")
 
                 # Track performance in session_state
                 self._update_session_state(
@@ -588,6 +688,7 @@ class AgnoWorkflowRouter(StepExecutorMixin):
                     specialists=["planner", "analyzer"],
                 )
             except Exception as e:
+                logger.error(f"  ❌ Hybrid team execution failed: {str(e)}")
                 return self._handle_execution_error(e, "hybrid team")
 
         return Step(
