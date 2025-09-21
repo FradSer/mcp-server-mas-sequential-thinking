@@ -1,46 +1,42 @@
 """Refactored server core with separated concerns and reduced complexity."""
 
-import asyncio
-import logging
 import os
 import time
 from abc import ABC, abstractmethod
+from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from dataclasses import dataclass
 from pathlib import Path
-from typing import AsyncIterator, Optional
 
-from agno.team.team import Team
 from agno.agent import Agent
-from agno.tools.reasoning import ReasoningTools
+from agno.team.team import Team
 from pydantic import ValidationError
 
-from .modernized_config import check_required_api_keys, get_model_config
-from .models import ThoughtData
-from .session import SessionMemory
-from .unified_team import create_team_by_type
-from .utils import setup_logging
-from .constants import (
-    DefaultValues,
-    DefaultTimeouts,
-    ProcessingDefaults,
-    FieldLengthLimits,
-    PerformanceMetrics,
-)
-from .retry_handler import RetryHandler, TeamProcessingRetryHandler
-from .response_processor import ResponseProcessor, ResponseExtractor
-from .metrics_logger import MetricsLogger, PerformanceTracker
 from .adaptive_routing import ComplexityLevel, ProcessingStrategy
 from .agno_workflow_router import AgnoWorkflowRouter, WorkflowResult
+from .constants import (
+    DefaultTimeouts,
+    DefaultValues,
+    FieldLengthLimits,
+    PerformanceMetrics,
+    ProcessingDefaults,
+)
+from .metrics_logger import MetricsLogger, PerformanceTracker
+from .models import ThoughtData
+from .modernized_config import check_required_api_keys, get_model_config
+from .response_processor import ResponseExtractor, ResponseProcessor
+from .retry_handler import TeamProcessingRetryHandler
+from .session import SessionMemory
 from .types import (
-    ProcessingMetadata,
-    ThoughtProcessingError,
     ConfigurationError,
-    TeamCreationError,
-    ConfigDict,
     CoordinationPlan,
     ExecutionMode,
+    ProcessingMetadata,
+    TeamCreationError,
+    ThoughtProcessingError,
 )
+from .unified_team import create_team_by_type
+from .utils import setup_logging
 
 logger = setup_logging()
 
@@ -107,8 +103,6 @@ class ServerConfig:
     @classmethod
     def from_environment(cls) -> "ServerConfig":
         """Create config from environment with sensible defaults."""
-        import os
-
         return cls(
             provider=os.environ.get("LLM_PROVIDER", DefaultValues.DEFAULT_LLM_PROVIDER),
             team_mode=os.environ.get(
@@ -130,12 +124,10 @@ class ServerInitializer(ABC):
     @abstractmethod
     async def initialize(self, config: ServerConfig) -> None:
         """Initialize server component."""
-        pass
 
     @abstractmethod
     async def cleanup(self) -> None:
         """Clean up server component."""
-        pass
 
 
 class EnvironmentInitializer(ServerInitializer):
@@ -172,14 +164,13 @@ class EnvironmentInitializer(ServerInitializer):
 
     async def cleanup(self) -> None:
         """No cleanup needed for environment."""
-        pass
 
 
 class TeamInitializer(ServerInitializer):
     """Handles team creation and configuration."""
 
     def __init__(self):
-        self._team: Optional[Team] = None
+        self._team: Team | None = None
 
     async def initialize(self, config: ServerConfig) -> None:
         """Initialize team based on configuration with enhanced error handling."""
@@ -220,8 +211,8 @@ class ServerState:
     """Manages server state with proper lifecycle and separation of concerns."""
 
     def __init__(self):
-        self._config: Optional[ServerConfig] = None
-        self._session: Optional[SessionMemory] = None
+        self._config: ServerConfig | None = None
+        self._session: SessionMemory | None = None
         self._initializers = [
             EnvironmentInitializer(),
             TeamInitializer(),
@@ -276,12 +267,12 @@ class ThoughtProcessor(LoggingMixin):
     """Handles thought processing with optimized performance and error handling."""
 
     __slots__ = (
-        "_session",
         "_agno_router",
-        "_retry_handler",
-        "_response_processor",
         "_metrics_logger",
         "_performance_tracker",
+        "_response_processor",
+        "_retry_handler",
+        "_session",
     )
 
     def __init__(self, session: SessionMemory) -> None:
@@ -414,7 +405,7 @@ class ThoughtProcessor(LoggingMixin):
         self, coordination_plan: CoordinationPlan, coordination_time: float
     ) -> None:
         """Log detailed coordination plan analysis."""
-        logger.info(f"🎯 COORDINATION PLAN:")
+        logger.info("🎯 COORDINATION PLAN:")
         logger.info(f"  Strategy: {coordination_plan.strategy}")
         logger.info(
             f"  Complexity: {coordination_plan.complexity_level} (score: {coordination_plan.complexity_score:.1f}/100)"
@@ -423,7 +414,7 @@ class ThoughtProcessor(LoggingMixin):
         logger.info(f"  Specialists: {coordination_plan.specialist_roles}")
         logger.info(f"  Team size: {coordination_plan.team_size}")
         logger.info(f"  Coordination: {coordination_plan.coordination_strategy}")
-        logger.info(f"  Processing mode: Unlimited time allowed")
+        logger.info("  Processing mode: Unlimited time allowed")
         logger.info(f"  Coordination time: {coordination_time:.3f}s")
         logger.info(f"  Confidence: {coordination_plan.confidence:.2f}")
         logger.debug(f"  Reasoning: {coordination_plan.reasoning}")
@@ -434,7 +425,7 @@ class ThoughtProcessor(LoggingMixin):
         """Execute coordination plan with timing and logging."""
         processing_start = time.time()
 
-        logger.info(f"📋 EXECUTING COORDINATION PLAN:")
+        logger.info("📋 EXECUTING COORDINATION PLAN:")
         logger.info(f"  Mode: {coordination_plan.execution_mode.value}")
         logger.info(f"  Task breakdown: {coordination_plan.task_breakdown}")
         logger.info(
@@ -543,7 +534,7 @@ class ThoughtProcessor(LoggingMixin):
 
     def _log_routing_analysis(self, routing_decision, routing_time: float) -> None:
         """Log detailed routing analysis information."""
-        logger.info(f"🧠 ROUTING ANALYSIS:")
+        logger.info("🧠 ROUTING ANALYSIS:")
         logger.info(f"  Strategy: {routing_decision.strategy.value}")
         logger.info(
             f"  Complexity: {routing_decision.complexity_level.value} (score: {routing_decision.complexity_score:.1f}/100)"
@@ -564,7 +555,7 @@ class ThoughtProcessor(LoggingMixin):
         self, thought_data: ThoughtData, input_prompt: str
     ) -> None:
         """Log context building details."""
-        logger.info(f"📝 CONTEXT BUILDING:")
+        logger.info("📝 CONTEXT BUILDING:")
 
         if thought_data.isRevision and thought_data.branchFromThought:
             logger.info(f"  Type: Revision of thought #{thought_data.branchFromThought}")
@@ -574,7 +565,7 @@ class ThoughtProcessor(LoggingMixin):
                 )
                 logger.info(f"  Original thought: {original}")
             except:
-                logger.info(f"  Original thought: [not found]")
+                logger.info("  Original thought: [not found]")
         elif thought_data.branchFromThought and thought_data.branchId:
             logger.info(
                 f"  Type: Branch '{thought_data.branchId}' from thought #{thought_data.branchFromThought}"
@@ -583,7 +574,7 @@ class ThoughtProcessor(LoggingMixin):
                 origin = self._session.find_thought_content(thought_data.branchFromThought)
                 logger.info(f"  Branch origin: {origin}")
             except:
-                logger.info(f"  Branch origin: [not found]")
+                logger.info("  Branch origin: [not found]")
         else:
             logger.info(f"  Type: Sequential thought #{thought_data.thoughtNumber}")
 
@@ -637,7 +628,7 @@ class ThoughtProcessor(LoggingMixin):
         final_response: str,
     ) -> None:
         """Log final processing completion summary."""
-        logger.info(f"🎯 PROCESSING COMPLETE:")
+        logger.info("🎯 PROCESSING COMPLETE:")
         logger.info(f"  Thought #{thought_data.thoughtNumber} processed successfully")
         logger.info(f"  Strategy used: {strategy_used}")
         logger.info(f"  Processing time: {processing_time:.3f}s")
@@ -649,7 +640,6 @@ class ThoughtProcessor(LoggingMixin):
         self, input_prompt: str, plan: CoordinationPlan
     ) -> str:
         """Execute thought processing based on coordination plan (unified approach)."""
-
         logger.info(
             f"🎯 Executing {plan.execution_mode.value} with {plan.specialist_roles}"
         )
@@ -658,14 +648,13 @@ class ThoughtProcessor(LoggingMixin):
             if plan.execution_mode == ExecutionMode.SINGLE_AGENT:
                 return await self._execute_single_agent_simple(input_prompt)
 
-            elif plan.execution_mode == ExecutionMode.SELECTIVE_TEAM:
+            if plan.execution_mode == ExecutionMode.SELECTIVE_TEAM:
                 return await self._execute_selective_team(input_prompt, plan)
 
-            elif plan.execution_mode == ExecutionMode.FULL_TEAM:
+            if plan.execution_mode == ExecutionMode.FULL_TEAM:
                 return await self._execute_full_team_unlimited(input_prompt, plan)
 
-            else:
-                raise ValueError(f"Unknown execution mode: {plan.execution_mode}")
+            raise ValueError(f"Unknown execution mode: {plan.execution_mode}")
 
         except Exception as e:
             logger.error(f"Coordination plan execution failed: {e}")
@@ -679,7 +668,7 @@ class ThoughtProcessor(LoggingMixin):
             processing_type="thought", use_markdown=False
         )
 
-        logger.info(f"🤖 SINGLE-AGENT CALL:")
+        logger.info("🤖 SINGLE-AGENT CALL:")
         logger.info(f"  Agent: {simple_agent.name} ({simple_agent.role})")
         logger.info(
             f"  Model: {getattr(simple_agent.model, 'id', 'unknown')} ({simple_agent.model.__class__.__name__})"
@@ -693,7 +682,7 @@ class ThoughtProcessor(LoggingMixin):
         # HOTFIX: Properly extract content from Agno RunOutput
         response_content = self._extract_response_content(response)
 
-        logger.info(f"✅ SINGLE-AGENT RESPONSE:")
+        logger.info("✅ SINGLE-AGENT RESPONSE:")
         self._log_output_details(response_content, processing_time)
 
         return response_content
@@ -703,7 +692,7 @@ class ThoughtProcessor(LoggingMixin):
     ) -> str:
         """Execute selective team processing (hybrid approach)."""
         # For now, delegate to full team but log as selective
-        logger.info(f"🏢 SELECTIVE TEAM CALL:")
+        logger.info("🏢 SELECTIVE TEAM CALL:")
         logger.info(f"  Required specialists: {plan.specialist_roles}")
         logger.info(f"  Coordination strategy: {plan.coordination_strategy}")
 
@@ -782,7 +771,7 @@ class ThoughtProcessor(LoggingMixin):
 Provide a focused response with clear guidance for the next step."""
 
             # ENHANCED LOGGING: Log single agent call details
-            logger.info(f"🤖 SINGLE-AGENT CALL:")
+            logger.info("🤖 SINGLE-AGENT CALL:")
             logger.info(f"  Agent: {simple_agent.name} ({simple_agent.role})")
             logger.info(
                 f"  Model: {getattr(simple_agent.model, 'id', 'unknown')} ({simple_agent.model.__class__.__name__})"
@@ -798,7 +787,7 @@ Provide a focused response with clear guidance for the next step."""
             response_content = self._extract_response_content(response)
 
             # ENHANCED LOGGING: Log single agent response details
-            logger.info(f"✅ SINGLE-AGENT RESPONSE:")
+            logger.info("✅ SINGLE-AGENT RESPONSE:")
             self._log_output_details(response_content, processing_time)
 
             logger.info(
@@ -837,20 +826,14 @@ Provide a focused response with clear guidance for the next step."""
                 return f"{base}{content}"
 
     def _format_response(self, content: str, thought_data: ThoughtData) -> str:
-        """Format response with appropriate guidance."""
-        guidance = (
-            "\n\nGuidance: Look for revision/branch recommendations in the response. Formulate the next logical thought."
-            if thought_data.nextThoughtNeeded
-            else "\n\nThis is the final thought. Review the synthesis."
-        )
-
-        final_response = content + guidance
+        """Format response for MCP - clean content without guidance."""
+        # MCP servers should return clean content, let AI decide next steps
+        final_response = content
 
         # ENHANCED LOGGING: Response formatting details
-        logger.info(f"📤 RESPONSE FORMATTING:")
+        logger.info("📤 RESPONSE FORMATTING:")
         logger.info(f"  Original content length: {len(content)} chars")
         logger.info(f"  Next needed: {thought_data.nextThoughtNeeded}")
-        logger.info(f"  Guidance added: {guidance.strip()}")
         logger.info(f"  Final response length: {len(final_response)} chars")
         logger.info(f"  Final response:\n{final_response}")
         logger.info(f"  {'=' * FieldLengthLimits.SEPARATOR_LENGTH}")
@@ -881,7 +864,6 @@ async def create_server_lifespan() -> AsyncIterator[ServerState]:
 class ServerInitializationError(Exception):
     """Custom exception for server initialization failures."""
 
-    pass
 
 
 def create_validated_thought_data(
@@ -890,8 +872,8 @@ def create_validated_thought_data(
     totalThoughts: int,
     nextThoughtNeeded: bool,
     isRevision: bool,
-    branchFromThought: Optional[int],
-    branchId: Optional[str],
+    branchFromThought: int | None,
+    branchId: str | None,
     needsMoreThoughts: bool,
 ) -> ThoughtData:
     """Create and validate thought data with enhanced error reporting."""
@@ -911,8 +893,8 @@ def create_validated_thought_data(
 
 
 # Global server state with workflow support
-_server_state: Optional[ServerState] = None
-_thought_processor: Optional[ThoughtProcessor] = None
+_server_state: ServerState | None = None
+_thought_processor: ThoughtProcessor | None = None
 
 
 async def get_thought_processor() -> ThoughtProcessor:
