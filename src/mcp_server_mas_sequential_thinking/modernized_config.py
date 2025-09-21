@@ -297,9 +297,12 @@ class ConfigurationManager:
             if not is_optional and not os.environ.get(var_name):
                 missing[var_name] = "Required but not set"
 
-        # Always check EXA API key for research functionality
-        if not os.environ.get("EXA_API_KEY"):
-            missing["EXA_API_KEY"] = "Required for research tools"
+        # Check EXA API key for research functionality (optional)
+        # Note: EXA tools will be disabled if key is not provided
+        exa_key = os.environ.get("EXA_API_KEY")
+        if not exa_key:
+            # Don't fail startup - just log warning that research will be disabled
+            pass
 
         return missing
 

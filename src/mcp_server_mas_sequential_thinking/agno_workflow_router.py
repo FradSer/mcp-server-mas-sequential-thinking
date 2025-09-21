@@ -167,7 +167,7 @@ class StepExecutorMixin:
         """Update session state with completion tracking."""
         if session_state is not None:
             session_state[completed_key] = True
-            session_state["processing_strategy"] = strategy
+            # Note: current_strategy is set directly in executors for consistency
 
     @staticmethod
     def _handle_execution_error(error: Exception, strategy: str) -> StepOutput:
@@ -967,7 +967,6 @@ class AgnoWorkflowRouter(StepExecutorMixin):
 
                 # Track performance in session_state
                 session_state["full_team_completed"] = True
-                session_state["processing_strategy"] = "multi_agent"
 
                 return StepOutput(
                     content=result,

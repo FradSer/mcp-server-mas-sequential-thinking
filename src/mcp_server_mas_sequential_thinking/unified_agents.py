@@ -1,12 +1,32 @@
 """Unified agent factory eliminating redundancy between standard and enhanced agents."""
 
+import os
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Dict, List, Type, Optional, Any
 from agno.agent import Agent
 from agno.models.base import Model
 from agno.tools.reasoning import ReasoningTools
-from agno.tools.exa import ExaTools
+
+# Conditional import of ExaTools based on API key availability
+_EXA_AVAILABLE = bool(os.environ.get("EXA_API_KEY"))
+if _EXA_AVAILABLE:
+    try:
+        from agno.tools.exa import ExaTools
+    except ImportError:
+        _EXA_AVAILABLE = False
+        ExaTools = None
+else:
+    ExaTools = None
+
+
+def _get_research_tools() -> List[Type]:
+    """Get available research tools based on API key availability."""
+    tools = [ReasoningTools]
+    if _EXA_AVAILABLE and ExaTools:
+        tools.append(ExaTools)
+    return tools
+
 
 __all__ = [
     "AgentCapability",
@@ -168,7 +188,7 @@ class UnifiedAgentFactory:
         "researcher": AgentCapability(
             role="Information Gatherer",
             description="Gathers and validates information based on delegated research sub-tasks",
-            tools=[ReasoningTools, ExaTools],  # Research tools for external data
+            tools=_get_research_tools(),  # Conditional research tools based on API availability
             role_description="Find, gather, and validate information using research tools for information-related sub-tasks",
             reasoning_level=ReasoningLevel.BASIC,  # Simpler reasoning for data gathering
             memory_enabled=False,
@@ -217,7 +237,7 @@ class UnifiedAgentFactory:
         "research_analyst": AgentCapability(
             role="Research & Analysis Specialist",
             description="Combined research and analysis with memory",
-            tools=[ReasoningTools, ExaTools],
+            tools=_get_research_tools(),  # Conditional research tools based on API availability
             role_description="Conduct research and perform analysis with context memory",
             reasoning_level=ReasoningLevel.INTERMEDIATE,
             memory_enabled=True,
