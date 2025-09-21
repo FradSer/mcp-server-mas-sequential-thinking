@@ -350,8 +350,8 @@ class AgnoWorkflowRouter(StepExecutorMixin):
             # Extract thought content from StepInput
             if isinstance(step_input.input, dict):
                 thought_content = step_input.input.get("thought", "")
-                thought_number = step_input.input.get("thoughtNumber", 1)
-                total_thoughts = step_input.input.get("totalThoughts", 1)
+                thought_number = step_input.input.get("thought_number", 1)
+                total_thoughts = step_input.input.get("total_thoughts", 1)
             else:
                 thought_content = str(step_input.input)
                 thought_number = 1  # Default fallback
