@@ -28,6 +28,14 @@ from .adaptive_routing import (
     ComplexityLevel,
 )
 from .modernized_config import get_model_config
+from .processing_constants import (
+    ComplexityThresholds, QualityThresholds, RetryConfiguration,
+    SixHatsConfiguration, get_complexity_level_name, is_content_sufficient_quality,
+    count_complex_keywords, is_suitable_for_six_hats, ERROR_INDICATORS
+)
+from .base_executor import (
+    BaseExecutor, SingleAgentExecutor, HybridTeamExecutor, MultiAgentExecutor
+)
 
 # Import Six Hats support
 try:
@@ -256,49 +264,38 @@ class AgnoWorkflowRouter(StepExecutorMixin):
             logger.info("AgnoWorkflowRouter initialized with Original strategies only")
 
     def _quality_evaluator(self, step_input: StepInput) -> bool:
-        """
-        Evaluate if additional quality improvement is needed.
-
-        Returns True if quality improvement steps should run.
-        """
+        """Evaluate if additional quality improvement is needed."""
         try:
-            # Get previous step output for quality assessment
             previous_content = step_input.previous_step_content or ""
 
-            # Simple quality heuristics
-            quality_issues = []
+            # Use centralized quality assessment
+            if not is_content_sufficient_quality(previous_content):
+                logger.info("Quality issues detected: content_quality_insufficient")
+                return True
 
-            # Check content length (too short might indicate insufficient analysis)
-            if len(previous_content.strip()) < 100:
-                quality_issues.append("content_too_short")
+            # Check for insufficient depth in longer content
+            if self._has_insufficient_depth(previous_content):
+                logger.info("Quality issues detected: insufficient_depth")
+                return True
 
-            # Check for error indicators
-            if any(
-                error_keyword in previous_content.lower()
-                for error_keyword in ["failed", "error", "could not", "unable to"]
-            ):
-                quality_issues.append("contains_errors")
-
-            # Check for insufficient depth (simplified without complexity score)
-            if len(previous_content.strip()) < 200:
-                quality_issues.append("insufficient_depth")
-
-            # Note: Cannot store in session_state since evaluators don't have access
-
-            # Return True if quality improvement is needed
-            needs_improvement = len(quality_issues) > 0
-
-            if needs_improvement:
-                logger.info(f"Quality issues detected: {quality_issues}")
-            else:
-                logger.info("Quality check passed - no improvement needed")
-
-            return needs_improvement
+            logger.info("Quality check passed - no improvement needed")
+            return False
 
         except Exception as e:
             logger.error(f"Error in quality evaluator: {e}")
-            # If evaluation fails, don't run improvement (fail safe)
             return False
+
+    def _has_insufficient_depth(self, content: str) -> bool:
+        """Check if content lacks analytical depth."""
+        if len(content.strip()) <= QualityThresholds.INSUFFICIENT_DEPTH_THRESHOLD:
+            return True
+
+        depth_indicators = ["analyze", "consider", "factors", "implications"]
+        depth_count = sum(
+            1 for indicator in depth_indicators
+            if indicator.lower() in content.lower()
+        )
+        return depth_count < 2
 
     def _create_quality_improvement_step(self) -> Step:
         """Create quality improvement step for when initial output needs enhancement."""
@@ -471,37 +468,13 @@ class AgnoWorkflowRouter(StepExecutorMixin):
 
     def _is_suitable_for_six_hats(self, thought_content: str) -> bool:
         """Quick heuristic to determine if Six Hats would be beneficial."""
-        text = thought_content.lower()
+        suitable = is_suitable_for_six_hats(thought_content)
 
-        # Six Hats is particularly good for:
-        six_hats_indicators = [
-            # Creative/innovative thinking
-            'creative', 'innovative', 'brainstorm', 'idea', 'solution', 'alternative',
-            # Decision making
-            'decide', 'choose', 'should', 'option', 'which', 'better',
-            # Evaluation/assessment
-            'evaluate', 'assess', 'pros', 'cons', 'advantages', 'disadvantages',
-            # Complex philosophical questions
-            'meaning', 'purpose', 'philosophy', 'ethical', 'moral', 'value',
-            # Problem solving
-            'problem', 'challenge', 'issue', 'difficulty', 'obstacle',
-            # Chinese equivalents
-            '创新', '创意', '解决', '选择', '评估', '哲学', '意义', '价值', '问题'
-        ]
-
-        # Count indicators
-        indicator_count = sum(1 for indicator in six_hats_indicators if indicator in text)
-
-        # Six Hats is suitable if:
-        # 1. Has multiple indicators (complex thinking needed)
-        # 2. Length suggests depth (not too short)
-        # 3. Has questions or evaluation needs
-
+        # Log details for debugging
+        text_lower = thought_content.lower()
+        indicator_count = sum(1 for indicator in ['creative', 'decide', 'evaluate', 'meaning', 'problem', '创新', '选择', '评估', '哲学', '问题'] if indicator in text_lower)
         has_questions = '?' in thought_content or '？' in thought_content
-        is_complex_length = len(thought_content) > 50
-        has_multiple_indicators = indicator_count >= 2
-
-        suitable = has_multiple_indicators or (has_questions and is_complex_length)
+        is_complex_length = len(thought_content) > SixHatsConfiguration.MIN_COMPLEX_LENGTH
 
         logger.info(f"    📊 Suitability: indicators={indicator_count}, questions={has_questions}, complex_length={is_complex_length} → {suitable}")
 
@@ -579,17 +552,18 @@ class AgnoWorkflowRouter(StepExecutorMixin):
                 else:
                     thought_content = str(step_input.input)
 
-                # Simplified complexity assessment based on content length and keywords
+                # Simplified complexity assessment using centralized logic
                 content_length = len(thought_content)
-                complex_keywords = ["analyze", "consider", "evaluate", "implications", "factors", "compare", "contrast"]
-                keyword_count = sum(1 for keyword in complex_keywords if keyword.lower() in thought_content.lower())
+                keyword_count = count_complex_keywords(thought_content)
 
-                # Simple heuristic-based complexity scoring
-                if content_length < 50 and keyword_count <= 1:
+                # Use retry configuration constants for thresholds
+                if (content_length < RetryConfiguration.SIMPLE_CONTENT_LENGTH_THRESHOLD and
+                    keyword_count <= RetryConfiguration.MAX_KEYWORD_COUNT_SIMPLE):
                     strategy = "single_agent"
                     selected_step = self.single_agent_step
                     logger.info("  🤖 Retry Route: Single Agent (simplified analysis)")
-                elif content_length < 200 and keyword_count <= 3:
+                elif (content_length < RetryConfiguration.MODERATE_CONTENT_LENGTH_THRESHOLD and
+                      keyword_count <= RetryConfiguration.MAX_KEYWORD_COUNT_MODERATE):
                     strategy = "hybrid"
                     selected_step = self.hybrid_team_step
                     logger.info("  🤝 Retry Route: Hybrid Team (simplified analysis)")
@@ -607,15 +581,16 @@ class AgnoWorkflowRouter(StepExecutorMixin):
                 return [self.single_agent_step]
 
     def _determine_complexity_level(self, score: float) -> ComplexityLevel:
-        """Determine complexity level from score (adjusted for realistic ranges)."""
-        if score < 5:
-            return ComplexityLevel.SIMPLE
-        elif score < 15:
-            return ComplexityLevel.MODERATE
-        elif score < 25:
-            return ComplexityLevel.COMPLEX
-        else:
-            return ComplexityLevel.HIGHLY_COMPLEX
+        """Determine complexity level from score using centralized thresholds."""
+        match score:
+            case s if s < ComplexityThresholds.SIMPLE_MAX:
+                return ComplexityLevel.SIMPLE
+            case s if s < ComplexityThresholds.MODERATE_MAX:
+                return ComplexityLevel.MODERATE
+            case s if s < ComplexityThresholds.COMPLEX_MAX:
+                return ComplexityLevel.COMPLEX
+            case _:
+                return ComplexityLevel.HIGHLY_COMPLEX
 
     async def process_thought_workflow(
         self, thought_data: ThoughtData, context_prompt: str
