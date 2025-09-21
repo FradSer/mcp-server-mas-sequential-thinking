@@ -29,6 +29,16 @@ from .adaptive_routing import (
 )
 from .modernized_config import get_model_config
 
+# Import Six Hats support
+try:
+    from .six_hats_processor import (
+        SixHatsSequentialProcessor, process_with_six_hats, create_six_hats_step_output
+    )
+    SIX_HATS_AVAILABLE = True
+except ImportError:
+    SIX_HATS_AVAILABLE = False
+    logger.warning("Six Hats functionality not available in workflow router")
+
 logger = logging.getLogger(__name__)
 
 
@@ -203,20 +213,33 @@ class AgnoWorkflowRouter(StepExecutorMixin):
         self.complexity_analyzer = complexity_analyzer or BasicComplexityAnalyzer()
         self.model_config = get_model_config()
 
-        # Create processing steps - simplified to 3 core strategies
+        # Initialize Six Hats processor if available
+        self.six_hats_processor = SixHatsSequentialProcessor() if SIX_HATS_AVAILABLE else None
+
+        # Create processing steps - include Six Hats if available
+        processing_choices = []
+
+        if SIX_HATS_AVAILABLE:
+            # Six Hats step (highest priority for appropriate problems)
+            self.six_hats_step = self._create_six_hats_step()
+            processing_choices.append(self.six_hats_step)
+
+        # Original steps as fallback
         self.single_agent_step = self._create_single_agent_step()
         self.hybrid_team_step = self._create_hybrid_team_step()
         self.full_team_step = self._create_full_team_step()
 
+        processing_choices.extend([
+            self.single_agent_step,
+            self.hybrid_team_step,
+            self.full_team_step,
+        ])
+
         # Create complexity-based router with custom selector
         self.complexity_router = Router(
-            name="complexity_based_router",
-            selector=self._complexity_selector,
-            choices=[
-                self.single_agent_step,
-                self.hybrid_team_step,
-                self.full_team_step,
-            ],
+            name="adaptive_complexity_router",
+            selector=self._enhanced_complexity_selector,
+            choices=processing_choices,
         )
 
         # Create main workflow - single step to avoid condition override
@@ -227,7 +250,10 @@ class AgnoWorkflowRouter(StepExecutorMixin):
             ],
         )
 
-        logger.info("AgnoWorkflowRouter initialized with Workflow + Router pattern")
+        if SIX_HATS_AVAILABLE:
+            logger.info("AgnoWorkflowRouter initialized with Six Hats + Original strategies")
+        else:
+            logger.info("AgnoWorkflowRouter initialized with Original strategies only")
 
     def _quality_evaluator(self, step_input: StepInput) -> bool:
         """
@@ -336,12 +362,153 @@ class AgnoWorkflowRouter(StepExecutorMixin):
             description="Enhance output quality when needed",
         )
 
-    def _complexity_selector(self, step_input: StepInput) -> List[Step]:
-        """
-        Agno-standard selector function for complexity-based routing.
+    def _create_six_hats_step(self) -> Step:
+        """Create Six Thinking Hats processing step."""
 
-        Router selectors only receive StepInput, not session_state.
-        """
+        async def six_hats_executor(
+            step_input: StepInput, session_state: dict
+        ) -> StepOutput:
+            """Execute Six Hats thinking process."""
+            try:
+                logger.info("🎩 SIX HATS STEP EXECUTION:")
+
+                # Extract thought content and metadata
+                if isinstance(step_input.input, dict):
+                    thought_content = step_input.input.get("thought", str(step_input.input))
+                    thought_number = step_input.input.get("thought_number", 1)
+                    total_thoughts = step_input.input.get("total_thoughts", 1)
+                    context = step_input.input.get("context", "")
+                else:
+                    thought_content = str(step_input.input)
+                    thought_number = 1
+                    total_thoughts = 1
+                    context = ""
+
+                # Create ThoughtData
+                thought_data = ThoughtData(
+                    thought=thought_content,
+                    thoughtNumber=thought_number,
+                    totalThoughts=total_thoughts,
+                    nextThoughtNeeded=True,
+                    isRevision=False,
+                    branchFromThought=None,
+                    branchId=None,
+                    needsMoreThoughts=False,
+                )
+
+                logger.info(f"  📝 Input: {thought_content[:100]}...")
+                logger.info(f"  🔢 Thought: {thought_number}/{total_thoughts}")
+
+                # Process with Six Hats
+                result = await self.six_hats_processor.process_thought_with_six_hats(
+                    thought_data, context
+                )
+
+                # Store metadata in session_state
+                session_state["current_strategy"] = result.strategy_used
+                session_state["current_complexity_score"] = result.complexity_score
+                session_state["six_hats_sequence"] = result.hat_sequence
+                session_state["cost_reduction"] = result.cost_reduction
+
+                logger.info(f"  ✅ Six Hats completed: {result.strategy_used}")
+                logger.info(f"  📊 Complexity: {result.complexity_score:.1f}")
+                logger.info(f"  💰 Cost Reduction: {result.cost_reduction:.1f}%")
+
+                return create_six_hats_step_output(result)
+
+            except Exception as e:
+                logger.error(f"  ❌ Six Hats execution failed: {e}")
+                return StepOutput(
+                    content=f"Six Hats processing failed: {str(e)}",
+                    success=False,
+                    error=str(e),
+                    step_name="six_hats_error"
+                )
+
+        return Step(
+            name="six_hats_processing",
+            executor=six_hats_executor,
+            description="Six Thinking Hats sequential processing with intelligent routing",
+        )
+
+    def _enhanced_complexity_selector(self, step_input: StepInput) -> List[Step]:
+        """Enhanced selector that considers Six Hats processing first."""
+        try:
+            logger.info("🧭 ENHANCED WORKFLOW ROUTING:")
+
+            # Extract thought content from StepInput
+            if isinstance(step_input.input, dict):
+                thought_content = step_input.input.get("thought", "")
+                thought_number = step_input.input.get("thought_number", 1)
+                total_thoughts = step_input.input.get("total_thoughts", 1)
+            else:
+                thought_content = str(step_input.input)
+                thought_number = 1
+                total_thoughts = 1
+
+            logger.info(f"  📝 Input: {thought_content[:100]}{'...' if len(thought_content) > 100 else ''}")
+
+            # If Six Hats is available, try to use it first
+            if SIX_HATS_AVAILABLE and self.six_hats_processor:
+                logger.info("  🎩 Evaluating Six Hats suitability...")
+
+                # Quick suitability check
+                is_suitable_for_six_hats = self._is_suitable_for_six_hats(thought_content)
+
+                if is_suitable_for_six_hats:
+                    logger.info("  ✅ Six Hats selected - optimal for this thought type")
+                    return [self.six_hats_step]
+
+                logger.info("  ❌ Six Hats not suitable - falling back to original strategies")
+
+            # Fall back to original complexity-based routing
+            return self._original_complexity_selector(step_input)
+
+        except Exception as e:
+            logger.error(f"Error in enhanced selector: {e}")
+            # Ultimate fallback
+            return [self.single_agent_step]
+
+    def _is_suitable_for_six_hats(self, thought_content: str) -> bool:
+        """Quick heuristic to determine if Six Hats would be beneficial."""
+        text = thought_content.lower()
+
+        # Six Hats is particularly good for:
+        six_hats_indicators = [
+            # Creative/innovative thinking
+            'creative', 'innovative', 'brainstorm', 'idea', 'solution', 'alternative',
+            # Decision making
+            'decide', 'choose', 'should', 'option', 'which', 'better',
+            # Evaluation/assessment
+            'evaluate', 'assess', 'pros', 'cons', 'advantages', 'disadvantages',
+            # Complex philosophical questions
+            'meaning', 'purpose', 'philosophy', 'ethical', 'moral', 'value',
+            # Problem solving
+            'problem', 'challenge', 'issue', 'difficulty', 'obstacle',
+            # Chinese equivalents
+            '创新', '创意', '解决', '选择', '评估', '哲学', '意义', '价值', '问题'
+        ]
+
+        # Count indicators
+        indicator_count = sum(1 for indicator in six_hats_indicators if indicator in text)
+
+        # Six Hats is suitable if:
+        # 1. Has multiple indicators (complex thinking needed)
+        # 2. Length suggests depth (not too short)
+        # 3. Has questions or evaluation needs
+
+        has_questions = '?' in thought_content or '？' in thought_content
+        is_complex_length = len(thought_content) > 50
+        has_multiple_indicators = indicator_count >= 2
+
+        suitable = has_multiple_indicators or (has_questions and is_complex_length)
+
+        logger.info(f"    📊 Suitability: indicators={indicator_count}, questions={has_questions}, complex_length={is_complex_length} → {suitable}")
+
+        return suitable
+
+    def _original_complexity_selector(self, step_input: StepInput) -> List[Step]:
+        """Original complexity-based selector (fallback when Six Hats not suitable)."""
         try:
             logger.info("🧭 WORKFLOW ROUTING ANALYSIS:")
 

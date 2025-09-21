@@ -10,6 +10,15 @@ from agno.models.base import Model
 from .modernized_config import ModelConfig, get_model_config
 from .unified_agents import UnifiedAgentFactory
 
+# Import Six Hats support
+try:
+    from .six_hats_core import HatColor, SixHatsAgentFactory
+    from .six_hats_router import SixHatsIntelligentRouter
+    SIX_HATS_AVAILABLE = True
+except ImportError:
+    SIX_HATS_AVAILABLE = False
+    logger.warning("Six Hats functionality not available in team factory")
+
 logger = logging.getLogger(__name__)
 
 
@@ -171,6 +180,76 @@ class EnhancedSpecializedTeamBuilder(TeamBuilder):
         )
 
 
+class SixHatsTeamBuilder(TeamBuilder):
+    """Builder for Six Thinking Hats teams."""
+
+    def __init__(self, hat_sequence: List[HatColor], team_name: str):
+        self.hat_sequence = hat_sequence
+        self.team_name = team_name
+
+    def get_configuration(self) -> TeamConfiguration:
+        return TeamConfiguration(
+            name=self.team_name,
+            description=f"Six Thinking Hats team with sequence: {' → '.join(hat.value for hat in self.hat_sequence)}",
+            team_type="six_hats",
+            instructions=[
+                "You coordinate Six Thinking Hats sequential thinking process.",
+                f"Hat sequence: {' → '.join(hat.value.upper() for hat in self.hat_sequence)}",
+                "CRITICAL: Follow the exact hat sequence - one hat at a time.",
+                "Each hat must think ONLY in its designated mode.",
+                "Blue Hat: You are responsible for final integration and unified output.",
+                "Never mix thinking modes - strict hat discipline required.",
+            ],
+            success_criteria=[
+                "Execute hats in correct sequence",
+                "Maintain thinking mode purity for each hat",
+                "Provide unified output through Blue Hat integration",
+                "Solve the 'synthesis + review' separation problem",
+            ],
+            enable_advanced_features=True,
+        )
+
+    def build_team(
+        self, config: ModelConfig, agent_factory: UnifiedAgentFactory
+    ) -> Team:
+        """Build Six Hats team with specified sequence."""
+        if not SIX_HATS_AVAILABLE:
+            raise ValueError("Six Hats functionality not available")
+
+        team_config = self.get_configuration()
+
+        # Create models
+        team_model = config.provider_class(id=config.team_model_id)
+        agent_model = config.provider_class(id=config.agent_model_id)
+
+        # Create Six Hats agents
+        hat_factory = SixHatsAgentFactory()
+        agents = []
+
+        for hat_color in self.hat_sequence:
+            agent = hat_factory.create_hat_agent(hat_color, agent_model)
+            agents.append(agent)
+
+        # Create coordinating team
+        team = Team(
+            name=team_config.name,
+            members=agents,
+            model=team_model,
+            description=team_config.description,
+            instructions=team_config.instructions,
+            # Six Hats specific coordination
+            respond_directly=False,  # Blue Hat coordinates final response
+            delegate_task_to_all_members=False,  # Sequential hat thinking
+            determine_input_for_members=True,  # Pass context between hats
+            enable_agentic_state=True,
+            share_member_interactions=True,
+            markdown=True,
+        )
+
+        logger.info(f"Six Hats team '{team_config.name}' created with sequence: {[h.value for h in self.hat_sequence]}")
+        return team
+
+
 class UnifiedTeamFactory:
     """Unified factory for creating all team types with eliminated conditional complexity."""
 
@@ -181,7 +260,32 @@ class UnifiedTeamFactory:
             "hybrid": HybridTeamBuilder(),
             "enhanced_specialized": EnhancedSpecializedTeamBuilder(),
         }
+
+        # Add Six Hats builders if available
+        if SIX_HATS_AVAILABLE:
+            # Predefined Six Hats team configurations
+            self._builders.update({
+                "six_hats_triple": SixHatsTeamBuilder(
+                    [HatColor.WHITE, HatColor.GREEN, HatColor.BLUE],
+                    "TripleHatsThinkingTeam"
+                ),
+                "six_hats_full": SixHatsTeamBuilder(
+                    [HatColor.BLUE, HatColor.WHITE, HatColor.RED,
+                     HatColor.YELLOW, HatColor.BLACK, HatColor.GREEN, HatColor.BLUE],
+                    "FullSixHatsThinkingTeam"
+                ),
+                "six_hats_philosophical": SixHatsTeamBuilder(
+                    [HatColor.WHITE, HatColor.GREEN, HatColor.BLUE],
+                    "PhilosophicalThinkingTeam"
+                ),
+                "six_hats_creative": SixHatsTeamBuilder(
+                    [HatColor.RED, HatColor.GREEN, HatColor.YELLOW, HatColor.BLUE],
+                    "CreativeThinkingTeam"
+                ),
+            })
+
         self._agent_factory = UnifiedAgentFactory()
+        self._six_hats_router = SixHatsIntelligentRouter() if SIX_HATS_AVAILABLE else None
 
     def create_team(
         self, team_type: str = "standard", config: Optional[ModelConfig] = None
@@ -202,6 +306,19 @@ class UnifiedTeamFactory:
     def get_available_team_types(self) -> List[str]:
         """Get list of available team types."""
         return list(self._builders.keys())
+
+    def create_dynamic_six_hats_team(
+        self, hat_sequence: List[HatColor], team_name: str, config: Optional[ModelConfig] = None
+    ) -> Team:
+        """Create a Six Hats team with custom hat sequence."""
+        if not SIX_HATS_AVAILABLE:
+            raise ValueError("Six Hats functionality not available")
+
+        if config is None:
+            config = get_model_config()
+
+        builder = SixHatsTeamBuilder(hat_sequence, team_name)
+        return builder.build_team(config, self._agent_factory)
 
 
 # Singleton instance
