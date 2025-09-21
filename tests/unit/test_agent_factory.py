@@ -5,13 +5,10 @@ TDD测试 - AgentFactory重构组件
 测试重构后的代理工厂模式功能
 """
 
-import pytest
-from unittest.mock import Mock, patch, MagicMock
-from typing import List, Any
+from unittest.mock import Mock, patch
 
-from src.mcp_server_mas_sequential_thinking.agno_workflow_router import AgentFactory
-from agno.agent import Agent
 from agno.tools.reasoning import ReasoningTools
+from src.mcp_server_mas_sequential_thinking.agno_workflow_router import AgentFactory
 
 
 class TestAgentFactory:

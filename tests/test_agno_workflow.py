@@ -4,16 +4,15 @@ Tests for Agno-compliant workflow router.
 Tests the AgnoCompliantRouter implementation and its integration with the ThoughtProcessor.
 """
 
-import pytest
-import asyncio
-from unittest.mock import Mock, AsyncMock, patch
+from unittest.mock import AsyncMock, Mock, patch
 
+import pytest
+from src.mcp_server_mas_sequential_thinking.adaptive_routing import ComplexityLevel
 from src.mcp_server_mas_sequential_thinking.agno_workflow_router import (
     AgnoWorkflowRouter,
     WorkflowResult,
 )
 from src.mcp_server_mas_sequential_thinking.models import ThoughtData
-from src.mcp_server_mas_sequential_thinking.adaptive_routing import ComplexityLevel
 
 
 @pytest.fixture
@@ -32,9 +31,13 @@ def sample_thought_data():
     """Sample thought data for testing."""
     return ThoughtData(
         thought="What are the implications of artificial intelligence on society?",
-        thought_number=1,
-        total_thoughts=5,
-        next_needed=True,
+        thoughtNumber=1,
+        totalThoughts=5,
+        nextThoughtNeeded=True,
+        isRevision=False,
+        branchFromThought=None,
+        branchId=None,
+        needsMoreThoughts=False,
     )
 
 
@@ -79,7 +82,7 @@ class TestAgnoWorkflowRouter:
         input_data.session_state = session_state
 
         # Call selector
-        result = agno_router._complexity_selector(input_data)
+        result = agno_router._original_complexity_selector(input_data)
 
         # Should return single agent step for simple thought
         assert len(result) == 1
@@ -106,7 +109,7 @@ class TestAgnoWorkflowRouter:
         input_data.session_state = session_state
 
         # Call selector
-        result = agno_router._complexity_selector(input_data)
+        result = agno_router._original_complexity_selector(input_data)
 
         # Should return hybrid team step for moderate thought
         assert len(result) == 1
@@ -132,7 +135,7 @@ class TestAgnoWorkflowRouter:
         input_data.session_state = session_state
 
         # Call selector
-        result = agno_router._complexity_selector(input_data)
+        result = agno_router._original_complexity_selector(input_data)
 
         # Note: Selector doesn't modify session_state, cache is set by executors
         # Just verify the correct routing decision was made
@@ -161,7 +164,7 @@ class TestAgnoWorkflowRouter:
         input_data.session_state = session_state
 
         # Call selector
-        result = agno_router._complexity_selector(input_data)
+        result = agno_router._original_complexity_selector(input_data)
 
         # Should return full team step for highly complex thought (simplified architecture)
         assert len(result) == 1
@@ -181,7 +184,7 @@ class TestAgnoWorkflowRouter:
         input_data.session_state = session_state
 
         # Call selector - should fallback to emergency fallback
-        result = agno_router._complexity_selector(input_data)
+        result = agno_router._original_complexity_selector(input_data)
 
         assert len(result) == 1
         # With simplified retry mechanism, should still return a valid step
@@ -251,9 +254,6 @@ class TestWorkflowIntegration:
         """Test ThoughtProcessor integration with workflow."""
         from src.mcp_server_mas_sequential_thinking.server_core import ThoughtProcessor
         from src.mcp_server_mas_sequential_thinking.session import SessionMemory
-        from src.mcp_server_mas_sequential_thinking.unified_team import (
-            create_team_by_type,
-        )
 
         # Create mock session
         mock_team = Mock()

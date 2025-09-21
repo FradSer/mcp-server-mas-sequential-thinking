@@ -1,11 +1,10 @@
 """Tests for main.py validation functions using TDD approach."""
 
 import pytest
-
+from src.mcp_server_mas_sequential_thinking.models import ThoughtData
 from src.mcp_server_mas_sequential_thinking.server_core import (
     create_validated_thought_data,
 )
-from src.mcp_server_mas_sequential_thinking.models import ThoughtData
 
 
 class TestCreateValidatedThoughtData:

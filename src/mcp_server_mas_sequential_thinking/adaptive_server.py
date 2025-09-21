@@ -4,14 +4,14 @@ import logging
 import os
 import uuid
 from datetime import datetime
-from typing import Optional, Dict, Any
+from typing import Any
 
-from .adaptive_routing import AdaptiveRouter, RoutingDecision, ProcessingStrategy
+from .adaptive_routing import AdaptiveRouter, ProcessingStrategy, RoutingDecision
 from .cost_optimization import CostOptimizer, get_cost_optimizer_from_env
-from .persistent_memory import PersistentMemoryManager, get_database_url_from_env
 from .models import ThoughtData
-from .unified_team import create_team_by_type
+from .persistent_memory import PersistentMemoryManager, get_database_url_from_env
 from .server_core import ThoughtProcessor
+from .unified_team import create_team_by_type
 
 logger = logging.getLogger(__name__)
 
@@ -24,7 +24,7 @@ class AdaptiveThoughtProcessor:
         enable_adaptive_routing: bool = True,
         enable_cost_optimization: bool = True,
         enable_persistent_memory: bool = True,
-        session_id: Optional[str] = None,
+        session_id: str | None = None,
     ):
         self.enable_adaptive_routing = enable_adaptive_routing
         self.enable_cost_optimization = enable_cost_optimization
@@ -37,10 +37,10 @@ class AdaptiveThoughtProcessor:
         )
 
         # Initialize components
-        self.adaptive_router: Optional[AdaptiveRouter] = None
-        self.cost_optimizer: Optional[CostOptimizer] = None
-        self.memory_manager: Optional[PersistentMemoryManager] = None
-        self.thought_processor: Optional[ThoughtProcessor] = None
+        self.adaptive_router: AdaptiveRouter | None = None
+        self.cost_optimizer: CostOptimizer | None = None
+        self.memory_manager: PersistentMemoryManager | None = None
+        self.thought_processor: ThoughtProcessor | None = None
 
         self._initialize_components()
 
@@ -53,7 +53,6 @@ class AdaptiveThoughtProcessor:
 
     def _initialize_components(self) -> None:
         """Initialize all components based on configuration."""
-
         # Initialize adaptive routing
         if self.enable_adaptive_routing:
             budget_limit = None
@@ -80,13 +79,12 @@ class AdaptiveThoughtProcessor:
             logger.info(f"Persistent memory initialized - session: {self.session_id}")
 
     async def process_thought_adaptive(
-        self, thought_data: ThoughtData, provider: Optional[str] = None
+        self, thought_data: ThoughtData, provider: str | None = None
     ) -> str:
         """Process thought with adaptive routing, cost optimization, and memory management."""
-
         start_time = datetime.utcnow()
         provider = provider or os.getenv("LLM_PROVIDER", "deepseek")
-        processing_metadata: Dict[str, Any] = {}
+        processing_metadata: dict[str, Any] = {}
 
         try:
             # Step 1: Adaptive Routing Decision
@@ -210,7 +208,7 @@ class AdaptiveThoughtProcessor:
 
             raise
 
-    def _determine_team_mode(self, routing_decision: Optional[RoutingDecision]) -> str:
+    def _determine_team_mode(self, routing_decision: RoutingDecision | None) -> str:
         """Determine team mode based on routing decision."""
         if not routing_decision:
             return os.getenv("TEAM_MODE", "standard")
@@ -224,7 +222,7 @@ class AdaptiveThoughtProcessor:
 
         return strategy_to_mode.get(routing_decision.strategy, "standard")
 
-    def _get_remaining_budget(self) -> Optional[float]:
+    def _get_remaining_budget(self) -> float | None:
         """Get remaining budget for cost optimization."""
         if not self.cost_optimizer:
             return None
@@ -237,7 +235,7 @@ class AdaptiveThoughtProcessor:
 
         return None
 
-    def get_session_summary(self) -> Dict[str, Any]:
+    def get_session_summary(self) -> dict[str, Any]:
         """Get comprehensive session summary."""
         summary = {
             "session_id": self.session_id,
@@ -281,13 +279,12 @@ class AdaptiveThoughtProcessor:
 
 
 def create_adaptive_processor(
-    session_id: Optional[str] = None,
-    enable_adaptive_routing: Optional[bool] = None,
-    enable_cost_optimization: Optional[bool] = None,
-    enable_persistent_memory: Optional[bool] = None,
+    session_id: str | None = None,
+    enable_adaptive_routing: bool | None = None,
+    enable_cost_optimization: bool | None = None,
+    enable_persistent_memory: bool | None = None,
 ) -> AdaptiveThoughtProcessor:
     """Create adaptive processor with environment-based configuration."""
-
     # Use environment variables as defaults
     if enable_adaptive_routing is None:
         enable_adaptive_routing = (

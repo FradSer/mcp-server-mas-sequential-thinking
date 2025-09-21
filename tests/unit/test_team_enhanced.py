@@ -1,14 +1,13 @@
 """Comprehensive tests for the team module."""
 
-import pytest
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
 
+import pytest
+from agno.team.team import Team
 from src.mcp_server_mas_sequential_thinking.unified_team import (
     create_team,
-    StandardTeamBuilder,
-    EnhancedTeamBuilder,
 )
-from agno.team.team import Team
+
 from tests.helpers.mocks import MockModelConfig
 
 

@@ -5,8 +5,6 @@ TDD测试 - CostOptimizationConstants重构组件
 测试重构后的成本优化常量类功能
 """
 
-import pytest
-from typing import Dict, Any
 
 from src.mcp_server_mas_sequential_thinking.constants import CostOptimizationConstants
 

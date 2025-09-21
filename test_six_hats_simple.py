@@ -1,13 +1,12 @@
 #!/usr/bin/env python3
-"""
-Simple test for Six Thinking Hats core functionality without external dependencies.
+"""Simple test for Six Thinking Hats core functionality without external dependencies.
 """
 
-import sys
 import os
+import sys
 
 # Add src to path
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'src'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "src"))
 
 def test_hat_color_enum():
     """Test HatColor enum basics."""
@@ -32,8 +31,12 @@ def test_hat_capabilities():
     """Test hat capability definitions."""
     try:
         from src.mcp_server_mas_sequential_thinking.six_hats_core import (
-            WhiteHatCapability, RedHatCapability, BlackHatCapability,
-            YellowHatCapability, GreenHatCapability, BlueHatCapability
+            BlackHatCapability,
+            BlueHatCapability,
+            GreenHatCapability,
+            RedHatCapability,
+            WhiteHatCapability,
+            YellowHatCapability,
         )
 
         print("\n🎩 Testing Hat Capabilities:")
@@ -67,7 +70,9 @@ def test_hat_capabilities():
 def test_problem_analysis():
     """Test problem type analysis."""
     try:
-        from src.mcp_server_mas_sequential_thinking.six_hats_router import ProblemAnalyzer
+        from src.mcp_server_mas_sequential_thinking.six_hats_router import (
+            ProblemAnalyzer,
+        )
 
         print("\n🧭 Testing Problem Analysis:")
 
@@ -107,7 +112,9 @@ def test_sequence_library():
     """Test hat sequence strategy library."""
     try:
         from src.mcp_server_mas_sequential_thinking.six_hats_router import (
-            SixHatsSequenceLibrary, ProblemType, HatComplexity
+            HatComplexity,
+            ProblemType,
+            SixHatsSequenceLibrary,
         )
 
         print("\n📚 Testing Sequence Library:")
@@ -140,7 +147,8 @@ def test_timing_configs():
     """Test hat timing configurations."""
     try:
         from src.mcp_server_mas_sequential_thinking.six_hats_core import (
-            HAT_TIMING_CONFIGS, HatColor
+            HAT_TIMING_CONFIGS,
+            HatColor,
         )
 
         print("\n⏱️ Testing Timing Configurations:")
@@ -167,7 +175,6 @@ def test_timing_configs():
 
 def main():
     """Run all simple tests."""
-
     print("🎩 SIX THINKING HATS CORE FUNCTIONALITY TESTS")
     print("=" * 60)
 

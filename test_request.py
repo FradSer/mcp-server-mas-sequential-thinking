@@ -3,13 +3,13 @@
 
 import asyncio
 import os
+
 from src.mcp_server_mas_sequential_thinking.main import sequentialthinking
 from src.mcp_server_mas_sequential_thinking.server_core import create_server_lifespan
 
 
 async def test_user_request():
     """Test the exact user request that was failing."""
-
     # Test data from user
     test_input = {
         "thought": "如果生命终将结束，我们为什么要活着？",
@@ -48,9 +48,8 @@ async def test_user_request():
             if "failed" not in result.lower() and "error" not in result.lower():
                 print("✅ Response appears to be successful (no error keywords)")
                 return result
-            else:
-                print("⚠️  Response may contain error - check full output")
-                return result
+            print("⚠️  Response may contain error - check full output")
+            return result
 
     except Exception as e:
         print(f"❌ FAILED: {e}")

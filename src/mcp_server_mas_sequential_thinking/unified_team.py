@@ -3,9 +3,8 @@
 import logging
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Dict, List, Optional
+
 from agno.team.team import Team
-from agno.models.base import Model
 
 from .modernized_config import ModelConfig, get_model_config
 from .unified_agents import UnifiedAgentFactory
@@ -28,8 +27,8 @@ class TeamConfiguration:
 
     name: str
     description: str
-    instructions: List[str]
-    success_criteria: List[str]
+    instructions: list[str]
+    success_criteria: list[str]
     team_type: str
     enable_advanced_features: bool = False
 
@@ -40,7 +39,6 @@ class TeamBuilder(ABC):
     @abstractmethod
     def get_configuration(self) -> TeamConfiguration:
         """Return team configuration."""
-        pass
 
     def build_team(
         self, config: ModelConfig, agent_factory: UnifiedAgentFactory
@@ -183,7 +181,7 @@ class EnhancedSpecializedTeamBuilder(TeamBuilder):
 class SixHatsTeamBuilder(TeamBuilder):
     """Builder for Six Thinking Hats teams."""
 
-    def __init__(self, hat_sequence: List[HatColor], team_name: str):
+    def __init__(self, hat_sequence: list[HatColor], team_name: str):
         self.hat_sequence = hat_sequence
         self.team_name = team_name
 
@@ -288,7 +286,7 @@ class UnifiedTeamFactory:
         self._six_hats_router = SixHatsIntelligentRouter() if SIX_HATS_AVAILABLE else None
 
     def create_team(
-        self, team_type: str = "standard", config: Optional[ModelConfig] = None
+        self, team_type: str = "standard", config: ModelConfig | None = None
     ) -> Team:
         """Create team using unified factory with simplified logic."""
         if team_type not in self._builders:
@@ -303,12 +301,12 @@ class UnifiedTeamFactory:
         builder = self._builders[team_type]
         return builder.build_team(config, self._agent_factory)
 
-    def get_available_team_types(self) -> List[str]:
+    def get_available_team_types(self) -> list[str]:
         """Get list of available team types."""
         return list(self._builders.keys())
 
     def create_dynamic_six_hats_team(
-        self, hat_sequence: List[HatColor], team_name: str, config: Optional[ModelConfig] = None
+        self, hat_sequence: list[HatColor], team_name: str, config: ModelConfig | None = None
     ) -> Team:
         """Create a Six Hats team with custom hat sequence."""
         if not SIX_HATS_AVAILABLE:
@@ -326,26 +324,26 @@ _team_factory = UnifiedTeamFactory()
 
 
 # Convenience functions for backward compatibility and external use
-def create_team(config: Optional[ModelConfig] = None) -> Team:
+def create_team(config: ModelConfig | None = None) -> Team:
     """Create standard team (backward compatible)."""
     return _team_factory.create_team("standard", config)
 
 
-def create_enhanced_team(config: Optional[ModelConfig] = None) -> Team:
+def create_enhanced_team(config: ModelConfig | None = None) -> Team:
     """Create enhanced team (backward compatible)."""
     return _team_factory.create_team("enhanced", config)
 
 
-def create_hybrid_team_instance(config: Optional[ModelConfig] = None) -> Team:
+def create_hybrid_team_instance(config: ModelConfig | None = None) -> Team:
     """Create hybrid team (backward compatible)."""
     return _team_factory.create_team("hybrid", config)
 
 
-def create_enhanced_specialized_team(config: Optional[ModelConfig] = None) -> Team:
+def create_enhanced_specialized_team(config: ModelConfig | None = None) -> Team:
     """Create enhanced specialized team."""
     return _team_factory.create_team("enhanced_specialized", config)
 
 
-def create_team_by_type(team_type: str, config: Optional[ModelConfig] = None) -> Team:
+def create_team_by_type(team_type: str, config: ModelConfig | None = None) -> Team:
     """Create team by type with unified interface."""
     return _team_factory.create_team(team_type, config)

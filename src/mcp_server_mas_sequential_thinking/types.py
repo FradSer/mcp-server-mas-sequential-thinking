@@ -1,10 +1,11 @@
 """Type definitions for better type safety."""
 
-from typing import Dict, List, Optional, Protocol, TypedDict, Any
-from enum import Enum
 from dataclasses import dataclass
-from agno.models.base import Model
+from enum import Enum
+from typing import Any, Protocol, TypedDict
+
 from agno.agent import Agent
+from agno.models.base import Model
 from agno.team.team import Team
 
 # Type aliases for better semantic meaning
@@ -13,9 +14,9 @@ BranchId = str
 ProviderName = str
 TeamType = str
 AgentType = str
-ConfigDict = Dict[str, Any]
-InstructionsList = List[str]
-SuccessCriteriaList = List[str]
+ConfigDict = dict[str, Any]
+InstructionsList = list[str]
+SuccessCriteriaList = list[str]
 
 
 class ExecutionMode(Enum):
@@ -37,8 +38,8 @@ class CoordinationPlan:
 
     # Coordination decisions
     execution_mode: ExecutionMode
-    specialist_roles: List[str]
-    task_breakdown: List[str]
+    specialist_roles: list[str]
+    task_breakdown: list[str]
     coordination_strategy: str
 
     # Execution parameters
@@ -56,7 +57,6 @@ class CoordinationPlan:
         cls, routing_decision, thought_data
     ) -> "CoordinationPlan":
         """Create coordination plan from adaptive routing decision."""
-
         # Map ProcessingStrategy to ExecutionMode
         strategy_to_mode = {
             "single_agent": ExecutionMode.SINGLE_AGENT,
@@ -114,7 +114,7 @@ class ProcessingMetadata(TypedDict, total=False):
     actual_cost: float
     token_usage: int
     processing_time: float
-    specialists: List[str]
+    specialists: list[str]
     provider: str
     routing_reasoning: str
     error_count: int
@@ -156,7 +156,7 @@ class ModelProvider(Protocol):
 class AgentFactory(Protocol):
     """Protocol for agent factory implementations."""
 
-    def create_team_agents(self, model: Model, team_type: str) -> Dict[str, Agent]:
+    def create_team_agents(self, model: Model, team_type: str) -> dict[str, Agent]:
         """Create team agents with specified model and team type."""
         ...
 
@@ -206,7 +206,7 @@ class SessionManager(Protocol):
         """Find thought content by number."""
         ...
 
-    def get_branch_summary(self) -> Dict[str, int]:
+    def get_branch_summary(self) -> dict[str, int]:
         """Get summary of all branches."""
         ...
 
@@ -214,11 +214,11 @@ class SessionManager(Protocol):
 class ConfigurationProvider(Protocol):
     """Protocol for configuration management with type safety."""
 
-    def get_model_config(self, provider_name: Optional[str] = None) -> Any:
+    def get_model_config(self, provider_name: str | None = None) -> Any:
         """Get model configuration."""
         ...
 
-    def check_required_api_keys(self, provider_name: Optional[str] = None) -> List[str]:
+    def check_required_api_keys(self, provider_name: str | None = None) -> list[str]:
         """Check for required API keys."""
         ...
 
@@ -227,19 +227,17 @@ class ConfigurationProvider(Protocol):
 class ValidationError(ValueError):
     """Exception raised when data validation fails."""
 
-    pass
 
 
 class ConfigurationError(Exception):
     """Exception raised when configuration is invalid."""
 
-    pass
 
 
 class ThoughtProcessingError(Exception):
     """Exception raised when thought processing fails."""
 
-    def __init__(self, message: str, metadata: Optional[ProcessingMetadata] = None):
+    def __init__(self, message: str, metadata: ProcessingMetadata | None = None):
         super().__init__(message)
         self.metadata = metadata or {}
 
@@ -247,40 +245,33 @@ class ThoughtProcessingError(Exception):
 class TeamCreationError(Exception):
     """Exception raised when team creation fails."""
 
-    pass
 
 
 class RoutingDecisionError(ThoughtProcessingError):
     """Error in adaptive routing decision making."""
 
-    pass
 
 
 class CostOptimizationError(ThoughtProcessingError):
     """Error in cost optimization logic."""
 
-    pass
 
 
 class PersistentStorageError(ThoughtProcessingError):
     """Error in persistent memory storage."""
 
-    pass
 
 
 class ModelConfigurationError(ConfigurationError):
     """Error in model configuration."""
 
-    pass
 
 
 class ProviderError(Exception):
     """Error related to LLM providers."""
 
-    pass
 
 
 class AgentCreationError(Exception):
     """Error in agent creation."""
 
-    pass

@@ -3,12 +3,13 @@
 
 import asyncio
 import os
+
 from src.mcp_server_mas_sequential_thinking.main import sequentialthinking
 from src.mcp_server_mas_sequential_thinking.server_core import create_server_lifespan
 
+
 async def test_complete_schema():
     """Test the exact MCP input format required."""
-
     # Exact format as specified by user
     test_input = {
         "thought": "开始思考'什么是人'这个哲学问题的本质",
@@ -61,7 +62,6 @@ async def test_complete_schema():
 
 def test_schema_validation():
     """Test schema validation separately."""
-
     print("\n🔍 Testing schema validation...")
 
     from src.mcp_server_mas_sequential_thinking.models import ThoughtData

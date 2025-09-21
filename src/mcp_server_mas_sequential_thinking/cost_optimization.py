@@ -2,20 +2,16 @@
 
 import logging
 import os
-from dataclasses import dataclass, field, asdict
-from datetime import datetime, timedelta
+from dataclasses import asdict, dataclass, field
+from datetime import datetime
 from enum import Enum
-from typing import Dict, List, Optional, Tuple, Callable
-from abc import ABC, abstractmethod
 
-from .adaptive_routing import ProcessingStrategy, ComplexityLevel, RoutingDecision
-from .models import ThoughtData
+from .adaptive_routing import ComplexityLevel, ProcessingStrategy, RoutingDecision
 from .constants import (
-    TokenCosts,
-    QualityThresholds,
-    ProviderDefaults,
-    ComplexityThresholds,
     CostOptimizationConstants,
+    ProviderDefaults,
+    QualityThresholds,
+    TokenCosts,
 )
 
 logger = logging.getLogger(__name__)
@@ -40,14 +36,14 @@ class ProviderProfile:
     cost_per_1k_tokens: float
     avg_quality_score: float = ProviderDefaults.DEFAULT_QUALITY_SCORE  # 0.0-1.0
     avg_response_time: float = ProviderDefaults.DEFAULT_RESPONSE_TIME  # seconds
-    rate_limit_per_hour: Optional[int] = None
+    rate_limit_per_hour: int | None = None
     supports_streaming: bool = True
     supports_function_calling: bool = True
     max_context_length: int = ProviderDefaults.DEFAULT_CONTEXT_LENGTH
 
     # Model specifications
-    team_model_id: Optional[str] = None
-    agent_model_id: Optional[str] = None
+    team_model_id: str | None = None
+    agent_model_id: str | None = None
 
     # Availability and reliability
     uptime_score: float = ProviderDefaults.DEFAULT_UPTIME_SCORE  # 0.0-1.0
@@ -91,9 +87,9 @@ class ProviderProfile:
 class BudgetConstraints:
     """Budget constraints and limits."""
 
-    daily_limit: Optional[float] = None
-    monthly_limit: Optional[float] = None
-    per_thought_limit: Optional[float] = None
+    daily_limit: float | None = None
+    monthly_limit: float | None = None
+    per_thought_limit: float | None = None
     emergency_reserve: float = 0.0
 
     # Usage tracking
@@ -145,8 +141,8 @@ class CostOptimizationMetrics:
     hybrid_usage: int = 0
 
     # Provider distribution
-    provider_usage: Dict[str, int] = field(default_factory=dict)
-    provider_costs: Dict[str, float] = field(default_factory=dict)
+    provider_usage: dict[str, int] = field(default_factory=dict)
+    provider_costs: dict[str, float] = field(default_factory=dict)
 
 
 class ProviderProfileFactory:
@@ -224,7 +220,7 @@ class ProviderProfileFactory:
         )
 
     @classmethod
-    def get_default_providers(cls) -> Dict[str, ProviderProfile]:
+    def get_default_providers(cls) -> dict[str, ProviderProfile]:
         """Get dictionary of all default provider profiles."""
         return {
             "groq": cls.create_groq_profile(),
@@ -240,8 +236,8 @@ class CostOptimizer:
 
     def __init__(
         self,
-        budget_constraints: Optional[BudgetConstraints] = None,
-        provider_profiles: Optional[Dict[str, ProviderProfile]] = None,
+        budget_constraints: BudgetConstraints | None = None,
+        provider_profiles: dict[str, ProviderProfile] | None = None,
         quality_threshold: float = QualityThresholds.DEFAULT_QUALITY_THRESHOLD,
     ):
         self.budget_constraints = budget_constraints or BudgetConstraints()
@@ -288,7 +284,7 @@ class CostOptimizer:
         routing_decision: RoutingDecision,
         current_provider: str = "deepseek",
         force_quality_threshold: bool = True,
-    ) -> Tuple[str, str]:
+    ) -> tuple[str, str]:
         """Select optimal provider based on cost, quality, and constraints.
 
         Returns:
@@ -333,7 +329,7 @@ class CostOptimizer:
 
     def optimize_routing_decision(
         self, routing_decision: RoutingDecision, current_provider: str = "deepseek"
-    ) -> Tuple[RoutingDecision, str]:
+    ) -> tuple[RoutingDecision, str]:
         """Optimize routing decision based on cost constraints and provider capabilities.
 
         Returns:
@@ -380,7 +376,7 @@ class CostOptimizer:
 
         return routing_decision, optimal_provider
 
-    def _get_available_providers(self, max_cost: float) -> List[str]:
+    def _get_available_providers(self, max_cost: float) -> list[str]:
         """Get providers that are within budget constraints."""
         available = []
 
@@ -397,7 +393,7 @@ class CostOptimizer:
 
     def _score_providers(
         self,
-        providers: List[str],
+        providers: list[str],
         complexity_level: ComplexityLevel,
         estimated_cost: float,
     ) -> str:
@@ -449,7 +445,7 @@ class CostOptimizer:
         complexity_level: ComplexityLevel,
         actual_cost: float,
         actual_tokens: int,
-        quality_score: Optional[float] = None,
+        quality_score: float | None = None,
     ) -> None:
         """Record actual usage for optimization learning."""
         self.budget_constraints.record_spending(actual_cost)
@@ -498,7 +494,7 @@ class CostOptimizer:
             f"${actual_cost:.4f} ({actual_tokens} tokens)"
         )
 
-    def get_cost_report(self) -> Dict:
+    def get_cost_report(self) -> dict:
         """Generate comprehensive cost optimization report."""
         self.budget_constraints.reset_daily_if_needed()
 
@@ -546,7 +542,7 @@ class CostOptimizer:
             "optimization_metrics": asdict(self.metrics),
         }
 
-    def suggest_optimizations(self) -> List[str]:
+    def suggest_optimizations(self) -> list[str]:
         """Suggest optimizations based on usage patterns."""
         suggestions = []
 
@@ -612,9 +608,9 @@ class CostOptimizer:
 
 # Convenience functions
 def create_cost_optimizer(
-    daily_budget: Optional[float] = None,
-    monthly_budget: Optional[float] = None,
-    per_thought_budget: Optional[float] = None,
+    daily_budget: float | None = None,
+    monthly_budget: float | None = None,
+    per_thought_budget: float | None = None,
     quality_threshold: float = 0.7,
 ) -> CostOptimizer:
     """Create a cost optimizer with budget constraints."""

@@ -1,5 +1,4 @@
-"""
-Processing Constants for MAS Sequential Thinking System
+"""Processing Constants for MAS Sequential Thinking System
 
 Centralized constants to eliminate magic numbers and improve maintainability.
 """
@@ -149,12 +148,11 @@ def get_complexity_level_name(score: float) -> str:
     """Get human-readable complexity level name from score."""
     if score < ComplexityThresholds.SIMPLE_MAX:
         return "simple"
-    elif score < ComplexityThresholds.MODERATE_MAX:
+    if score < ComplexityThresholds.MODERATE_MAX:
         return "moderate"
-    elif score < ComplexityThresholds.COMPLEX_MAX:
+    if score < ComplexityThresholds.COMPLEX_MAX:
         return "complex"
-    else:
-        return "highly_complex"
+    return "highly_complex"
 
 
 def is_content_sufficient_quality(content: str) -> bool:
@@ -177,7 +175,7 @@ def is_suitable_for_six_hats(text: str) -> bool:
     text_lower = text.lower()
     indicator_count = sum(1 for indicator in SIX_HATS_INDICATORS if indicator in text_lower)
 
-    has_questions = '?' in text or '？' in text
+    has_questions = "?" in text or "？" in text
     is_complex_length = len(text) > SixHatsConfiguration.MIN_COMPLEX_LENGTH
     has_multiple_indicators = indicator_count >= SixHatsConfiguration.SUITABILITY_MIN_INDICATORS
 

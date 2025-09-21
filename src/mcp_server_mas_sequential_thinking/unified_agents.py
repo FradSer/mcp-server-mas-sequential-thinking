@@ -3,7 +3,7 @@
 import os
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Dict, List, Type, Optional, Any
+
 from agno.agent import Agent
 from agno.models.base import Model
 from agno.tools.reasoning import ReasoningTools
@@ -11,7 +11,10 @@ from agno.tools.reasoning import ReasoningTools
 # Import Six Hats support
 try:
     from .six_hats_core import (
-        HatColor, SixHatsAgentFactory, create_hat_agent, get_all_hat_colors
+        HatColor,
+        SixHatsAgentFactory,
+        create_hat_agent,
+        get_all_hat_colors,
     )
     SIX_HATS_AVAILABLE = True
 except ImportError:
@@ -30,7 +33,7 @@ else:
     ExaTools = None
 
 
-def _get_research_tools() -> List[Type]:
+def _get_research_tools() -> list[type]:
     """Get available research tools based on API key availability."""
     tools = [ReasoningTools]
     if _EXA_AVAILABLE and ExaTools:
@@ -40,13 +43,13 @@ def _get_research_tools() -> List[Type]:
 
 __all__ = [
     "AgentCapability",
+    "ReasoningLevel",
     "UnifiedAgentFactory",
     "create_agent",
     "create_all_agents",
     "create_all_enhanced_agents",
-    "create_hybrid_team",
     "create_enhanced_specialized_agents",
-    "ReasoningLevel",
+    "create_hybrid_team",
 ]
 
 
@@ -80,7 +83,7 @@ class AgentCapability:
 
     role: str
     description: str
-    tools: List[Type]
+    tools: list[type]
     role_description: str
 
     # Enhancement features
@@ -88,7 +91,7 @@ class AgentCapability:
     memory_enabled: bool = False
     structured_outputs: bool = True
 
-    def get_instructions(self, enhanced_mode: bool = False) -> List[str]:
+    def get_instructions(self, enhanced_mode: bool = False) -> list[str]:
         """Generate instructions based on enhancement mode."""
         base_instructions = [
             f"You are a {'enhanced ' if enhanced_mode else ''}specialist agent receiving specific sub-tasks from the Team Coordinator.",
@@ -119,7 +122,7 @@ class AgentCapability:
 
         return base_instructions
 
-    def create_tools(self) -> List:
+    def create_tools(self) -> list:
         """Instantiate tools for this capability."""
         return [tool_class() for tool_class in self.tools]
 
@@ -133,7 +136,6 @@ class AgentBuilder(ABC):
     @abstractmethod
     def build_agent(self, model: Model, enhanced_mode: bool = False, **kwargs) -> Agent:
         """Build agent with specified enhancement level."""
-        pass
 
 
 class StandardAgentBuilder(AgentBuilder):
@@ -327,12 +329,12 @@ class UnifiedAgentFactory:
             available_types.extend(list(self.SIX_HATS_CAPABILITIES.keys()))
 
             # Check if this is a six hats agent
-            if agent_type.endswith('_hat') and agent_type in self.SIX_HATS_CAPABILITIES:
-                hat_color_name = agent_type.replace('_hat', '')
+            if agent_type.endswith("_hat") and agent_type in self.SIX_HATS_CAPABILITIES:
+                hat_color_name = agent_type.replace("_hat", "")
                 try:
                     hat_color = HatColor(hat_color_name)
-                    context = kwargs.pop('context', '')
-                    previous_results = kwargs.pop('previous_results', None)
+                    context = kwargs.pop("context", "")
+                    previous_results = kwargs.pop("previous_results", None)
                     return self._six_hats_factory.create_hat_agent(
                         hat_color, model, context, previous_results, **kwargs
                     )
@@ -350,24 +352,24 @@ class UnifiedAgentFactory:
 
     def create_team_agents(
         self, model: Model, team_type: str = "standard"
-    ) -> Dict[str, Agent]:
+    ) -> dict[str, Agent]:
         """Create complete agent teams based on team type."""
         if team_type == "standard":
             return {
                 agent_type: self.create_agent(agent_type, model, enhanced_mode=False)
                 for agent_type in self.CAPABILITIES.keys()
             }
-        elif team_type == "enhanced":
+        if team_type == "enhanced":
             return {
                 agent_type: self.create_agent(agent_type, model, enhanced_mode=True)
                 for agent_type in self.CAPABILITIES.keys()
             }
-        elif team_type == "enhanced_specialized":
+        if team_type == "enhanced_specialized":
             return {
                 agent_type: self.create_agent(agent_type, model, enhanced_mode=True)
                 for agent_type in self.ENHANCED_ONLY_CAPABILITIES.keys()
             }
-        elif team_type == "hybrid":
+        if team_type == "hybrid":
             # Mix standard and enhanced agents strategically
             agents = {}
 
@@ -386,18 +388,17 @@ class UnifiedAgentFactory:
             return agents
 
         # Six Hats team types
-        elif SIX_HATS_AVAILABLE and team_type.startswith("six_hats_"):
+        if SIX_HATS_AVAILABLE and team_type.startswith("six_hats_"):
             return self._create_six_hats_team(team_type, model)
 
-        else:
-            available_types = ["standard", "enhanced", "enhanced_specialized", "hybrid"]
-            if SIX_HATS_AVAILABLE:
-                available_types.extend(["six_hats_single", "six_hats_double", "six_hats_triple", "six_hats_full"])
-            raise ValueError(
-                f"Unknown team type: {team_type}. Available: {', '.join(available_types)}"
-            )
+        available_types = ["standard", "enhanced", "enhanced_specialized", "hybrid"]
+        if SIX_HATS_AVAILABLE:
+            available_types.extend(["six_hats_single", "six_hats_double", "six_hats_triple", "six_hats_full"])
+        raise ValueError(
+            f"Unknown team type: {team_type}. Available: {', '.join(available_types)}"
+        )
 
-    def _create_six_hats_team(self, team_type: str, model: Model) -> Dict[str, Agent]:
+    def _create_six_hats_team(self, team_type: str, model: Model) -> dict[str, Agent]:
         """Create Six Hats team based on type"""
         if not SIX_HATS_AVAILABLE:
             raise ValueError("Six Hats functionality not available")
@@ -442,28 +443,28 @@ def create_agent(
     return _factory.create_agent(agent_type, model, enhanced_mode, **kwargs)
 
 
-def create_all_agents(model: Model) -> Dict[str, Agent]:
+def create_all_agents(model: Model) -> dict[str, Agent]:
     """Create standard agents (backward compatible)."""
     return _factory.create_team_agents(model, "standard")
 
 
-def create_all_enhanced_agents(model: Model) -> Dict[str, Agent]:
+def create_all_enhanced_agents(model: Model) -> dict[str, Agent]:
     """Create enhanced agents (backward compatible)."""
     return _factory.create_team_agents(model, "enhanced")
 
 
-def create_hybrid_team(model: Model) -> Dict[str, Agent]:
+def create_hybrid_team(model: Model) -> dict[str, Agent]:
     """Create hybrid team (backward compatible)."""
     return _factory.create_team_agents(model, "hybrid")
 
 
-def create_enhanced_specialized_agents(model: Model) -> Dict[str, Agent]:
+def create_enhanced_specialized_agents(model: Model) -> dict[str, Agent]:
     """Create enhanced specialized agents."""
     return _factory.create_team_agents(model, "enhanced_specialized")
 
 
 # Six Hats convenience functions
-def create_six_hats_team(model: Model, team_type: str = "six_hats_triple") -> Dict[str, Agent]:
+def create_six_hats_team(model: Model, team_type: str = "six_hats_triple") -> dict[str, Agent]:
     """Create Six Thinking Hats team."""
     if not SIX_HATS_AVAILABLE:
         raise ValueError("Six Hats functionality not available")

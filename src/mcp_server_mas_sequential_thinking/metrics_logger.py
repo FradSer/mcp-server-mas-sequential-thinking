@@ -1,11 +1,11 @@
 """Metrics logging utilities for consistent performance tracking."""
 
 import logging
-from typing import Dict, Any, Optional
 from dataclasses import dataclass
 from enum import Enum
+from typing import Any
 
-from .constants import PerformanceMetrics, FieldLengthLimits
+from .constants import FieldLengthLimits, PerformanceMetrics
 from .models import ThoughtData
 
 logger = logging.getLogger(__name__)
@@ -37,7 +37,7 @@ class MetricsLogger:
         self.config = config or MetricsConfig()
 
     def log_section_header(
-        self, title: str, separator_length: Optional[int] = None
+        self, title: str, separator_length: int | None = None
     ) -> None:
         """Log a section header with consistent formatting."""
         length = separator_length or self.config.separator_length
@@ -46,7 +46,7 @@ class MetricsLogger:
         if self.config.include_separators:
             self.log_separator(length)
 
-    def log_metrics_block(self, title: str, metrics: Dict[str, Any]) -> None:
+    def log_metrics_block(self, title: str, metrics: dict[str, Any]) -> None:
         """Log a block of metrics with consistent formatting."""
         self._log_with_level(title, self.config.log_level)
 
@@ -54,7 +54,7 @@ class MetricsLogger:
             formatted_value = self._format_metric_value(value)
             self._log_with_level(f"  {key}: {formatted_value}", self.config.log_level)
 
-    def log_separator(self, length: Optional[int] = None) -> None:
+    def log_separator(self, length: int | None = None) -> None:
         """Log a separator line."""
         sep_length = length or self.config.separator_length
         separator = f"  {'=' * sep_length}"
@@ -99,7 +99,7 @@ class MetricsLogger:
         self.log_metrics_block("🎯 PROCESSING COMPLETE:", final_summary)
         self.log_separator(FieldLengthLimits.SEPARATOR_LENGTH)
 
-    def log_team_details(self, team_info: Dict[str, Any]) -> None:
+    def log_team_details(self, team_info: dict[str, Any]) -> None:
         """Log team processing details."""
         team_details = {
             "Team": f"{team_info.get('name', 'unknown')} ({team_info.get('member_count', 0)} agents)",
@@ -128,7 +128,7 @@ class MetricsLogger:
 
     def _calculate_performance_metrics(
         self, processing_time: float, strategy: str, final_response: str
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Calculate performance metrics for logging."""
         # Calculate efficiency score
         efficiency_score = self._calculate_efficiency_score(processing_time)
@@ -147,11 +147,10 @@ class MetricsLogger:
         """Calculate efficiency score based on processing time."""
         if processing_time < PerformanceMetrics.EFFICIENCY_TIME_THRESHOLD:
             return PerformanceMetrics.PERFECT_EFFICIENCY_SCORE
-        else:
-            return max(
-                PerformanceMetrics.MINIMUM_EFFICIENCY_SCORE,
-                PerformanceMetrics.EFFICIENCY_TIME_THRESHOLD / processing_time,
-            )
+        return max(
+            PerformanceMetrics.MINIMUM_EFFICIENCY_SCORE,
+            PerformanceMetrics.EFFICIENCY_TIME_THRESHOLD / processing_time,
+        )
 
     def _calculate_execution_consistency(self, success: bool) -> float:
         """Calculate execution consistency score."""
@@ -167,17 +166,14 @@ class MetricsLogger:
             # Format floats to 3 decimal places
             if value == int(value):
                 return str(int(value))
-            else:
-                return f"{value:.3f}"
-        elif isinstance(value, bool):
+            return f"{value:.3f}"
+        if isinstance(value, bool):
             return "✅" if value else "❌"
-        elif isinstance(value, (list, tuple)):
+        if isinstance(value, (list, tuple)):
             if len(value) <= 3:
                 return ", ".join(str(item) for item in value)
-            else:
-                return f"{', '.join(str(item) for item in value[:3])}... ({len(value)} total)"
-        else:
-            return str(value)
+            return f"{', '.join(str(item) for item in value[:3])}... ({len(value)} total)"
+        return str(value)
 
     def _log_with_level(self, message: str, level: LogLevel) -> None:
         """Log message with specified level."""
@@ -208,7 +204,7 @@ class PerformanceTracker:
         if success:
             self.success_count += 1
 
-    def get_performance_summary(self) -> Dict[str, Any]:
+    def get_performance_summary(self) -> dict[str, Any]:
         """Get comprehensive performance summary."""
         if not self.processing_times:
             return {"status": "no_data"}

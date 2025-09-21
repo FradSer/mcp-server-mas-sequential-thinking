@@ -2,18 +2,17 @@
 
 import logging
 import logging.handlers
-import os
 import re
 import sys
 from pathlib import Path
-from typing import List, Tuple, Pattern, Any
+from re import Pattern
 
 
 class SensitiveDataFilter(logging.Filter):
     """High-performance filter to redact sensitive information from log messages."""
 
     # Pre-compiled patterns with optimized regex for better performance
-    _SENSITIVE_PATTERNS: List[Tuple[Pattern[str], str]] = [
+    _SENSITIVE_PATTERNS: list[tuple[Pattern[str], str]] = [
         (
             re.compile(
                 r'(API_KEY|TOKEN|SECRET|PASSWORD)["\s]*[:=]["\s]*[^\s"\'<>&]{8,}',
@@ -83,7 +82,7 @@ def setup_logging() -> logging.Logger:
     sensitive_filter = SensitiveDataFilter()
 
     # Configure handlers with shared filter and formatter
-    handlers: List[logging.Handler] = [
+    handlers: list[logging.Handler] = [
         logging.handlers.RotatingFileHandler(
             log_dir / "sequential_thinking.log",
             maxBytes=5 * 1024 * 1024,  # 5MB

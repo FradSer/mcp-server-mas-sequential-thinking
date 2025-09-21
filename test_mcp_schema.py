@@ -2,11 +2,12 @@
 """Test MCP tool schema generation."""
 
 import inspect
+
 from src.mcp_server_mas_sequential_thinking.main import sequentialthinking
+
 
 def test_mcp_schema():
     """Test MCP tool function signature."""
-
     print("🔍 Testing MCP tool function schema...")
 
     # Get function signature
@@ -49,17 +50,16 @@ def test_mcp_schema():
     if set(required_params) == set(expected_required):
         print("\n✅ SUCCESS: All expected parameters are required!")
         return True
-    else:
-        missing = set(expected_required) - set(required_params)
-        unexpected = set(required_params) - set(expected_required)
+    missing = set(expected_required) - set(required_params)
+    unexpected = set(required_params) - set(expected_required)
 
-        if missing:
-            print(f"\n❌ Missing required parameters: {missing}")
-        if unexpected:
-            print(f"\n❌ Unexpected required parameters: {unexpected}")
+    if missing:
+        print(f"\n❌ Missing required parameters: {missing}")
+    if unexpected:
+        print(f"\n❌ Unexpected required parameters: {unexpected}")
 
-        print("\n❌ FAILED: Parameter requirements don't match!")
-        return False
+    print("\n❌ FAILED: Parameter requirements don't match!")
+    return False
 
 if __name__ == "__main__":
     test_mcp_schema()

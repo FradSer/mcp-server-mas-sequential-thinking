@@ -1,10 +1,11 @@
 """Retry handling utilities for robust processing."""
 
 import asyncio
-import time
 import logging
-from typing import Callable, TypeVar, Any, Optional
+import time
+from collections.abc import Callable
 from dataclasses import dataclass
+from typing import Any, TypeVar
 
 from .constants import DefaultTimeouts, PerformanceMetrics
 from .types import ThoughtProcessingError
@@ -35,7 +36,7 @@ class RetryHandler:
         self,
         operation: Callable[[], Any],
         operation_name: str,
-        context_info: Optional[dict] = None,
+        context_info: dict | None = None,
     ) -> Any:
         """Execute operation with retry logic."""
         last_exception = None
@@ -76,7 +77,7 @@ class RetryHandler:
         retry_count: int,
         max_retries: int,
         operation_name: str,
-        context_info: Optional[dict],
+        context_info: dict | None,
     ) -> None:
         """Log retry attempt information."""
         logger.info(

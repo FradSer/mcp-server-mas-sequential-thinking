@@ -1,11 +1,11 @@
 """Streamlined models with consolidated validation logic."""
 
-from typing import Optional, List
-from pydantic import BaseModel, Field, model_validator
 from enum import Enum
 
-from .constants import ValidationLimits, FieldLengthLimits
-from .types import ThoughtNumber, BranchId
+from pydantic import BaseModel, Field, model_validator
+
+from .constants import FieldLengthLimits, ValidationLimits
+from .types import BranchId, ThoughtNumber
 
 
 class ThoughtType(Enum):
@@ -70,12 +70,12 @@ class ThoughtData(BaseModel):
 
     # Required workflow fields
     isRevision: bool = Field(..., description="Whether this revises a previous thought")
-    branchFromThought: Optional[ThoughtNumber] = Field(
+    branchFromThought: ThoughtNumber | None = Field(
         ...,
         ge=ValidationLimits.MIN_THOUGHT_NUMBER,
         description="Thought number to branch from",
     )
-    branchId: Optional[BranchId] = Field(..., description="Unique branch identifier")
+    branchId: BranchId | None = Field(..., description="Unique branch identifier")
     needsMoreThoughts: bool = Field(
         ..., description="Whether more thoughts are needed beyond estimate"
     )
@@ -85,7 +85,7 @@ class ThoughtData(BaseModel):
         """Determine the type of thought based on field values."""
         if self.isRevision:
             return ThoughtType.REVISION
-        elif self.branchFromThought is not None:
+        if self.branchFromThought is not None:
             return ThoughtType.BRANCH
         return ThoughtType.STANDARD
 

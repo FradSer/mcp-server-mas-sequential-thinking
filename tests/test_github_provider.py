@@ -5,13 +5,13 @@ Covers initialization, configuration, environment overrides, and agno Model inte
 """
 
 import os
-import pytest
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
 
+import pytest
 from src.mcp_server_mas_sequential_thinking.modernized_config import (
-    ModelConfig,
     BaseProviderStrategy,
     GitHubStrategy,
+    ModelConfig,
 )
 
 # Import ProviderStrategy for compatibility

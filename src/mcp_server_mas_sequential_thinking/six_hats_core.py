@@ -1,15 +1,14 @@
-"""
-Six Thinking Hats Core Agent Architecture
+"""Six Thinking Hats Core Agent Architecture
 
 基于 Edward de Bono 六帽思维的 Agent 核心实现。
 严格遵循"一次一顶帽子"原则，支持单帽到六帽的智能序列。
 """
 
 import logging
-from abc import ABC, abstractmethod
+from abc import abstractmethod
 from dataclasses import dataclass
 from enum import Enum
-from typing import Dict, List, Type, Optional, Any
+
 from agno.agent import Agent
 from agno.models.base import Model
 from agno.tools.reasoning import ReasoningTools
@@ -74,15 +73,15 @@ class SixHatsCapability:
     timing_config: HatTimingConfig
 
     # 增强特性
-    tools: List[Type] = None
+    tools: list[type] = None
     reasoning_level: int = 1
     memory_enabled: bool = False
 
     def __post_init__(self):
         if self.tools is None:
-            object.__setattr__(self, 'tools', [ReasoningTools])
+            object.__setattr__(self, "tools", [ReasoningTools])
 
-    def get_instructions(self, context: str = "", previous_results: Dict = None) -> List[str]:
+    def get_instructions(self, context: str = "", previous_results: dict = None) -> list[str]:
         """生成特定帽子的指令"""
         base_instructions = [
             f"You are wearing the {self.hat_color.value.upper()} HAT in the Six Thinking Hats methodology.",
@@ -118,9 +117,8 @@ class SixHatsCapability:
         return base_instructions
 
     @abstractmethod
-    def _get_specific_instructions(self) -> List[str]:
+    def _get_specific_instructions(self) -> list[str]:
         """获取特定帽子的详细指令"""
-        pass
 
 
 class WhiteHatCapability(SixHatsCapability):
@@ -140,7 +138,7 @@ class WhiteHatCapability(SixHatsCapability):
             memory_enabled=False,
         )
 
-    def _get_specific_instructions(self) -> List[str]:
+    def _get_specific_instructions(self) -> list[str]:
         return [
             "",
             "WHITE HAT SPECIFIC GUIDELINES:",
@@ -176,7 +174,7 @@ class RedHatCapability(SixHatsCapability):
             memory_enabled=False,
         )
 
-    def _get_specific_instructions(self) -> List[str]:
+    def _get_specific_instructions(self) -> list[str]:
         return [
             "",
             "RED HAT SPECIFIC GUIDELINES:",
@@ -214,7 +212,7 @@ class BlackHatCapability(SixHatsCapability):
             memory_enabled=False,
         )
 
-    def _get_specific_instructions(self) -> List[str]:
+    def _get_specific_instructions(self) -> list[str]:
         return [
             "",
             "BLACK HAT SPECIFIC GUIDELINES:",
@@ -253,7 +251,7 @@ class YellowHatCapability(SixHatsCapability):
             memory_enabled=False,
         )
 
-    def _get_specific_instructions(self) -> List[str]:
+    def _get_specific_instructions(self) -> list[str]:
         return [
             "",
             "YELLOW HAT SPECIFIC GUIDELINES:",
@@ -293,7 +291,7 @@ class GreenHatCapability(SixHatsCapability):
             memory_enabled=True,  # 创意可能需要记忆组合
         )
 
-    def _get_specific_instructions(self) -> List[str]:
+    def _get_specific_instructions(self) -> list[str]:
         return [
             "",
             "GREEN HAT SPECIFIC GUIDELINES:",
@@ -333,7 +331,7 @@ class BlueHatCapability(SixHatsCapability):
             memory_enabled=True,  # 需要记住所有其他帽子的结果
         )
 
-    def _get_specific_instructions(self) -> List[str]:
+    def _get_specific_instructions(self) -> list[str]:
         return [
             "",
             "BLUE HAT SPECIFIC GUIDELINES:",
@@ -377,11 +375,10 @@ class SixHatsAgentFactory:
         hat_color: HatColor,
         model: Model,
         context: str = "",
-        previous_results: Dict = None,
+        previous_results: dict = None,
         **kwargs
     ) -> Agent:
         """创建特定颜色的帽子Agent"""
-
         capability = self.HAT_CAPABILITIES[hat_color]
 
         # 生成缓存键
@@ -419,7 +416,7 @@ class SixHatsAgentFactory:
         """获取特定帽子的时间配置"""
         return HAT_TIMING_CONFIGS[hat_color]
 
-    def get_available_hats(self) -> List[HatColor]:
+    def get_available_hats(self) -> list[HatColor]:
         """获取所有可用的帽子颜色"""
         return list(self.HAT_CAPABILITIES.keys())
 
@@ -444,6 +441,6 @@ def get_hat_timing(hat_color: HatColor) -> HatTimingConfig:
     return _hat_factory.get_timing_config(hat_color)
 
 
-def get_all_hat_colors() -> List[HatColor]:
+def get_all_hat_colors() -> list[HatColor]:
     """获取所有帽子颜色的便利函数"""
     return _hat_factory.get_available_hats()

@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 """Test schema validation for required fields."""
 
-from src.mcp_server_mas_sequential_thinking.models import ThoughtData
 from pydantic import ValidationError
+from src.mcp_server_mas_sequential_thinking.models import ThoughtData
+
 
 def test_required_fields():
     """Test that all fields are required."""
-
     print("🧪 Testing required field validation...")
 
     # Test 1: Valid complete input

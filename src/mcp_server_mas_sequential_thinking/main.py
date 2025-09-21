@@ -1,27 +1,26 @@
 """Refactored MCP Sequential Thinking Server with separated concerns and reduced complexity."""
 
 import sys
-from html import escape
-from typing import AsyncIterator
+from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
+from html import escape
 
+from dotenv import load_dotenv
 from mcp.server.fastmcp import FastMCP
 from pydantic import ValidationError
-from dotenv import load_dotenv
+
+from .constants import ProcessingDefaults, ValidationLimits
 
 # Import refactored modules
-from .models import ThoughtData
 from .server_core import (
-    create_server_lifespan,
-    create_validated_thought_data,
     ServerConfig,
     ServerState,
-    ThoughtProcessor,
+    create_server_lifespan,
+    create_validated_thought_data,
     get_thought_processor,
 )
-from .types import ThoughtProcessingError, ValidationError as CustomValidationError
+from .types import ThoughtProcessingError
 from .utils import setup_logging
-from .constants import ValidationLimits, ProcessingDefaults, ThoughtProcessingLimits
 
 # Initialize environment and logging
 load_dotenv()
@@ -133,8 +132,7 @@ async def sequentialthinking(
     branchId: str | None,
     needsMoreThoughts: bool,
 ) -> str:
-    """
-    Advanced sequential thinking tool with multi-agent coordination.
+    """Advanced sequential thinking tool with multi-agent coordination.
 
     Processes thoughts through a specialized team of AI agents that coordinate
     to provide comprehensive analysis, planning, research, critique, and synthesis.

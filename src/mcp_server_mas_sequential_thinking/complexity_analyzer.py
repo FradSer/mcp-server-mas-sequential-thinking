@@ -3,11 +3,10 @@
 import re
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import List, Dict, Pattern
 from enum import Enum
 
-from .models import ThoughtData
 from .constants import ComplexityAnalysisConstants
+from .models import ThoughtData
 
 
 class LanguageType(Enum):
@@ -46,9 +45,8 @@ class TextAnalyzer(ABC):
     """Abstract base class for text analysis strategies."""
 
     @abstractmethod
-    def analyze(self, text: str) -> Dict[str, int]:
+    def analyze(self, text: str) -> dict[str, int]:
         """Analyze text and return feature counts."""
-        pass
 
 
 class LanguageDetector:
@@ -99,7 +97,7 @@ class SentenceAnalyzer(TextAnalyzer):
         "questions": re.compile(r"[?？]"),
     }
 
-    def analyze(self, text: str) -> Dict[str, int]:
+    def analyze(self, text: str) -> dict[str, int]:
         """Analyze sentence structure."""
         sentences = self.SENTENCE_PATTERNS["sentence_endings"].split(text)
         valid_sentences = [s for s in sentences if s.strip()]
@@ -177,7 +175,7 @@ class TechnicalTermAnalyzer(TextAnalyzer):
         "指标",
     ]
 
-    def analyze(self, text: str) -> Dict[str, int]:
+    def analyze(self, text: str) -> dict[str, int]:
         """Count technical terms in text."""
         text_lower = text.lower()
         technical_count = sum(1 for term in self.TECHNICAL_TERMS if term in text_lower)
@@ -226,7 +224,7 @@ class ResearchAnalyzer(TextAnalyzer):
         "数据",
     ]
 
-    def analyze(self, text: str) -> Dict[str, int]:
+    def analyze(self, text: str) -> dict[str, int]:
         """Count research indicators in text."""
         text_lower = text.lower()
         research_count = sum(
@@ -270,7 +268,7 @@ class BranchingAnalyzer(TextAnalyzer):
         "对比",
     ]
 
-    def analyze(self, text: str) -> Dict[str, int]:
+    def analyze(self, text: str) -> dict[str, int]:
         """Count branching indicators in text."""
         text_lower = text.lower()
         branching_count = sum(
@@ -329,7 +327,7 @@ class AnalysisDepthAnalyzer(TextAnalyzer):
         ],
     }
 
-    def analyze(self, text: str) -> Dict[str, int]:
+    def analyze(self, text: str) -> dict[str, int]:
         """Analyze logical reasoning depth."""
         text_lower = text.lower()
         total_depth = 0
@@ -383,7 +381,7 @@ class ComplexityAnalyzer:
             analysis_depth=features.get("analysis_depth", 0),
         )
 
-    def get_complexity_insights(self, features: TextFeatures) -> Dict[str, str]:
+    def get_complexity_insights(self, features: TextFeatures) -> dict[str, str]:
         """Generate human-readable complexity insights."""
         insights = []
 
@@ -429,9 +427,8 @@ class ComplexityAnalyzer:
 
         if score < 10:
             return "simple"
-        elif score < 25:
+        if score < 25:
             return "moderate"
-        elif score < 40:
+        if score < 40:
             return "complex"
-        else:
-            return "highly_complex"
+        return "highly_complex"

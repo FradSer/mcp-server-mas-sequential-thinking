@@ -1,5 +1,4 @@
-"""
-Base Executor for MAS Sequential Thinking
+"""Base Executor for MAS Sequential Thinking
 
 Eliminates code duplication in workflow executors by providing a common pattern
 for input extraction, complexity analysis, and error handling.
@@ -9,17 +8,18 @@ import logging
 import time
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Any, Dict, Optional, Protocol, Union
+from typing import Any, Protocol
 
-from agno.workflow.types import StepInput, StepOutput
 from agno.agent import Agent
 from agno.team import Team
+from agno.workflow.types import StepInput, StepOutput
 
+from .adaptive_routing import BasicComplexityAnalyzer, ComplexityAnalyzer
 from .models import ThoughtData
-from .adaptive_routing import ComplexityAnalyzer, BasicComplexityAnalyzer
 from .processing_constants import (
-    ComplexityThresholds, LoggingLimits, get_complexity_level_name,
-    is_content_sufficient_quality
+    LoggingLimits,
+    get_complexity_level_name,
+    is_content_sufficient_quality,
 )
 
 logger = logging.getLogger(__name__)
@@ -62,7 +62,7 @@ class BaseExecutor(ABC):
     def __init__(
         self,
         strategy_name: str,
-        complexity_analyzer: Optional[ComplexityAnalyzer] = None
+        complexity_analyzer: ComplexityAnalyzer | None = None
     ):
         self.strategy_name = strategy_name
         self.complexity_analyzer = complexity_analyzer or BasicComplexityAnalyzer()
@@ -70,8 +70,8 @@ class BaseExecutor(ABC):
     async def execute(
         self,
         step_input: StepInput,
-        session_state: Dict[str, Any],
-        processor: Union[Agent, Team, Processor]
+        session_state: dict[str, Any],
+        processor: Agent | Team | Processor
     ) -> StepOutput:
         """Execute the processor with standardized pattern."""
         start_time = time.time()
@@ -125,12 +125,11 @@ class BaseExecutor(ABC):
                 context=step_input.input.get("context", ""),
                 original_input=step_input.input
             )
-        else:
-            content = str(step_input.input)
-            return ExtractedInput(
-                thought_content=content,
-                original_input=step_input.input
-            )
+        content = str(step_input.input)
+        return ExtractedInput(
+            thought_content=content,
+            original_input=step_input.input
+        )
 
     def _analyze_complexity(self, extracted: ExtractedInput) -> float:
         """Analyze complexity of the thought content."""
@@ -150,7 +149,7 @@ class BaseExecutor(ABC):
 
     async def _execute_processor(
         self,
-        processor: Union[Agent, Team, Processor],
+        processor: Agent | Team | Processor,
         extracted: ExtractedInput
     ) -> Any:
         """Execute the processor with extracted input."""
@@ -164,16 +163,15 @@ class BaseExecutor(ABC):
         if isinstance(result, str):
             return result.strip()
 
-        if hasattr(result, 'content'):
+        if hasattr(result, "content"):
             content = result.content
             if isinstance(content, str):
                 return content.strip()
-            else:
-                return str(content).strip()
+            return str(content).strip()
 
         if isinstance(result, dict):
             # Try common content keys
-            for key in ['content', 'result', 'output', 'response']:
+            for key in ["content", "result", "output", "response"]:
                 if key in result:
                     content = result[key]
                     if isinstance(content, str):
@@ -189,7 +187,7 @@ class BaseExecutor(ABC):
 
     def _update_session_state(
         self,
-        session_state: Dict[str, Any],
+        session_state: dict[str, Any],
         complexity_score: float,
         execution_time: float
     ) -> None:
@@ -204,7 +202,6 @@ class BaseExecutor(ABC):
     @abstractmethod
     def _enhance_input_for_strategy(self, extracted: ExtractedInput) -> str:
         """Enhance input with strategy-specific context."""
-        pass
 
     def _log_execution_start(self, extracted: ExtractedInput) -> None:
         """Log execution start with truncated content."""
@@ -239,7 +236,7 @@ class BaseExecutor(ABC):
 class SingleAgentExecutor(BaseExecutor):
     """Executor for single agent processing."""
 
-    def __init__(self, complexity_analyzer: Optional[ComplexityAnalyzer] = None):
+    def __init__(self, complexity_analyzer: ComplexityAnalyzer | None = None):
         super().__init__("single_agent", complexity_analyzer)
 
     def _enhance_input_for_strategy(self, extracted: ExtractedInput) -> str:
@@ -261,7 +258,7 @@ class SingleAgentExecutor(BaseExecutor):
 class HybridTeamExecutor(BaseExecutor):
     """Executor for hybrid team processing."""
 
-    def __init__(self, complexity_analyzer: Optional[ComplexityAnalyzer] = None):
+    def __init__(self, complexity_analyzer: ComplexityAnalyzer | None = None):
         super().__init__("hybrid_team", complexity_analyzer)
 
     def _enhance_input_for_strategy(self, extracted: ExtractedInput) -> str:
@@ -282,7 +279,7 @@ class HybridTeamExecutor(BaseExecutor):
 class MultiAgentExecutor(BaseExecutor):
     """Executor for multi-agent team processing."""
 
-    def __init__(self, complexity_analyzer: Optional[ComplexityAnalyzer] = None):
+    def __init__(self, complexity_analyzer: ComplexityAnalyzer | None = None):
         super().__init__("multi_agent", complexity_analyzer)
 
     def _enhance_input_for_strategy(self, extracted: ExtractedInput) -> str:

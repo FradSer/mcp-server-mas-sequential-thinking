@@ -1,7 +1,7 @@
 """Factory classes for creating test data using the builder pattern."""
 
 from dataclasses import dataclass
-from typing import Optional
+
 from src.mcp_server_mas_sequential_thinking.models import ThoughtData
 
 
@@ -14,9 +14,9 @@ class ThoughtDataBuilder:
     total_thoughts: int = 5
     next_needed: bool = True
     is_revision: bool = False
-    revises_thought: Optional[int] = None
-    branch_from: Optional[int] = None
-    branch_id: Optional[str] = None
+    revises_thought: int | None = None
+    branch_from: int | None = None
+    branch_id: str | None = None
     needs_more: bool = False
 
     def with_thought(self, content: str) -> "ThoughtDataBuilder":

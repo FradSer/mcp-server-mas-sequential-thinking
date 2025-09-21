@@ -1,11 +1,12 @@
 """Session management for thought history and branching."""
 
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional
+
 from agno.team.team import Team
-from .models import ThoughtData
+
 from .constants import ValidationLimits
-from .types import ThoughtNumber, BranchId
+from .models import ThoughtData
+from .types import BranchId, ThoughtNumber
 
 
 @dataclass
@@ -13,10 +14,10 @@ class SessionMemory:
     """Manages thought history and branches with optimized lookups and DoS protection."""
 
     team: Team
-    thought_history: List[ThoughtData] = field(default_factory=list)
-    branches: Dict[BranchId, List[ThoughtData]] = field(default_factory=dict)
+    thought_history: list[ThoughtData] = field(default_factory=list)
+    branches: dict[BranchId, list[ThoughtData]] = field(default_factory=dict)
     # High-performance cache for O(1) thought lookups by number
-    _thought_cache: Dict[ThoughtNumber, ThoughtData] = field(
+    _thought_cache: dict[ThoughtNumber, ThoughtData] = field(
         default_factory=dict, init=False, repr=False
     )
 
@@ -71,7 +72,7 @@ class SessionMemory:
         thought = self._thought_cache.get(thought_number)
         return thought.thought if thought else "Unknown thought"
 
-    def get_branch_summary(self) -> Dict[BranchId, int]:
+    def get_branch_summary(self) -> dict[BranchId, int]:
         """Get summary of all branches."""
         return {
             branch_id: len(thoughts) for branch_id, thoughts in self.branches.items()

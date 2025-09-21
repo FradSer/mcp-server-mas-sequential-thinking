@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-Test script for Six Thinking Hats integration.
+"""Test script for Six Thinking Hats integration.
 
 Tests the complete integration from problem input to Six Hats processing,
 including the philosophical question example that was causing "synthesis + review" issues.
@@ -8,24 +7,24 @@ including the philosophical question example that was causing "synthesis + revie
 
 import asyncio
 import logging
-import sys
 import os
+import sys
 
 # Add src to path
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'src'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "src"))
 
 from src.mcp_server_mas_sequential_thinking.models import ThoughtData
-from src.mcp_server_mas_sequential_thinking.six_hats_router import (
-    SixHatsIntelligentRouter, route_thought_to_hats
-)
 from src.mcp_server_mas_sequential_thinking.six_hats_processor import (
-    SixHatsSequentialProcessor, process_with_six_hats
+    process_with_six_hats,
+)
+from src.mcp_server_mas_sequential_thinking.six_hats_router import (
+    route_thought_to_hats,
 )
 
 # Set up logging
 logging.basicConfig(
     level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 )
 
 logger = logging.getLogger(__name__)
@@ -33,7 +32,6 @@ logger = logging.getLogger(__name__)
 
 async def test_philosophical_question():
     """Test the philosophical question that was causing synthesis+review separation."""
-
     print("🎩" + "="*70)
     print("Testing Six Hats with Philosophical Question")
     print("="*71)
@@ -101,8 +99,7 @@ async def test_philosophical_question():
         if has_synthesis_review_separation:
             print("⚠️  WARNING: Still showing synthesis + review separation")
             return False
-        else:
-            print("✅ SUCCESS: Unified output achieved (no synthesis + review separation)")
+        print("✅ SUCCESS: Unified output achieved (no synthesis + review separation)")
 
     except Exception as e:
         print(f"❌ Processing test failed: {e}")
@@ -113,7 +110,6 @@ async def test_philosophical_question():
 
 async def test_simple_question():
     """Test a simple question that should use single hat mode."""
-
     print("\n🎩" + "="*70)
     print("Testing Six Hats with Simple Question")
     print("="*71)
@@ -145,9 +141,8 @@ async def test_simple_question():
         if routing_decision.strategy.complexity.value == "single":
             print("✅ SUCCESS: Simple question routed to single hat mode")
             return True
-        else:
-            print("⚠️  WARNING: Simple question not using single hat mode")
-            return False
+        print("⚠️  WARNING: Simple question not using single hat mode")
+        return False
 
     except Exception as e:
         print(f"❌ Simple question test failed: {e}")
@@ -156,7 +151,6 @@ async def test_simple_question():
 
 async def test_creative_question():
     """Test a creative question that should use green hat + others."""
-
     print("\n🎩" + "="*70)
     print("Testing Six Hats with Creative Question")
     print("="*71)
@@ -190,9 +184,8 @@ async def test_creative_question():
         if has_green_hat:
             print("✅ SUCCESS: Creative question includes Green Hat")
             return True
-        else:
-            print("⚠️  WARNING: Creative question doesn't include Green Hat")
-            return False
+        print("⚠️  WARNING: Creative question doesn't include Green Hat")
+        return False
 
     except Exception as e:
         print(f"❌ Creative question test failed: {e}")
@@ -201,7 +194,6 @@ async def test_creative_question():
 
 async def main():
     """Run all tests."""
-
     print("🎩 SIX THINKING HATS INTEGRATION TESTS")
     print("=" * 71)
     print()

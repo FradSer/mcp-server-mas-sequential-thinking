@@ -4,28 +4,26 @@ import logging
 import os
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
+
 from sqlalchemy import (
-    create_engine,
+    JSON,
+    Boolean,
     Column,
+    DateTime,
+    Float,
+    ForeignKey,
+    Index,
     Integer,
     String,
     Text,
-    DateTime,
-    Boolean,
-    Float,
-    JSON,
-    ForeignKey,
-    Index,
+    create_engine,
     desc,
 )
-from sqlalchemy.orm import DeclarativeBase
-from sqlalchemy.orm import sessionmaker, Session, relationship
+from sqlalchemy.orm import DeclarativeBase, Session, relationship, sessionmaker
 from sqlalchemy.pool import StaticPool
-from dataclasses import asdict
 
-from .models import ThoughtData
 from .constants import DatabaseConstants, DefaultSettings
+from .models import ThoughtData
 
 logger = logging.getLogger(__name__)
 
@@ -33,7 +31,6 @@ logger = logging.getLogger(__name__)
 class Base(DeclarativeBase):
     """Base class for SQLAlchemy models with modern typing support."""
 
-    pass
 
 
 class SessionRecord(Base):
@@ -166,9 +163,8 @@ class UsageMetrics(Base):
 class PersistentMemoryManager:
     """Manages persistent storage and memory pruning."""
 
-    def __init__(self, database_url: Optional[str] = None):
+    def __init__(self, database_url: str | None = None):
         """Initialize persistent memory manager."""
-
         # Default to local SQLite database
         if database_url is None:
             db_dir = Path.home() / ".sequential_thinking" / "data"
@@ -220,8 +216,8 @@ class PersistentMemoryManager:
         self,
         session_id: str,
         thought_data: ThoughtData,
-        response: Optional[str] = None,
-        processing_metadata: Optional[Dict] = None,
+        response: str | None = None,
+        processing_metadata: dict | None = None,
     ) -> int:
         """Store a thought and return its database ID."""
         with self.SessionLocal() as db:
@@ -255,8 +251,8 @@ class PersistentMemoryManager:
         self,
         session_id: str,
         thought_data: ThoughtData,
-        response: Optional[str],
-        processing_metadata: Optional[Dict],
+        response: str | None,
+        processing_metadata: dict | None,
     ) -> ThoughtRecord:
         """Create a thought record with metadata."""
         thought_record = ThoughtRecord(
@@ -276,7 +272,7 @@ class PersistentMemoryManager:
         return thought_record
 
     def _apply_processing_metadata(
-        self, thought_record: ThoughtRecord, metadata: Dict
+        self, thought_record: ThoughtRecord, metadata: dict
     ) -> None:
         """Apply processing metadata to thought record."""
         if strategy := metadata.get("strategy"):
@@ -296,7 +292,7 @@ class PersistentMemoryManager:
         thought_record.processed_at = datetime.utcnow()  # type: ignore[assignment]
 
     def _update_session_stats(
-        self, session_record: SessionRecord, processing_metadata: Optional[Dict]
+        self, session_record: SessionRecord, processing_metadata: dict | None
     ) -> None:
         """Update session statistics."""
         if session_record:
@@ -332,8 +328,8 @@ class PersistentMemoryManager:
         branch_record.thought_count += 1  # type: ignore[assignment]
 
     def get_session_thoughts(
-        self, session_id: str, limit: Optional[int] = None
-    ) -> List[ThoughtRecord]:
+        self, session_id: str, limit: int | None = None
+    ) -> list[ThoughtRecord]:
         """Retrieve thoughts for a session."""
         with self.SessionLocal() as db:
             query = (
@@ -349,7 +345,7 @@ class PersistentMemoryManager:
 
     def get_thought_by_number(
         self, session_id: str, thought_number: int
-    ) -> Optional[ThoughtRecord]:
+    ) -> ThoughtRecord | None:
         """Get a specific thought by number."""
         with self.SessionLocal() as db:
             return (
@@ -363,7 +359,7 @@ class PersistentMemoryManager:
 
     def get_branch_thoughts(
         self, session_id: str, branch_id: str
-    ) -> List[ThoughtRecord]:
+    ) -> list[ThoughtRecord]:
         """Get all thoughts in a specific branch."""
         with self.SessionLocal() as db:
             return (
@@ -402,7 +398,7 @@ class PersistentMemoryManager:
 
             return deleted_count
 
-    def get_usage_stats(self, days_back: int = 7) -> Dict:
+    def get_usage_stats(self, days_back: int = 7) -> dict:
         """Get usage statistics for cost optimization."""
         cutoff_date = datetime.utcnow() - timedelta(days=days_back)
 
@@ -530,7 +526,7 @@ class PersistentMemoryManager:
 
 # Convenience functions
 def create_persistent_memory(
-    database_url: Optional[str] = None,
+    database_url: str | None = None,
 ) -> PersistentMemoryManager:
     """Create a persistent memory manager instance."""
     return PersistentMemoryManager(database_url)

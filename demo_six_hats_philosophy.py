@@ -1,24 +1,24 @@
 #!/usr/bin/env python3
-"""
-Six Hats Philosophy Demo
+"""Six Hats Philosophy Demo
 
 Demonstrates how the Six Hats system solves the "synthesis + review" separation problem
 for philosophical questions using the triple hat sequence: White → Green → Blue.
 """
 
-import sys
 import os
+import sys
 
 # Add src to path
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'src'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "src"))
 
 from src.mcp_server_mas_sequential_thinking.six_hats_router import (
-    SixHatsIntelligentRouter, ProblemAnalyzer
+    ProblemAnalyzer,
+    SixHatsIntelligentRouter,
 )
+
 
 def simulate_philosophical_processing():
     """Simulate the processing of a philosophical question without actual LLM calls."""
-
     print("🎩 SIX HATS PHILOSOPHY DEMO")
     print("=" * 50)
 
@@ -102,7 +102,7 @@ def simulate_philosophical_processing():
 4. 留下影响 - 为后代和社会留下积极的改变
 
 死亡的必然性让每个选择、每次体验都变得珍贵。正是因为时间有限，我们才会珍惜当下，追求有意义的生活。"""
-                print(f"     → 元认知整合：统一的哲学思考")
+                print("     → 元认知整合：统一的哲学思考")
 
             simulated_results[hat_name] = result
             print()
@@ -144,7 +144,6 @@ def simulate_philosophical_processing():
 
 def show_comparison():
     """Show comparison between old and new approaches."""
-
     print("📊 COMPARISON: Old vs New Approach")
     print("=" * 50)
 
@@ -175,7 +174,6 @@ def show_comparison():
 
 def main():
     """Run the philosophy demo."""
-
     success = simulate_philosophical_processing()
 
     if success:

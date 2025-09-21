@@ -5,14 +5,12 @@ TDD测试 - StepExecutorMixin重构组件
 测试重构后的步骤执行器混入类功能
 """
 
-import pytest
-from unittest.mock import Mock, patch
-from typing import Dict, Any, List, Optional
+from typing import Any
 
+from agno.workflow.types import StepOutput
 from src.mcp_server_mas_sequential_thinking.agno_workflow_router import (
     StepExecutorMixin,
 )
-from agno.workflow.types import StepOutput
 
 
 class TestStepExecutorMixin:
@@ -189,7 +187,7 @@ class TestStepExecutorMixinIntegration:
 
         class MockWorkflowStep(StepExecutorMixin):
             def execute(
-                self, content: str, session_state: Optional[Dict[str, Any]] = None
+                self, content: str, session_state: dict[str, Any] | None = None
             ):
                 try:
                     # 模拟处理

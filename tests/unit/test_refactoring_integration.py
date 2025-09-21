@@ -1,26 +1,26 @@
 """TDD tests for refactoring integration - verifying behavior consistency after refactoring."""
 
-import pytest
-from unittest.mock import Mock, patch, AsyncMock
-from typing import Dict, Any
+from unittest.mock import Mock, patch
 
+import pytest
 from src.mcp_server_mas_sequential_thinking.constants import (
-    ValidationLimits,
-    TokenCosts,
     ComplexityScoring,
     DefaultSettings,
-)
-from src.mcp_server_mas_sequential_thinking.types import (
-    ProcessingMetadata,
-    ValidationError,
-    ConfigurationError,
-    ThoughtProcessingError,
+    TokenCosts,
+    ValidationLimits,
 )
 from src.mcp_server_mas_sequential_thinking.models import ThoughtData
-from src.mcp_server_mas_sequential_thinking.session import SessionMemory
 from src.mcp_server_mas_sequential_thinking.server_core import (
     create_validated_thought_data,
 )
+from src.mcp_server_mas_sequential_thinking.session import SessionMemory
+from src.mcp_server_mas_sequential_thinking.types import (
+    ConfigurationError,
+    ProcessingMetadata,
+    ThoughtProcessingError,
+    ValidationError,
+)
+
 from tests.helpers.factories import ThoughtDataBuilder
 
 
@@ -152,7 +152,6 @@ class TestModuleUnificationIntegration:
         """RED: Test unified config module works as expected."""
         from src.mcp_server_mas_sequential_thinking.modernized_config import (
             get_model_config,
-            check_required_api_keys,
         )
 
         # Mock config to test integration
@@ -180,9 +179,8 @@ class TestModuleUnificationIntegration:
     def test_unified_team_module_import(self):
         """RED: Test unified team module can be imported and used."""
         from src.mcp_server_mas_sequential_thinking.unified_team import (
-            create_team,
-            StandardTeamBuilder,
             EnhancedTeamBuilder,
+            StandardTeamBuilder,
         )
 
         # Should be able to instantiate builders
@@ -379,9 +377,6 @@ class TestRefactoredComponentsIntegration:
     def test_logging_mixin_with_cost_optimization_constants(self):
         """Test LoggingMixin uses CostOptimizationConstants correctly."""
         from src.mcp_server_mas_sequential_thinking.server_core import LoggingMixin
-        from src.mcp_server_mas_sequential_thinking.constants import (
-            CostOptimizationConstants,
-        )
 
         mixin = LoggingMixin()
 
@@ -400,10 +395,11 @@ class TestRefactoredComponentsIntegration:
 
     def test_agent_factory_creates_functional_agents(self):
         """Test AgentFactory creates agents that can be used in workflows."""
+        from unittest.mock import Mock
+
         from src.mcp_server_mas_sequential_thinking.agno_workflow_router import (
             AgentFactory,
         )
-        from unittest.mock import Mock
 
         # Mock model for agent creation
         mock_model = Mock()
@@ -465,15 +461,16 @@ class TestRefactoredComponentsIntegration:
 
     def test_complete_workflow_integration(self):
         """Test complete workflow using all refactored components together."""
+        from unittest.mock import Mock, patch
+
         from src.mcp_server_mas_sequential_thinking.agno_workflow_router import (
             AgentFactory,
             StepExecutorMixin,
         )
-        from src.mcp_server_mas_sequential_thinking.server_core import LoggingMixin
         from src.mcp_server_mas_sequential_thinking.constants import (
             CostOptimizationConstants,
         )
-        from unittest.mock import Mock, patch
+        from src.mcp_server_mas_sequential_thinking.server_core import LoggingMixin
 
         # Create a mock class that uses all mixins
         class MockWorkflowProcessor(LoggingMixin, StepExecutorMixin):
@@ -622,11 +619,10 @@ class TestRefactoredComponentsIntegration:
 
     def test_performance_metrics_integration(self):
         """Test performance metrics work with logging and cost optimization."""
-        from src.mcp_server_mas_sequential_thinking.server_core import LoggingMixin
         from src.mcp_server_mas_sequential_thinking.constants import (
             PerformanceMetrics,
-            CostOptimizationConstants,
         )
+        from src.mcp_server_mas_sequential_thinking.server_core import LoggingMixin
 
         mixin = LoggingMixin()
 

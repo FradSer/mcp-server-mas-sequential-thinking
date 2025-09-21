@@ -1,14 +1,15 @@
 """TDD integration tests for complexity-based routing strategy selection."""
 
-import pytest
 from unittest.mock import Mock, patch
 
-from src.mcp_server_mas_sequential_thinking.models import ThoughtData
-from src.mcp_server_mas_sequential_thinking.agno_workflow_router import AgnoWorkflowRouter
 from src.mcp_server_mas_sequential_thinking.adaptive_routing import (
     BasicComplexityAnalyzer,
     ComplexityLevel,
 )
+from src.mcp_server_mas_sequential_thinking.agno_workflow_router import (
+    AgnoWorkflowRouter,
+)
+from src.mcp_server_mas_sequential_thinking.models import ThoughtData
 
 
 class TestRoutingStrategyIntegration:
@@ -48,7 +49,7 @@ class TestRoutingStrategyIntegration:
         assert complexity_level == ComplexityLevel.SIMPLE
 
         # Test step selection
-        with patch.object(self.router, '_complexity_selector') as mock_selector:
+        with patch.object(self.router, "_complexity_selector") as mock_selector:
             mock_selector.return_value = [self.router.single_agent_step]
             steps = self.router._complexity_selector(Mock())
             assert steps == [self.router.single_agent_step]

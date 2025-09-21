@@ -2,13 +2,12 @@
 
 import logging
 import re
+from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Dict, List, Optional, Tuple
-from abc import ABC, abstractmethod
 
+from .complexity_analyzer import ComplexityAnalyzer
 from .models import ThoughtData
-from .complexity_analyzer import ComplexityAnalyzer, TextFeatures
 
 logger = logging.getLogger(__name__)
 
@@ -66,9 +65,9 @@ class RoutingDecision:
     complexity_level: ComplexityLevel
     complexity_score: float
     reasoning: str
-    estimated_token_usage: Tuple[int, int]  # (min, max)
+    estimated_token_usage: tuple[int, int]  # (min, max)
     estimated_cost: float
-    specialist_recommendations: List[str] = field(default_factory=list)
+    specialist_recommendations: list[str] = field(default_factory=list)
 
 
 class ComplexityAnalyzer(ABC):
@@ -77,7 +76,6 @@ class ComplexityAnalyzer(ABC):
     @abstractmethod
     def analyze(self, thought_data: ThoughtData) -> ComplexityMetrics:
         """Analyze thought complexity and return metrics."""
-        pass
 
 
 class BasicComplexityAnalyzer(ComplexityAnalyzer):
@@ -434,7 +432,7 @@ class CostEstimator:
         strategy: ProcessingStrategy,
         complexity_level: ComplexityLevel,
         provider: str = "deepseek",
-    ) -> Tuple[Tuple[int, int], float]:
+    ) -> tuple[tuple[int, int], float]:
         """Estimate token usage and cost."""
         token_range = self.TOKEN_ESTIMATES[strategy][complexity_level]
         cost_per_token = self.COST_PER_1K_TOKENS.get(provider, 0.0002) / 1000
@@ -448,9 +446,9 @@ class AdaptiveRouter:
 
     def __init__(
         self,
-        analyzer: Optional[ComplexityAnalyzer] = None,
-        cost_estimator: Optional[CostEstimator] = None,
-        budget_limit: Optional[float] = None,
+        analyzer: ComplexityAnalyzer | None = None,
+        cost_estimator: CostEstimator | None = None,
+        budget_limit: float | None = None,
     ):
         self.analyzer = analyzer or BasicComplexityAnalyzer()
         self.cost_estimator = cost_estimator or CostEstimator()
@@ -476,10 +474,9 @@ class AdaptiveRouter:
         self,
         thought_data: ThoughtData,
         provider: str = "deepseek",
-        budget_remaining: Optional[float] = None,
+        budget_remaining: float | None = None,
     ) -> RoutingDecision:
         """Route thought to appropriate processing strategy."""
-
         # Analyze complexity
         metrics = self.analyzer.analyze(thought_data)
         complexity_level = self._determine_complexity_level(metrics.complexity_score)
@@ -538,7 +535,7 @@ class AdaptiveRouter:
         strategy: ProcessingStrategy,
         complexity_level: ComplexityLevel,
         provider: str,
-        budget_remaining: Optional[float],
+        budget_remaining: float | None,
     ) -> ProcessingStrategy:
         """Adjust strategy based on budget constraints."""
         if budget_remaining is None:
@@ -589,7 +586,7 @@ class AdaptiveRouter:
         metrics: ComplexityMetrics,
         complexity_level: ComplexityLevel,
         strategy: ProcessingStrategy,
-    ) -> List[str]:
+    ) -> list[str]:
         """Recommend which specialists to use based on analysis."""
         recommendations = []
 
@@ -660,7 +657,7 @@ class AdaptiveRouter:
 
 
 # Convenience functions for easy integration
-def create_adaptive_router(budget_limit: Optional[float] = None) -> AdaptiveRouter:
+def create_adaptive_router(budget_limit: float | None = None) -> AdaptiveRouter:
     """Create a configured adaptive router."""
     return AdaptiveRouter(budget_limit=budget_limit)
 
@@ -668,8 +665,8 @@ def create_adaptive_router(budget_limit: Optional[float] = None) -> AdaptiveRout
 def route_thought_adaptive(
     thought_data: ThoughtData,
     provider: str = "deepseek",
-    budget_remaining: Optional[float] = None,
-    budget_limit: Optional[float] = None,
+    budget_remaining: float | None = None,
+    budget_limit: float | None = None,
 ) -> RoutingDecision:
     """Quick routing function for thought processing."""
     router = AdaptiveRouter(budget_limit=budget_limit)

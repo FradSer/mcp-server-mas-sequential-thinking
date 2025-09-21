@@ -5,13 +5,10 @@ TDD测试 - LoggingMixin重构组件
 测试重构后的日志工具混入类功能
 """
 
-import pytest
-import logging
-from unittest.mock import patch, MagicMock
-from io import StringIO
+from unittest.mock import patch
 
-from src.mcp_server_mas_sequential_thinking.server_core import LoggingMixin
 from src.mcp_server_mas_sequential_thinking.constants import PerformanceMetrics
+from src.mcp_server_mas_sequential_thinking.server_core import LoggingMixin
 
 
 class TestLoggingMixin:

@@ -2,7 +2,6 @@
 
 import pytest
 from pydantic import ValidationError
-
 from src.mcp_server_mas_sequential_thinking.models import ThoughtData
 
 

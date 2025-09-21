@@ -3,12 +3,12 @@
 This file provides shared fixtures and configuration for all tests across the project.
 """
 
-import pytest
 import asyncio
 import tempfile
 from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock
 
+import pytest
 from src.mcp_server_mas_sequential_thinking.models import ThoughtData
 from src.mcp_server_mas_sequential_thinking.session import SessionMemory
 

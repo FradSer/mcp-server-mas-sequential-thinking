@@ -1,13 +1,11 @@
 """TDD tests for ComplexityAnalyzer and related analysis components."""
 
-import pytest
-from unittest.mock import Mock
 
-from src.mcp_server_mas_sequential_thinking.models import ThoughtData
 from src.mcp_server_mas_sequential_thinking.adaptive_routing import (
     BasicComplexityAnalyzer,
     ComplexityMetrics,
 )
+from src.mcp_server_mas_sequential_thinking.models import ThoughtData
 
 
 class TestBasicComplexityAnalyzer:
@@ -300,14 +298,14 @@ class TestBasicComplexityAnalyzer:
 
         # Verify it's the correct type with all required fields
         assert isinstance(metrics, ComplexityMetrics)
-        assert hasattr(metrics, 'word_count')
-        assert hasattr(metrics, 'sentence_count')
-        assert hasattr(metrics, 'question_count')
-        assert hasattr(metrics, 'technical_terms')
-        assert hasattr(metrics, 'branching_references')
-        assert hasattr(metrics, 'research_indicators')
-        assert hasattr(metrics, 'analysis_depth')
-        assert hasattr(metrics, 'complexity_score')  # Property should be available
+        assert hasattr(metrics, "word_count")
+        assert hasattr(metrics, "sentence_count")
+        assert hasattr(metrics, "question_count")
+        assert hasattr(metrics, "technical_terms")
+        assert hasattr(metrics, "branching_references")
+        assert hasattr(metrics, "research_indicators")
+        assert hasattr(metrics, "analysis_depth")
+        assert hasattr(metrics, "complexity_score")  # Property should be available
 
     def test_analyze_performance_with_long_content(self):
         """RED: Test analysis performance with very long content."""

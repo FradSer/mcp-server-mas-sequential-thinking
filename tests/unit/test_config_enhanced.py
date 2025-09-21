@@ -1,20 +1,20 @@
 """Comprehensive tests for the configuration module."""
 
-import pytest
 from unittest.mock import MagicMock
 
+import pytest
 from src.mcp_server_mas_sequential_thinking.modernized_config import (
-    get_model_config,
-    check_required_api_keys,
     DeepSeekStrategy,
-    GroqStrategy,
-    GitHubStrategy,
-    OpenRouterStrategy,
-    OllamaStrategy,
-    ModelConfig,
-    ConfigurationManager,
     GitHubOpenAI,
+    GitHubStrategy,
+    GroqStrategy,
+    ModelConfig,
+    OllamaStrategy,
+    OpenRouterStrategy,
+    check_required_api_keys,
+    get_model_config,
 )
+
 from tests.helpers.mocks import MockEnvironment
 
 

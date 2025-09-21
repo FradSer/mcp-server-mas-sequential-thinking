@@ -1,16 +1,15 @@
 """Comprehensive tests for the agents module."""
 
-import pytest
 from unittest.mock import MagicMock
 
+import pytest
+from agno.tools.exa import ExaTools
+from agno.tools.reasoning import ReasoningTools
 from src.mcp_server_mas_sequential_thinking.unified_agents import (
-    UnifiedAgentFactory,
     AgentCapability,
     create_agent,
     create_all_agents,
 )
-from agno.tools.reasoning import ReasoningTools
-from agno.tools.exa import ExaTools
 
 
 class TestAgentCapability:

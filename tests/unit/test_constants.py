@@ -1,13 +1,12 @@
 """TDD tests for constants module - validating magic number extraction."""
 
-import pytest
 from src.mcp_server_mas_sequential_thinking.constants import (
-    TokenCosts,
     ComplexityScoring,
-    TokenEstimates,
-    ValidationLimits,
     DefaultSettings,
     ProcessingStrategy,
+    TokenCosts,
+    TokenEstimates,
+    ValidationLimits,
 )
 
 

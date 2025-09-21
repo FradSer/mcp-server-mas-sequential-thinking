@@ -1,8 +1,8 @@
 """Response processing utilities for consistent response handling."""
 
 import logging
-from typing import Any, Optional, Union
 from dataclasses import dataclass
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -13,8 +13,8 @@ class ProcessedResponse:
 
     content: str
     raw_response: Any
-    processing_time: Optional[float] = None
-    metadata: Optional[dict] = None
+    processing_time: float | None = None
+    metadata: dict | None = None
 
 
 class ResponseExtractor:
@@ -35,10 +35,10 @@ class ResponseExtractor:
             content = response.content
             if isinstance(content, str):
                 return content
-            elif isinstance(content, dict):
+            if isinstance(content, dict):
                 # Extract from dict-based content
                 return ResponseExtractor._extract_from_dict(content)
-            elif hasattr(content, "__str__"):
+            if hasattr(content, "__str__"):
                 return str(content)
 
         # Handle dictionary responses
@@ -67,7 +67,7 @@ class ResponseExtractor:
                 value = content_dict[key]
                 if isinstance(value, str):
                     return value
-                elif isinstance(value, dict) and "result" in value:
+                if isinstance(value, dict) and "result" in value:
                     # Handle nested result structures
                     return str(value["result"])
 
@@ -90,7 +90,7 @@ class ResponseProcessor:
     def process_response(
         self,
         response: Any,
-        processing_time: Optional[float] = None,
+        processing_time: float | None = None,
         context: str = "processing",
     ) -> ProcessedResponse:
         """Process response with extraction, validation, and logging."""

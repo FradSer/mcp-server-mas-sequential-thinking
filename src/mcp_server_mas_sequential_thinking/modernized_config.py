@@ -3,15 +3,15 @@
 import os
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Dict, Optional, Protocol, Type, runtime_checkable
+from typing import Protocol, runtime_checkable
 
+from agno.models.anthropic import Claude
 from agno.models.base import Model
 from agno.models.deepseek import DeepSeek
 from agno.models.groq import Groq
 from agno.models.ollama import Ollama
-from agno.models.openrouter import OpenRouter
 from agno.models.openai import OpenAIChat
-from agno.models.anthropic import Claude
+from agno.models.openrouter import OpenRouter
 
 
 class GitHubOpenAI(OpenAIChat):
@@ -58,10 +58,10 @@ class GitHubOpenAI(OpenAIChat):
 class ModelConfig:
     """Immutable configuration for model provider and settings."""
 
-    provider_class: Type[Model]
+    provider_class: type[Model]
     team_model_id: str
     agent_model_id: str
-    api_key: Optional[str] = None
+    api_key: str | None = None
 
     def create_team_model(self) -> Model:
         """Create team model instance with configuration."""
@@ -92,7 +92,7 @@ class ConfigurationStrategy(Protocol):
         """Return model configuration for this strategy."""
         ...
 
-    def get_required_environment_variables(self) -> Dict[str, bool]:
+    def get_required_environment_variables(self) -> dict[str, bool]:
         """Return required environment variables and whether they're optional."""
         ...
 
@@ -102,27 +102,23 @@ class BaseProviderStrategy(ABC):
 
     @property
     @abstractmethod
-    def provider_class(self) -> Type[Model]:
+    def provider_class(self) -> type[Model]:
         """Return the provider model class."""
-        pass
 
     @property
     @abstractmethod
     def default_team_model(self) -> str:
         """Return default team model ID."""
-        pass
 
     @property
     @abstractmethod
     def default_agent_model(self) -> str:
         """Return default agent model ID."""
-        pass
 
     @property
     @abstractmethod
-    def api_key_name(self) -> Optional[str]:
+    def api_key_name(self) -> str | None:
         """Return API key environment variable name."""
-        pass
 
     def _get_env_with_fallback(self, env_var: str, fallback: str) -> str:
         """Get environment variable with fallback to default."""
@@ -153,7 +149,7 @@ class BaseProviderStrategy(ABC):
             api_key=api_key,
         )
 
-    def get_required_environment_variables(self) -> Dict[str, bool]:
+    def get_required_environment_variables(self) -> dict[str, bool]:
         """Return required environment variables."""
         env_vars = {}
 
@@ -209,7 +205,7 @@ class GitHubStrategy(BaseProviderStrategy):
     """GitHub Models provider strategy."""
 
     @property
-    def provider_class(self) -> Type[Model]:
+    def provider_class(self) -> type[Model]:
         return GitHubOpenAI
 
     @property
@@ -229,7 +225,7 @@ class AnthropicStrategy(BaseProviderStrategy):
     """Anthropic Claude provider strategy with prompt caching enabled."""
 
     @property
-    def provider_class(self) -> Type[Model]:
+    def provider_class(self) -> type[Model]:
         return Claude
 
     @property
@@ -264,7 +260,7 @@ class ConfigurationManager:
         self._strategies[name] = strategy
 
     def get_strategy(
-        self, provider_name: Optional[str] = None
+        self, provider_name: str | None = None
     ) -> ConfigurationStrategy:
         """Get strategy for specified provider."""
         if provider_name is None:
@@ -280,14 +276,14 @@ class ConfigurationManager:
 
         return self._strategies[provider_name]
 
-    def get_model_config(self, provider_name: Optional[str] = None) -> ModelConfig:
+    def get_model_config(self, provider_name: str | None = None) -> ModelConfig:
         """Get model configuration using dependency injection."""
         strategy = self.get_strategy(provider_name)
         return strategy.get_config()
 
     def validate_environment(
-        self, provider_name: Optional[str] = None
-    ) -> Dict[str, str]:
+        self, provider_name: str | None = None
+    ) -> dict[str, str]:
         """Validate environment variables and return missing required ones."""
         strategy = self.get_strategy(provider_name)
         required_vars = strategy.get_required_environment_variables()
@@ -316,12 +312,12 @@ _config_manager = ConfigurationManager()
 
 
 # Public API functions
-def get_model_config(provider_name: Optional[str] = None) -> ModelConfig:
+def get_model_config(provider_name: str | None = None) -> ModelConfig:
     """Get model configuration using modernized configuration management."""
     return _config_manager.get_model_config(provider_name)
 
 
-def check_required_api_keys(provider_name: Optional[str] = None) -> list[str]:
+def check_required_api_keys(provider_name: str | None = None) -> list[str]:
     """Check for missing required API keys."""
     missing_vars = _config_manager.validate_environment(provider_name)
     return list(missing_vars.keys())

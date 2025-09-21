@@ -1,7 +1,6 @@
 """Mock objects and utilities for testing the MCP Sequential Thinking Server."""
 
 from unittest.mock import MagicMock
-from typing import Dict, Optional
 
 
 class MockLLMResponse:
@@ -31,7 +30,7 @@ class MockAgentTools:
 class MockTeam:
     """Mock team with configurable responses."""
 
-    def __init__(self, responses: Optional[list[str]] = None):
+    def __init__(self, responses: list[str] | None = None):
         self.responses = responses or ["Default mock response"]
         self.call_count = 0
         self.call_history = []
@@ -91,7 +90,7 @@ class MockModelConfig:
 class MockEnvironment:
     """Mock environment for testing configuration."""
 
-    def __init__(self, env_vars: Dict[str, str]):
+    def __init__(self, env_vars: dict[str, str]):
         self.env_vars = env_vars
 
     def __enter__(self):

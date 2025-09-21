@@ -1,22 +1,22 @@
 """TDD tests for types module - validating type definitions and protocols."""
 
-import pytest
-from typing import get_type_hints, get_origin, get_args
+from typing import get_args, get_origin, get_type_hints
 from unittest.mock import Mock
 
+import pytest
 from src.mcp_server_mas_sequential_thinking.types import (
+    AgentFactory,
+    BranchId,
+    ComplexityMetrics,
+    ConfigurationError,
+    ModelProvider,
     ProcessingMetadata,
     SessionStats,
-    ComplexityMetrics,
-    ModelProvider,
-    AgentFactory,
     TeamBuilder,
-    ValidationError,
-    ConfigurationError,
-    ThoughtProcessingError,
     TeamCreationError,
     ThoughtNumber,
-    BranchId,
+    ThoughtProcessingError,
+    ValidationError,
 )
 
 
