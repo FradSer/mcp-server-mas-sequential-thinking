@@ -203,11 +203,10 @@ class AgnoWorkflowRouter(StepExecutorMixin):
         self.complexity_analyzer = complexity_analyzer or BasicComplexityAnalyzer()
         self.model_config = get_model_config()
 
-        # Create processing steps
+        # Create processing steps - simplified to 3 core strategies
         self.single_agent_step = self._create_single_agent_step()
         self.hybrid_team_step = self._create_hybrid_team_step()
         self.full_team_step = self._create_full_team_step()
-        self.parallel_analysis_step = self._create_parallel_analysis_step()
 
         # Create complexity-based router with custom selector
         self.complexity_router = Router(
@@ -217,7 +216,6 @@ class AgnoWorkflowRouter(StepExecutorMixin):
                 self.single_agent_step,
                 self.hybrid_team_step,
                 self.full_team_step,
-                self.parallel_analysis_step,
             ],
         )
 
@@ -293,7 +291,7 @@ class AgnoWorkflowRouter(StepExecutorMixin):
             ],
         )
 
-        def quality_improvement_executor(
+        async def quality_improvement_executor(
             step_input: StepInput, session_state: dict
         ) -> StepOutput:
             """Quality improvement executor."""
@@ -310,7 +308,7 @@ class AgnoWorkflowRouter(StepExecutorMixin):
                 Please provide an improved, more comprehensive analysis that addresses these issues.
                 """
 
-                result = quality_improver.run(
+                result = await quality_improver.arun(
                     input=improvement_prompt, session_state=session_state
                 )
 
@@ -380,7 +378,7 @@ class AgnoWorkflowRouter(StepExecutorMixin):
             logger.info(f"  📊 Complexity Score: {complexity_score:.1f}")
             logger.info(f"  📈 Complexity Level: {complexity_level.value}")
 
-            # Determine strategy
+            # Determine strategy - simplified to 3 core strategies
             if complexity_level == ComplexityLevel.SIMPLE:
                 strategy = "single_agent"
                 selected_step = self.single_agent_step
@@ -389,14 +387,10 @@ class AgnoWorkflowRouter(StepExecutorMixin):
                 strategy = "hybrid"
                 selected_step = self.hybrid_team_step
                 logger.info("  🤝 Route: Hybrid Team (Balanced processing)")
-            elif complexity_level == ComplexityLevel.COMPLEX:
+            else:  # COMPLEX or HIGHLY_COMPLEX -> use multi_agent
                 strategy = "multi_agent"
                 selected_step = self.full_team_step
-                logger.info("  👥 Route: Full Team (Comprehensive processing)")
-            else:  # HIGHLY_COMPLEX
-                strategy = "parallel_analysis"
-                selected_step = self.parallel_analysis_step
-                logger.info("  ⚡ Route: Parallel Analysis (Maximum processing)")
+                logger.info("  👥 Route: Multi Agent (Comprehensive processing)")
 
             logger.info("🎯 ROUTING DECISION:")
             logger.info(
@@ -408,8 +402,42 @@ class AgnoWorkflowRouter(StepExecutorMixin):
 
         except Exception as e:
             logger.error(f"Error in complexity selector: {e}")
-            # Fallback to single agent for reliability
-            return [self.single_agent_step]
+            logger.warning("Retrying with simplified complexity analysis")
+
+            # RETRY MECHANISM: Use simplified complexity analysis instead of direct fallback
+            try:
+                # Extract basic content for simplified analysis
+                if isinstance(step_input.input, dict):
+                    thought_content = step_input.input.get("thought", "")
+                else:
+                    thought_content = str(step_input.input)
+
+                # Simplified complexity assessment based on content length and keywords
+                content_length = len(thought_content)
+                complex_keywords = ["analyze", "consider", "evaluate", "implications", "factors", "compare", "contrast"]
+                keyword_count = sum(1 for keyword in complex_keywords if keyword.lower() in thought_content.lower())
+
+                # Simple heuristic-based complexity scoring
+                if content_length < 50 and keyword_count <= 1:
+                    strategy = "single_agent"
+                    selected_step = self.single_agent_step
+                    logger.info("  🤖 Retry Route: Single Agent (simplified analysis)")
+                elif content_length < 200 and keyword_count <= 3:
+                    strategy = "hybrid"
+                    selected_step = self.hybrid_team_step
+                    logger.info("  🤝 Retry Route: Hybrid Team (simplified analysis)")
+                else:
+                    strategy = "multi_agent"
+                    selected_step = self.full_team_step
+                    logger.info("  👥 Retry Route: Multi Agent (simplified analysis)")
+
+                logger.info(f"  ✅ Retry successful: {strategy} (length={content_length}, keywords={keyword_count})")
+                return [selected_step]
+
+            except Exception as retry_error:
+                logger.error(f"Retry also failed: {retry_error}")
+                logger.warning("Final fallback to single agent")
+                return [self.single_agent_step]
 
     def _determine_complexity_level(self, score: float) -> ComplexityLevel:
         """Determine complexity level from score (adjusted for realistic ranges)."""
@@ -666,7 +694,7 @@ class AgnoWorkflowRouter(StepExecutorMixin):
             markdown=False,
         )
 
-        def single_agent_executor(
+        async def single_agent_executor(
             step_input: StepInput, session_state: dict
         ) -> StepOutput:
             """Custom executor that ensures StepOutput compliance."""
@@ -708,8 +736,8 @@ class AgnoWorkflowRouter(StepExecutorMixin):
                 logger.info(f"  🧠 Model: {agent.model}")
                 logger.info(f"  🚀 Starting single agent processing...")
 
-                # Run the agent with session_state
-                result = agent.run(input=thought_content, session_state=session_state)
+                # Run the agent with session_state (async + parallel)
+                result = await agent.arun(input=thought_content, session_state=session_state)
 
                 logger.info("  ✅ Single agent completed successfully")
                 logger.info(f"  📊 Result type: {type(result).__name__}")
@@ -757,7 +785,7 @@ class AgnoWorkflowRouter(StepExecutorMixin):
             ],
         )
 
-        def hybrid_team_executor(
+        async def hybrid_team_executor(
             step_input: StepInput, session_state: dict
         ) -> StepOutput:
             """Custom executor that ensures StepOutput compliance."""
@@ -799,9 +827,9 @@ class AgnoWorkflowRouter(StepExecutorMixin):
                 )
                 logger.info(f"  🧠 Team model: {hybrid_team.model}")
 
-                # Run the team with session_state
+                # Run the team with session_state (async + parallel)
                 logger.info("  🚀 Starting hybrid team processing...")
-                result = hybrid_team.run(
+                result = await hybrid_team.arun(
                     input=thought_content, session_state=session_state
                 )
 
@@ -912,7 +940,7 @@ class AgnoWorkflowRouter(StepExecutorMixin):
             ],
         )
 
-        def full_team_executor(
+        async def full_team_executor(
             step_input: StepInput, session_state: dict
         ) -> StepOutput:
             """Custom executor that ensures StepOutput compliance."""
@@ -954,8 +982,8 @@ class AgnoWorkflowRouter(StepExecutorMixin):
                 logger.info(f"  🧠 Model: {full_team.model}")
                 logger.info("  🚀 Starting full team processing...")
 
-                # Run the full team with session_state
-                result = full_team.run(
+                # Run the full team with session_state (async + parallel)
+                result = await full_team.arun(
                     input=thought_content, session_state=session_state
                 )
 
@@ -986,144 +1014,3 @@ class AgnoWorkflowRouter(StepExecutorMixin):
             description="Maximum quality processing with all specialists",
         )
 
-    def _create_parallel_analysis_step(self) -> Parallel:
-        """Create parallel analysis step for highly complex thoughts."""
-        model = self.model_config.create_team_model()
-
-        # Create specialized agents for parallel analysis
-        semantic_analyzer = Agent(
-            name="SemanticAnalyzer",
-            role="Semantic Analysis Specialist",
-            model=model,
-            tools=[ReasoningTools],
-            instructions=[
-                "Focus on semantic meaning and conceptual relationships.",
-                "Analyze language patterns and meaning structures.",
-                "Identify key concepts and their interconnections.",
-            ],
-        )
-
-        technical_analyzer = Agent(
-            name="TechnicalAnalyzer",
-            role="Technical Analysis Specialist",
-            model=model,
-            tools=[ReasoningTools],
-            instructions=[
-                "Analyze technical aspects and implementation details.",
-                "Focus on methodology and technical feasibility.",
-                "Evaluate technical constraints and requirements.",
-            ],
-        )
-
-        context_analyzer = Agent(
-            name="ContextAnalyzer",
-            role="Contextual Analysis Specialist",
-            model=model,
-            tools=[ReasoningTools],
-            instructions=[
-                "Analyze contextual implications and broader impact.",
-                "Consider historical context and situational factors.",
-                "Evaluate environmental and situational influences.",
-            ],
-        )
-
-        def semantic_executor(step_input: StepInput, session_state: dict) -> StepOutput:
-            """Semantic analysis executor."""
-            try:
-                logger.info("🔍 SEMANTIC ANALYSIS:")
-                thought_content = (
-                    step_input.input.get("thought", str(step_input.input))
-                    if isinstance(step_input.input, dict)
-                    else str(step_input.input)
-                )
-                logger.info(f"  📥 Input: {thought_content[:100]}...")
-                logger.info(f"  🎯 Analyzer: {semantic_analyzer.name}")
-                logger.info("  🚀 Starting semantic analysis...")
-
-                result = semantic_analyzer.run(
-                    input=f"Perform semantic analysis of: {thought_content}",
-                    session_state=session_state,
-                )
-                logger.info("  ✅ Semantic analysis completed")
-                return StepOutput(
-                    content=result,
-                    success=True,
-                )
-            except Exception as e:
-                logger.error(f"  ❌ Semantic analysis failed: {str(e)}")
-                return StepOutput(
-                    content=f"Semantic analysis failed: {str(e)}",
-                    success=False,
-                    error=str(e),
-                )
-
-        def technical_executor(
-            step_input: StepInput, session_state: dict
-        ) -> StepOutput:
-            """Technical analysis executor."""
-            try:
-                logger.info("🔧 TECHNICAL ANALYSIS:")
-                thought_content = (
-                    step_input.input.get("thought", str(step_input.input))
-                    if isinstance(step_input.input, dict)
-                    else str(step_input.input)
-                )
-                logger.info(f"  📥 Input: {thought_content[:100]}...")
-                logger.info(f"  🎯 Analyzer: {technical_analyzer.name}")
-                logger.info("  🚀 Starting technical analysis...")
-
-                result = technical_analyzer.run(
-                    input=f"Perform technical analysis of: {thought_content}",
-                    session_state=session_state,
-                )
-                logger.info("  ✅ Technical analysis completed")
-                return StepOutput(
-                    content=result,
-                    success=True,
-                )
-            except Exception as e:
-                logger.error(f"  ❌ Technical analysis failed: {str(e)}")
-                return StepOutput(
-                    content=f"Technical analysis failed: {str(e)}",
-                    success=False,
-                    error=str(e),
-                )
-
-        def context_executor(step_input: StepInput, session_state: dict) -> StepOutput:
-            """Contextual analysis executor."""
-            try:
-                logger.info("🌐 CONTEXTUAL ANALYSIS:")
-                thought_content = (
-                    step_input.input.get("thought", str(step_input.input))
-                    if isinstance(step_input.input, dict)
-                    else str(step_input.input)
-                )
-                logger.info(f"  📥 Input: {thought_content[:100]}...")
-                logger.info(f"  🎯 Analyzer: {context_analyzer.name}")
-                logger.info("  🚀 Starting contextual analysis...")
-
-                result = context_analyzer.run(
-                    input=f"Perform contextual analysis of: {thought_content}",
-                    session_state=session_state,
-                )
-                logger.info("  ✅ Contextual analysis completed")
-                return StepOutput(
-                    content=result,
-                    success=True,
-                )
-            except Exception as e:
-                logger.error(f"  ❌ Contextual analysis failed: {str(e)}")
-                return StepOutput(
-                    content=f"Contextual analysis failed: {str(e)}",
-                    success=False,
-                    error=str(e),
-                )
-
-        # Create parallel step with independent analysis tasks
-        return Parallel(
-            Step(name="semantic_analysis", executor=semantic_executor),
-            Step(name="technical_analysis", executor=technical_executor),
-            Step(name="contextual_analysis", executor=context_executor),
-            name="parallel_complex_analysis",
-            description="Parallel multi-dimensional analysis for highly complex thoughts",
-        )
