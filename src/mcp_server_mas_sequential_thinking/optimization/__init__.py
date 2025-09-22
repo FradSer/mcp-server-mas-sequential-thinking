@@ -6,7 +6,6 @@ optimization, cost optimization, and model-specific optimization.
 
 from .agent_optimization import (
     AgentPerformanceOptimizer,
-    OptimizedAgentSystem,
     SmartResponseFormatter,
 )
 from .cost_optimization import (
@@ -23,14 +22,13 @@ from .model_specific_optimization import (
 __all__ = [
     # From agent_optimization
     "AgentPerformanceOptimizer",
+    "SmartResponseFormatter",
     # From cost_optimization
     "BudgetConstraints",
     "CostOptimizer",
+    "ProviderProfile",
+    "create_cost_optimizer",
     # From model_specific_optimization
     "ModelOptimizer",
-    "OptimizedAgentSystem",
-    "ProviderProfile",
-    "SmartResponseFormatter",
-    "create_cost_optimizer",
     "create_model_optimizer",
 ]

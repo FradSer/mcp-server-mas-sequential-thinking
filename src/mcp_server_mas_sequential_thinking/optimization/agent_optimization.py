@@ -1,77 +1,11 @@
-"""Agent optimization integration module - patches existing system with improvements."""
+"""Agent performance monitoring and response optimization module."""
 
 import time
 
 from mcp_server_mas_sequential_thinking.core.models import ThoughtData
-from mcp_server_mas_sequential_thinking.infrastructure.logging_config import (
-    SmartLogLevel,
-    configure_smart_logging,
-    get_logger,
-)
-from mcp_server_mas_sequential_thinking.routing.optimized_routing import (
-    ProcessingMode,
-    create_optimized_router,
-)
+from mcp_server_mas_sequential_thinking.infrastructure.logging_config import get_logger
 
 logger = get_logger(__name__)
-
-
-class OptimizedAgentSystem:
-    """Drop-in replacement for existing agent system with optimizations."""
-
-    def __init__(self, processing_mode: ProcessingMode = ProcessingMode.BALANCED) -> None:
-        self.router = create_optimized_router(processing_mode)
-        self.processing_mode = processing_mode
-
-        # Configure logging based on mode
-        if processing_mode == ProcessingMode.FAST:
-            configure_smart_logging(SmartLogLevel.CRITICAL_ONLY)
-        elif processing_mode == ProcessingMode.BALANCED:
-            configure_smart_logging(SmartLogLevel.PERFORMANCE)
-        else:  # DEEP
-            configure_smart_logging(SmartLogLevel.ROUTING)
-
-        logger.info(f"🚀 Optimized Agent System initialized in {processing_mode.value} mode")
-
-    def route_thought(self, thought_data: ThoughtData) -> tuple[str, float, dict]:
-        """Route thought and return strategy info compatible with existing system."""
-        start_time = time.time()
-
-        # Get optimized routing decision
-        decision = self.router.route_thought(thought_data)
-
-        routing_time = time.time() - start_time
-
-        # Return compatible format
-        strategy_info = {
-            "name": decision.strategy.name,
-            "complexity": decision.complexity_metrics.complexity_score,
-            "estimated_time": decision.strategy.estimated_time_seconds,
-            "hat_sequence": [hat.value for hat in decision.strategy.hat_sequence],
-            "reasoning": decision.reasoning,
-            "cost_reduction": decision.estimated_cost_reduction
-        }
-
-        return decision.strategy.name, routing_time, strategy_info
-
-    def should_use_six_hats(self, complexity_score: float) -> bool:
-        """Determine if Six Hats should be used based on optimized thresholds."""
-        # Use Six Hats for complexity > 5 (old system used everything)
-        return complexity_score > 5.0
-
-    def get_processing_recommendation(self, thought_data: ThoughtData) -> dict:
-        """Get processing recommendation with performance insights."""
-        decision = self.router.route_thought(thought_data)
-
-        return {
-            "strategy": decision.strategy.name,
-            "estimated_time": decision.strategy.estimated_time_seconds,
-            "complexity_score": decision.complexity_metrics.complexity_score,
-            "hat_count": len(decision.strategy.hat_sequence),
-            "cost_efficient": decision.strategy.estimated_time_seconds <= 120,
-            "reasoning": decision.reasoning,
-            "cost_reduction": decision.estimated_cost_reduction
-        }
 
 
 class AgentPerformanceOptimizer:
@@ -261,29 +195,13 @@ class SmartResponseFormatter:
 
 
 # Global instances for easy access
-optimized_system = OptimizedAgentSystem(ProcessingMode.BALANCED)
 performance_optimizer = AgentPerformanceOptimizer()
 response_formatter = SmartResponseFormatter()
-
-
-def patch_existing_system():
-    """Patch existing system with optimizations."""
-    logger.info("🔧 Patching existing system with optimizations...")
-
-    # This function can be called to replace existing components
-    # with optimized versions while maintaining compatibility
-
-    return {
-        "router": optimized_system,
-        "optimizer": performance_optimizer,
-        "formatter": response_formatter
-    }
 
 
 def get_optimization_status() -> dict:
     """Get current optimization status."""
     return {
-        "system_mode": optimized_system.processing_mode.value,
         "performance_summary": performance_optimizer.get_optimization_summary(),
         "optimizations_active": True
     }
