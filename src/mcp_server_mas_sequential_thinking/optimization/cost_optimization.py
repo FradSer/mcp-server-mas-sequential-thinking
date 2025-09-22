@@ -12,7 +12,7 @@ from mcp_server_mas_sequential_thinking.config.constants import (
     TokenCosts,
 )
 from mcp_server_mas_sequential_thinking.infrastructure.logging_config import get_logger
-from mcp_server_mas_sequential_thinking.routing.adaptive_routing import (
+from mcp_server_mas_sequential_thinking.routing.complexity_types import (
     ComplexityLevel,
     ProcessingStrategy,
     RoutingDecision,
@@ -352,7 +352,7 @@ class CostOptimizer:
                 routing_decision.strategy = ProcessingStrategy.SINGLE_AGENT
 
             # Recalculate cost estimates
-            from .adaptive_routing import CostEstimator
+            from .complexity_types import CostEstimator
 
             cost_estimator = CostEstimator()
             token_range, estimated_cost = cost_estimator.estimate_cost(

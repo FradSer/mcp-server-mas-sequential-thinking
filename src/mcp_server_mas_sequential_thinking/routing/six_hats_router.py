@@ -12,7 +12,8 @@ import logging
 from dataclasses import dataclass, field
 from enum import Enum
 
-from .adaptive_routing import BasicComplexityAnalyzer, ComplexityMetrics
+from .ai_complexity_analyzer import AIComplexityAnalyzer
+from .complexity_types import ComplexityMetrics
 
 logger = logging.getLogger(__name__)
 from mcp_server_mas_sequential_thinking.core.models import ThoughtData
@@ -224,10 +225,10 @@ class SixHatsSequenceLibrary:
 
         "fact_and_judge": HatSequenceStrategy(
             name="事实判断序列",
-            complexity=HatComplexity.DOUBLE,
-            hat_sequence=[HatColor.WHITE, HatColor.BLACK],
-            estimated_time_seconds=240,
-            description="收集事实，然后批判验证",
+            complexity=HatComplexity.TRIPLE,
+            hat_sequence=[HatColor.WHITE, HatColor.BLACK, HatColor.BLUE],
+            estimated_time_seconds=360,
+            description="收集事实，批判验证，蓝帽整合结论",
             recommended_for=[ProblemType.FACTUAL, ProblemType.EVALUATIVE]
         ),
 
@@ -316,8 +317,8 @@ class RoutingDecision:
 class SixHatsIntelligentRouter:
     """六帽智能路由器."""
 
-    def __init__(self, complexity_analyzer: BasicComplexityAnalyzer | None = None) -> None:
-        self.complexity_analyzer = complexity_analyzer or BasicComplexityAnalyzer()
+    def __init__(self, complexity_analyzer: AIComplexityAnalyzer | None = None) -> None:
+        self.complexity_analyzer = complexity_analyzer or AIComplexityAnalyzer()
         self.problem_analyzer = ProblemAnalyzer()
         self.sequence_library = SixHatsSequenceLibrary()
 
@@ -329,13 +330,13 @@ class SixHatsIntelligentRouter:
             HatComplexity.FULL: (20, 100)
         }
 
-    def route_thought(self, thought_data: ThoughtData) -> RoutingDecision:
+    async def route_thought(self, thought_data: ThoughtData) -> RoutingDecision:
         """智能路由思想到最佳帽子序列."""
         logger.info("🎩 SIX HATS INTELLIGENT ROUTING:")
         logger.info(f"  📝 Input: {thought_data.thought[:100]}...")
 
-        # 步骤1: 复杂度分析
-        complexity_metrics = self.complexity_analyzer.analyze(thought_data)
+        # 步骤1: 复杂度分析 (AI-powered)
+        complexity_metrics = await self.complexity_analyzer.analyze(thought_data)
         complexity_score = complexity_metrics.complexity_score
 
         logger.info(f"  📊 Complexity Score: {complexity_score:.1f}")
@@ -499,7 +500,7 @@ def create_six_hats_router(complexity_analyzer=None) -> SixHatsIntelligentRouter
     return SixHatsIntelligentRouter(complexity_analyzer)
 
 
-def route_thought_to_hats(thought_data: ThoughtData) -> RoutingDecision:
+async def route_thought_to_hats(thought_data: ThoughtData) -> RoutingDecision:
     """将思想路由到最佳帽子序列."""
     router = SixHatsIntelligentRouter()
-    return router.route_thought(thought_data)
+    return await router.route_thought(thought_data)

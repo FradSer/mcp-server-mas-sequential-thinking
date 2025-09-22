@@ -20,8 +20,10 @@ from mcp_server_mas_sequential_thinking.config.processing_constants import (
 )
 from mcp_server_mas_sequential_thinking.core.models import ThoughtData
 from mcp_server_mas_sequential_thinking.infrastructure.logging_config import get_logger
-from mcp_server_mas_sequential_thinking.routing.adaptive_routing import (
-    BasicComplexityAnalyzer,
+from mcp_server_mas_sequential_thinking.routing.ai_complexity_analyzer import (
+    AIComplexityAnalyzer,
+)
+from mcp_server_mas_sequential_thinking.routing.complexity_types import (
     ComplexityAnalyzer,
 )
 
@@ -68,7 +70,7 @@ class BaseExecutor(ABC):
         complexity_analyzer: ComplexityAnalyzer | None = None
     ) -> None:
         self.strategy_name = strategy_name
-        self.complexity_analyzer = complexity_analyzer or BasicComplexityAnalyzer()
+        self.complexity_analyzer = complexity_analyzer or AIComplexityAnalyzer()
 
     async def execute(
         self,

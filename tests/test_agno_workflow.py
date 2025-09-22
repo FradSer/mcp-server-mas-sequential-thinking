@@ -7,7 +7,7 @@ Tests the AgnoCompliantRouter implementation and its integration with the Though
 from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
-from src.mcp_server_mas_sequential_thinking.adaptive_routing import ComplexityLevel
+from src.mcp_server_mas_sequential_thinking.routing.complexity_types import ComplexityLevel
 from src.mcp_server_mas_sequential_thinking.agno_workflow_router import (
     AgnoWorkflowRouter,
     WorkflowResult,

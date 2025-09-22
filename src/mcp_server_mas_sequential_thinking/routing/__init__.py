@@ -4,7 +4,7 @@ This module contains routing and workflow logic including adaptive routing,
 workflow routing, optimization, and six hats routing functionality.
 """
 
-from .adaptive_routing import ComplexityLevel, ProcessingStrategy
+from .complexity_types import ComplexityLevel, ProcessingStrategy
 from .agno_workflow_router import SixHatsWorkflowResult, SixHatsWorkflowRouter
 from .optimized_routing import CostAwareRouter, create_optimized_router
 from .six_hats_router import SixHatsIntelligentRouter, create_six_hats_router

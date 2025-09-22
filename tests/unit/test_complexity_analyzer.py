@@ -1,19 +1,19 @@
 """TDD tests for ComplexityAnalyzer and related analysis components."""
 
 
-from src.mcp_server_mas_sequential_thinking.adaptive_routing import (
-    BasicComplexityAnalyzer,
+from src.mcp_server_mas_sequential_thinking.routing.complexity_types import (
+    AIComplexityAnalyzer,
     ComplexityMetrics,
 )
 from src.mcp_server_mas_sequential_thinking.models import ThoughtData
 
 
-class TestBasicComplexityAnalyzer:
-    """Test BasicComplexityAnalyzer.analyze method with various content types."""
+class TestAIComplexityAnalyzer:
+    """Test AIComplexityAnalyzer.analyze method with various content types."""
 
     def setUp(self):
         """Set up test fixture with analyzer instance."""
-        self.analyzer = BasicComplexityAnalyzer()
+        self.analyzer = AIComplexityAnalyzer()
 
     def test_analyze_simple_english_content(self):
         """RED: Test analysis of simple English content."""

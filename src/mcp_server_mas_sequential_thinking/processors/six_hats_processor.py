@@ -58,7 +58,7 @@ class SixHatsSequentialProcessor:
 
         try:
             # 步骤1: 智能路由决策
-            routing_decision = self.router.route_thought(thought_data)
+            routing_decision = await self.router.route_thought(thought_data)
 
             logger.info(f"  🎯 Strategy: {routing_decision.strategy.name}")
             logger.info(f"  🎨 Hat Sequence: {[hat.value for hat in routing_decision.strategy.hat_sequence]}")

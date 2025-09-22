@@ -8,7 +8,7 @@ from datetime import datetime
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
-    from mcp_server_mas_sequential_thinking.routing.adaptive_routing import (
+    from mcp_server_mas_sequential_thinking.routing.complexity_types import (
         AdaptiveRouter,
         RoutingDecision,
     )
@@ -19,7 +19,7 @@ from mcp_server_mas_sequential_thinking.optimization.cost_optimization import (
     CostOptimizer,
     get_cost_optimizer_from_env,
 )
-from mcp_server_mas_sequential_thinking.routing.adaptive_routing import (
+from mcp_server_mas_sequential_thinking.routing.complexity_types import (
     ProcessingStrategy,
 )
 
@@ -73,7 +73,7 @@ class AdaptiveThoughtProcessor:
                 float(os.getenv("DAILY_BUDGET_LIMIT", "0")) or None
 
             # Dynamic import to avoid circular dependency
-            from mcp_server_mas_sequential_thinking.routing.adaptive_routing import (
+            from mcp_server_mas_sequential_thinking.routing.complexity_types import (
                 AdaptiveRouter,
             )
             self.adaptive_router = AdaptiveRouter()

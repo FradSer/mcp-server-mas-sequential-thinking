@@ -422,7 +422,7 @@ class ThoughtProcessor(LoggingMixin):
     ) -> tuple[CoordinationPlan, float]:
         """Create coordination plan from routing decision with timing."""
         coordination_start = time.time()
-        routing_decision = self._router.route_thought(thought_data)
+        routing_decision = await self._router.route_thought(thought_data)
         coordination_plan = CoordinationPlan.from_routing_decision(
             routing_decision, thought_data
         )
@@ -556,7 +556,7 @@ class ThoughtProcessor(LoggingMixin):
     async def _analyze_routing(self, thought_data: ThoughtData) -> tuple[object, float]:
         """Analyze routing decision and return decision with timing."""
         routing_start = time.time()
-        routing_decision = self._router.route_thought(thought_data)
+        routing_decision = await self._router.route_thought(thought_data)
         routing_time = time.time() - routing_start
 
         self._log_routing_analysis(routing_decision, routing_time)

@@ -2,8 +2,8 @@
 
 from unittest.mock import Mock, patch
 
-from src.mcp_server_mas_sequential_thinking.adaptive_routing import (
-    BasicComplexityAnalyzer,
+from src.mcp_server_mas_sequential_thinking.routing.complexity_types import (
+    AIComplexityAnalyzer,
     ComplexityLevel,
 )
 from src.mcp_server_mas_sequential_thinking.agno_workflow_router import (
@@ -17,7 +17,7 @@ class TestRoutingStrategyIntegration:
 
     def setUp(self):
         """Set up test fixture with router instance."""
-        self.analyzer = BasicComplexityAnalyzer()
+        self.analyzer = AIComplexityAnalyzer()
         self.router = AgnoWorkflowRouter(complexity_analyzer=self.analyzer)
 
     def test_simple_content_routes_to_single_agent(self):

@@ -179,7 +179,7 @@ class GroqStrategy(BaseProviderStrategy):
 
     provider_class = Groq
     default_team_model = "deepseek-r1-distill-llama-70b"
-    default_agent_model = "qwen-2.5-32b"
+    default_agent_model = "qwen/qwen3-32b"
     api_key_name = "GROQ_API_KEY"
 
 
