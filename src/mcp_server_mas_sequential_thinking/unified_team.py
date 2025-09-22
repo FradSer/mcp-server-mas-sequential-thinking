@@ -1,240 +1,64 @@
-"""Unified team factory with simplified creation logic and eliminated conditional complexity."""
+"""Six Thinking Hats Team Factory - Complete Rewrite
+
+纯净的Six Thinking Hats团队实现，无任何Legacy代码。
+基于Edward de Bono的六帽思维方法论，支持智能路由和动态序列。
+"""
 
 import logging
-from abc import ABC, abstractmethod
 from dataclasses import dataclass
+from typing import Any
 
 from agno.team.team import Team
 
 from .modernized_config import ModelConfig, get_model_config
-from .unified_agents import UnifiedAgentFactory
 
 # Import Six Hats support
-try:
-    from .six_hats_core import HatColor, SixHatsAgentFactory
-    from .six_hats_router import SixHatsIntelligentRouter
-    SIX_HATS_AVAILABLE = True
-except ImportError:
-    SIX_HATS_AVAILABLE = False
-    logger.warning("Six Hats functionality not available in team factory")
+from .six_hats_core import HatColor, SixHatsAgentFactory
+from .six_hats_router import SixHatsIntelligentRouter
 
 logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
-class TeamConfiguration:
-    """Team configuration with all necessary settings."""
+class SixHatsTeamConfiguration:
+    """Six Thinking Hats team configuration."""
 
     name: str
     description: str
+    hat_sequence: list[HatColor]
     instructions: list[str]
-    success_criteria: list[str]
-    team_type: str
-    enable_advanced_features: bool = False
+    routing_strategy: str = "intelligent"  # intelligent, sequential, adaptive
 
 
-class TeamBuilder(ABC):
-    """Abstract builder for creating teams with different configurations."""
-
-    @abstractmethod
-    def get_configuration(self) -> TeamConfiguration:
-        """Return team configuration."""
-
-    def build_team(
-        self, config: ModelConfig, agent_factory: UnifiedAgentFactory
-    ) -> Team:
-        """Build team with specified configuration."""
-        team_config = self.get_configuration()
-
-        # Create model instances
-        team_model = config.provider_class(id=config.team_model_id)
-        agent_model = config.provider_class(id=config.agent_model_id)
-
-        # Create agents using factory
-        agents = agent_factory.create_team_agents(agent_model, team_config.team_type)
-
-        # Create team with unified configuration (v2 compatible)
-        team = Team(
-            name=team_config.name,
-            members=list(agents.values()),
-            model=team_model,
-            description=team_config.description,
-            instructions=team_config.instructions,
-            # v2 attributes replacing deprecated mode="coordinate"
-            respond_directly=False,  # Team leader processes responses from members
-            delegate_task_to_all_members=False,  # Delegate one by one
-            determine_input_for_members=True,  # Team leader synthesizes input
-            enable_agentic_state=team_config.enable_advanced_features,
-            share_member_interactions=team_config.enable_advanced_features,
-            markdown=True,
-        )
-
-        logger.info(
-            f"Team '{team_config.name}' created with {config.provider_class.__name__} provider"
-        )
-        return team
-
-
-class StandardTeamBuilder(TeamBuilder):
-    """Builder for standard sequential thinking team."""
-
-    def get_configuration(self) -> TeamConfiguration:
-        return TeamConfiguration(
-            name="SequentialThinkingTeam",
-            description="Coordinator for sequential thinking specialist team",
-            team_type="standard",
-            instructions=[
-                "You coordinate specialists (Planner, Researcher, Analyzer, Critic, Synthesizer) for sequential thinking.",
-                "HOTFIX: Optimize for speed - delegate to maximum 2 specialists per thought unless complexity demands more.",
-                "Process: 1) Quick analysis (< 5s), 2) Select MINIMAL specialists needed, 3) Delegate ONE clear sub-task each, 4) Fast synthesis, 5) Provide guidance.",
-                "Include recommendations: 'RECOMMENDATION: Revise thought #X...' or 'SUGGESTION: Consider branching from thought #Y...'",
-                "Skip specialists if their contribution won't significantly improve the response quality.",
-            ],
-            success_criteria=[
-                "Efficiently delegate sub-tasks to relevant specialists",
-                "Synthesize specialist responses coherently",
-                "Recommend revisions or branches based on analysis",
-            ],
-            enable_advanced_features=False,
-        )
-
-
-class EnhancedTeamBuilder(TeamBuilder):
-    """Builder for enhanced team with Agno 1.8+ features."""
-
-    def get_configuration(self) -> TeamConfiguration:
-        return TeamConfiguration(
-            name="EnhancedSequentialThinkingTeam",
-            description="Enhanced coordinator with advanced reasoning capabilities",
-            team_type="enhanced",
-            instructions=[
-                "You coordinate enhanced specialists with advanced reasoning capabilities for sequential thinking.",
-                "Available specialists: Enhanced agents with memory, reasoning, and structured outputs.",
-                "Process: 1) Analyze input with reasoning, 2) Select optimal specialists, 3) Delegate with context, 4) Synthesize structured responses, 5) Provide actionable guidance.",
-                "Use structured outputs for recommendations: 'RECOMMENDATION: ...' or 'SUGGESTION: ...'",
-                "Leverage agent memory and reasoning capabilities for complex tasks.",
-                "Prioritize accuracy and depth over speed when dealing with complex reasoning tasks.",
-            ],
-            success_criteria=[
-                "Efficiently delegate sub-tasks to relevant specialists",
-                "Synthesize specialist responses coherently",
-                "Recommend revisions or branches based on analysis",
-                "Utilize agent memory for context retention",
-                "Apply structured reasoning patterns",
-                "Generate structured outputs",
-            ],
-            enable_advanced_features=True,
-        )
-
-
-class HybridTeamBuilder(TeamBuilder):
-    """Builder for hybrid team mixing standard and enhanced agents."""
-
-    def get_configuration(self) -> TeamConfiguration:
-        return TeamConfiguration(
-            name="HybridSequentialThinkingTeam",
-            description="Hybrid coordinator with mixed standard and enhanced capabilities",
-            team_type="hybrid",
-            instructions=[
-                "You coordinate a hybrid team mixing standard and enhanced specialists for sequential thinking.",
-                "Standard agents (researcher, analyzer): Fast, efficient processing for routine tasks.",
-                "Enhanced agents (planner, critic, synthesizer): Advanced reasoning for complex tasks.",
-                "Process: 1) Assess task complexity, 2) Select appropriate agent types, 3) Delegate strategically, 4) Synthesize diverse responses, 5) Provide balanced guidance.",
-                "Balance speed and accuracy based on task requirements.",
-                "Leverage each agent type's strengths for optimal results.",
-            ],
-            success_criteria=[
-                "Efficiently utilize both standard and enhanced specialists",
-                "Balance speed and accuracy based on task complexity",
-                "Synthesize responses from diverse agent capabilities",
-                "Adapt delegation strategy to agent strengths",
-            ],
-            enable_advanced_features=True,
-        )
-
-
-class EnhancedSpecializedTeamBuilder(TeamBuilder):
-    """Builder for team with enhanced specialized agents only."""
-
-    def get_configuration(self) -> TeamConfiguration:
-        return TeamConfiguration(
-            name="EnhancedSpecializedThinkingTeam",
-            description="Coordinator for specialized enhanced agents with advanced capabilities",
-            team_type="enhanced_specialized",
-            instructions=[
-                "You coordinate highly specialized enhanced agents for complex sequential thinking.",
-                "Available specialists: Reasoning Planner, Research Analyst, Critical Thinker, Creative Synthesizer.",
-                "Process: 1) Deep analysis with multi-step reasoning, 2) Strategic specialist selection, 3) Context-rich delegation, 4) Advanced synthesis, 5) Structured guidance.",
-                "Focus on maximum accuracy and depth for complex problems requiring advanced reasoning.",
-                "Utilize full reasoning capabilities and structured outputs for optimal results.",
-            ],
-            success_criteria=[
-                "Maximize reasoning depth and accuracy",
-                "Utilize advanced agent capabilities effectively",
-                "Generate highly structured and comprehensive outputs",
-                "Handle complex problems requiring specialized expertise",
-            ],
-            enable_advanced_features=True,
-        )
-
-
-class SixHatsTeamBuilder(TeamBuilder):
+class SixHatsTeamBuilder:
     """Builder for Six Thinking Hats teams."""
 
-    def __init__(self, hat_sequence: list[HatColor], team_name: str):
-        self.hat_sequence = hat_sequence
-        self.team_name = team_name
+    def __init__(self, config: SixHatsTeamConfiguration):
+        self.config = config
+        self._hat_factory = SixHatsAgentFactory()
+        self._router = SixHatsIntelligentRouter()
 
-    def get_configuration(self) -> TeamConfiguration:
-        return TeamConfiguration(
-            name=self.team_name,
-            description=f"Six Thinking Hats team with sequence: {' → '.join(hat.value for hat in self.hat_sequence)}",
-            team_type="six_hats",
-            instructions=[
-                "You coordinate Six Thinking Hats sequential thinking process.",
-                f"Hat sequence: {' → '.join(hat.value.upper() for hat in self.hat_sequence)}",
-                "CRITICAL: Follow the exact hat sequence - one hat at a time.",
-                "Each hat must think ONLY in its designated mode.",
-                "Blue Hat: You are responsible for final integration and unified output.",
-                "Never mix thinking modes - strict hat discipline required.",
-            ],
-            success_criteria=[
-                "Execute hats in correct sequence",
-                "Maintain thinking mode purity for each hat",
-                "Provide unified output through Blue Hat integration",
-                "Solve the 'synthesis + review' separation problem",
-            ],
-            enable_advanced_features=True,
-        )
-
-    def build_team(
-        self, config: ModelConfig, agent_factory: UnifiedAgentFactory
-    ) -> Team:
-        """Build Six Hats team with specified sequence."""
-        if not SIX_HATS_AVAILABLE:
-            raise ValueError("Six Hats functionality not available")
-
-        team_config = self.get_configuration()
+    def build_team(self, model_config: ModelConfig) -> Team:
+        """Build Six Thinking Hats team."""
+        logger.info(f"Building Six Hats team: {self.config.name}")
 
         # Create models
-        team_model = config.provider_class(id=config.team_model_id)
-        agent_model = config.provider_class(id=config.agent_model_id)
+        team_model = model_config.provider_class(id=model_config.team_model_id)
+        agent_model = model_config.provider_class(id=model_config.agent_model_id)
 
-        # Create Six Hats agents
-        hat_factory = SixHatsAgentFactory()
-        agents = []
+        # Create hat agents for the sequence
+        hat_agents = []
+        for hat_color in self.config.hat_sequence:
+            agent = self._hat_factory.create_hat_agent(hat_color, agent_model)
+            hat_agents.append(agent)
 
-        for hat_color in self.hat_sequence:
-            agent = hat_factory.create_hat_agent(hat_color, agent_model)
-            agents.append(agent)
-
-        # Create coordinating team
+        # Create coordinating team with Blue Hat leadership
         team = Team(
-            name=team_config.name,
-            members=agents,
+            name=self.config.name,
+            members=hat_agents,
             model=team_model,
-            description=team_config.description,
-            instructions=team_config.instructions,
+            description=self.config.description,
+            instructions=self.config.instructions,
             # Six Hats specific coordination
             respond_directly=False,  # Blue Hat coordinates final response
             delegate_task_to_all_members=False,  # Sequential hat thinking
@@ -244,106 +68,253 @@ class SixHatsTeamBuilder(TeamBuilder):
             markdown=True,
         )
 
-        logger.info(f"Six Hats team '{team_config.name}' created with sequence: {[h.value for h in self.hat_sequence]}")
+        logger.info(
+            f"Six Hats team '{self.config.name}' created with sequence: {[h.value for h in self.config.hat_sequence]}"
+        )
         return team
 
 
-class UnifiedTeamFactory:
-    """Unified factory for creating all team types with eliminated conditional complexity."""
+class SixHatsTeamFactory:
+    """Factory for creating Six Thinking Hats teams exclusively."""
 
     def __init__(self):
-        self._builders = {
-            "standard": StandardTeamBuilder(),
-            "enhanced": EnhancedTeamBuilder(),
-            "hybrid": HybridTeamBuilder(),
-            "enhanced_specialized": EnhancedSpecializedTeamBuilder(),
+        """Initialize Six Hats team factory."""
+        self._predefined_configs = {
+            # Single Hat Teams
+            "white_hat": SixHatsTeamConfiguration(
+                name="WhiteHatFactualTeam",
+                description="Pure factual and data-driven analysis",
+                hat_sequence=[HatColor.WHITE],
+                instructions=[
+                    "Focus exclusively on facts, data, and objective information.",
+                    "Present neutral, verified information without interpretation.",
+                    "Identify missing information that would be helpful.",
+                ],
+            ),
+
+            "red_hat": SixHatsTeamConfiguration(
+                name="RedHatEmotionalTeam",
+                description="Intuitive and emotional response analysis",
+                hat_sequence=[HatColor.RED],
+                instructions=[
+                    "Express immediate emotional reactions and gut feelings.",
+                    "Share intuitive responses without justification.",
+                    "Provide the human emotional perspective on the situation.",
+                ],
+            ),
+
+            # Core Philosophical Thinking (Default)
+            "philosophical": SixHatsTeamConfiguration(
+                name="PhilosophicalThinkingTeam",
+                description="Specialized for philosophical and existential questions",
+                hat_sequence=[HatColor.WHITE, HatColor.GREEN, HatColor.BLUE],
+                instructions=[
+                    "Process philosophical questions through structured Six Hats thinking.",
+                    "White Hat: Present relevant facts and philosophical concepts.",
+                    "Green Hat: Explore creative perspectives and new ideas.",
+                    "Blue Hat: Synthesize insights into a coherent, human-friendly response.",
+                    "Focus on practical wisdom while acknowledging complexity.",
+                ],
+            ),
+
+            # Creative Problem Solving
+            "creative": SixHatsTeamConfiguration(
+                name="CreativeThinkingTeam",
+                description="Creative problem-solving and innovation",
+                hat_sequence=[HatColor.RED, HatColor.GREEN, HatColor.YELLOW, HatColor.BLUE],
+                instructions=[
+                    "Apply creative thinking to generate innovative solutions.",
+                    "Red Hat: Express initial feelings and reactions.",
+                    "Green Hat: Generate creative alternatives and new ideas.",
+                    "Yellow Hat: Explore potential benefits and opportunities.",
+                    "Blue Hat: Synthesize creative insights into actionable recommendations.",
+                ],
+            ),
+
+            # Decision Making
+            "decision": SixHatsTeamConfiguration(
+                name="DecisionMakingTeam",
+                description="Balanced decision analysis and evaluation",
+                hat_sequence=[HatColor.WHITE, HatColor.BLACK, HatColor.YELLOW, HatColor.BLUE],
+                instructions=[
+                    "Analyze decisions through multiple perspectives.",
+                    "White Hat: Present relevant facts and data.",
+                    "Black Hat: Identify risks, problems, and potential failures.",
+                    "Yellow Hat: Explore benefits, opportunities, and positive outcomes.",
+                    "Blue Hat: Synthesize analysis into balanced decision guidance.",
+                ],
+            ),
+
+            # Comprehensive Analysis
+            "full": SixHatsTeamConfiguration(
+                name="FullSixHatsThinkingTeam",
+                description="Complete Six Thinking Hats analysis",
+                hat_sequence=[
+                    HatColor.BLUE,   # Process overview
+                    HatColor.WHITE,  # Facts and data
+                    HatColor.RED,    # Emotions and intuition
+                    HatColor.YELLOW, # Benefits and optimism
+                    HatColor.BLACK,  # Caution and criticism
+                    HatColor.GREEN,  # Creativity and alternatives
+                    HatColor.BLUE    # Final synthesis
+                ],
+                instructions=[
+                    "Apply complete Six Thinking Hats methodology for comprehensive analysis.",
+                    "Follow the hat sequence strictly, maintaining thinking mode purity.",
+                    "Blue Hat manages process and provides final integration.",
+                    "Each hat contributes its unique perspective without mixing modes.",
+                    "Focus on practical, actionable insights.",
+                ],
+            ),
         }
 
-        # Add Six Hats builders if available
-        if SIX_HATS_AVAILABLE:
-            # Predefined Six Hats team configurations
-            self._builders.update({
-                "six_hats_triple": SixHatsTeamBuilder(
-                    [HatColor.WHITE, HatColor.GREEN, HatColor.BLUE],
-                    "TripleHatsThinkingTeam"
-                ),
-                "six_hats_full": SixHatsTeamBuilder(
-                    [HatColor.BLUE, HatColor.WHITE, HatColor.RED,
-                     HatColor.YELLOW, HatColor.BLACK, HatColor.GREEN, HatColor.BLUE],
-                    "FullSixHatsThinkingTeam"
-                ),
-                "six_hats_philosophical": SixHatsTeamBuilder(
-                    [HatColor.WHITE, HatColor.GREEN, HatColor.BLUE],
-                    "PhilosophicalThinkingTeam"
-                ),
-                "six_hats_creative": SixHatsTeamBuilder(
-                    [HatColor.RED, HatColor.GREEN, HatColor.YELLOW, HatColor.BLUE],
-                    "CreativeThinkingTeam"
-                ),
-            })
-
-        self._agent_factory = UnifiedAgentFactory()
-        self._six_hats_router = SixHatsIntelligentRouter() if SIX_HATS_AVAILABLE else None
+        self._router = SixHatsIntelligentRouter()
+        logger.info("Six Hats Team Factory initialized")
 
     def create_team(
-        self, team_type: str = "standard", config: ModelConfig | None = None
+        self,
+        team_type: str = "philosophical",
+        model_config: ModelConfig | None = None
     ) -> Team:
-        """Create team using unified factory with simplified logic."""
-        if team_type not in self._builders:
-            available_types = ", ".join(sorted(self._builders.keys()))
-            raise ValueError(
-                f"Unknown team type '{team_type}'. Available types: {available_types}"
-            )
+        """Create a Six Thinking Hats team."""
+        if model_config is None:
+            model_config = get_model_config()
 
-        if config is None:
-            config = get_model_config()
+        if team_type not in self._predefined_configs:
+            available = ", ".join(self._predefined_configs.keys())
+            raise ValueError(f"Unknown team type '{team_type}'. Available: {available}")
 
-        builder = self._builders[team_type]
-        return builder.build_team(config, self._agent_factory)
+        config = self._predefined_configs[team_type]
+        builder = SixHatsTeamBuilder(config)
+        return builder.build_team(model_config)
+
+    def create_adaptive_team(
+        self,
+        thought_content: str,
+        model_config: ModelConfig | None = None
+    ) -> Team:
+        """Create an adaptive Six Hats team based on thought content."""
+        if model_config is None:
+            model_config = get_model_config()
+
+        # Use intelligent router to determine optimal sequence
+        optimal_sequence = self._router.route_to_hat_sequence(thought_content)
+
+        # Create custom configuration
+        config = SixHatsTeamConfiguration(
+            name="AdaptiveSixHatsTeam",
+            description=f"Adaptive team with sequence: {' → '.join(h.value for h in optimal_sequence)}",
+            hat_sequence=optimal_sequence,
+            instructions=[
+                "Apply adaptive Six Thinking Hats based on problem characteristics.",
+                "Follow the intelligently determined hat sequence.",
+                "Each hat maintains its unique thinking mode strictly.",
+                "Blue Hat provides final synthesis and integration.",
+            ],
+        )
+
+        builder = SixHatsTeamBuilder(config)
+        return builder.build_team(model_config)
+
+    def create_custom_team(
+        self,
+        hat_sequence: list[HatColor],
+        team_name: str = "CustomSixHatsTeam",
+        model_config: ModelConfig | None = None
+    ) -> Team:
+        """Create a custom Six Thinking Hats team with specified sequence."""
+        if model_config is None:
+            model_config = get_model_config()
+
+        config = SixHatsTeamConfiguration(
+            name=team_name,
+            description=f"Custom team with sequence: {' → '.join(h.value for h in hat_sequence)}",
+            hat_sequence=hat_sequence,
+            instructions=[
+                "Apply custom Six Thinking Hats sequence.",
+                "Maintain strict hat discipline - one mode at a time.",
+                "Follow the specified sequence exactly.",
+                "Provide integrated output through Blue Hat coordination.",
+            ],
+        )
+
+        builder = SixHatsTeamBuilder(config)
+        return builder.build_team(model_config)
 
     def get_available_team_types(self) -> list[str]:
-        """Get list of available team types."""
-        return list(self._builders.keys())
+        """Get available predefined team types."""
+        return list(self._predefined_configs.keys())
 
-    def create_dynamic_six_hats_team(
-        self, hat_sequence: list[HatColor], team_name: str, config: ModelConfig | None = None
-    ) -> Team:
-        """Create a Six Hats team with custom hat sequence."""
-        if not SIX_HATS_AVAILABLE:
-            raise ValueError("Six Hats functionality not available")
+    def get_team_info(self, team_type: str) -> dict[str, Any]:
+        """Get information about a specific team type."""
+        if team_type not in self._predefined_configs:
+            return {}
 
-        if config is None:
-            config = get_model_config()
-
-        builder = SixHatsTeamBuilder(hat_sequence, team_name)
-        return builder.build_team(config, self._agent_factory)
-
-
-# Singleton instance
-_team_factory = UnifiedTeamFactory()
+        config = self._predefined_configs[team_type]
+        return {
+            "name": config.name,
+            "description": config.description,
+            "hat_sequence": [h.value for h in config.hat_sequence],
+            "routing_strategy": config.routing_strategy,
+        }
 
 
-# Convenience functions for backward compatibility and external use
-def create_team(config: ModelConfig | None = None) -> Team:
-    """Create standard team (backward compatible)."""
-    return _team_factory.create_team("standard", config)
+# Global factory instance
+_six_hats_team_factory = SixHatsTeamFactory()
 
 
-def create_enhanced_team(config: ModelConfig | None = None) -> Team:
-    """Create enhanced team (backward compatible)."""
-    return _team_factory.create_team("enhanced", config)
+# Public API functions
+def create_six_hats_team(team_type: str = "philosophical", model_config: ModelConfig | None = None) -> Team:
+    """Create a Six Thinking Hats team by type."""
+    return _six_hats_team_factory.create_team(team_type, model_config)
 
 
-def create_hybrid_team_instance(config: ModelConfig | None = None) -> Team:
-    """Create hybrid team (backward compatible)."""
-    return _team_factory.create_team("hybrid", config)
+def create_adaptive_six_hats_team(thought_content: str, model_config: ModelConfig | None = None) -> Team:
+    """Create an adaptive Six Thinking Hats team based on content."""
+    return _six_hats_team_factory.create_adaptive_team(thought_content, model_config)
 
 
-def create_enhanced_specialized_team(config: ModelConfig | None = None) -> Team:
-    """Create enhanced specialized team."""
-    return _team_factory.create_team("enhanced_specialized", config)
+def create_custom_six_hats_team(
+    hat_sequence: list[HatColor],
+    team_name: str = "CustomSixHatsTeam",
+    model_config: ModelConfig | None = None
+) -> Team:
+    """Create a custom Six Thinking Hats team."""
+    return _six_hats_team_factory.create_custom_team(hat_sequence, team_name, model_config)
 
 
-def create_team_by_type(team_type: str, config: ModelConfig | None = None) -> Team:
-    """Create team by type with unified interface."""
-    return _team_factory.create_team(team_type, config)
+def get_available_six_hats_teams() -> list[str]:
+    """Get available Six Thinking Hats team types."""
+    return _six_hats_team_factory.get_available_team_types()
+
+
+# Backward compatibility functions
+def create_team(model_config: ModelConfig | None = None) -> Team:
+    """Create default Six Thinking Hats team."""
+    return create_six_hats_team("philosophical", model_config)
+
+
+def create_team_by_type(team_type: str, model_config: ModelConfig | None = None) -> Team:
+    """Create team by type - Six Hats only."""
+    # Map legacy types to Six Hats equivalents
+    team_type_mapping = {
+        "standard": "philosophical",
+        "enhanced": "full",
+        "hybrid": "creative",
+        "enhanced_specialized": "decision",
+    }
+
+    # Use mapping if it's a legacy type
+    if team_type in team_type_mapping:
+        logger.info(f"Mapping legacy team type '{team_type}' to Six Hats '{team_type_mapping[team_type]}'")
+        team_type = team_type_mapping[team_type]
+
+    # Handle six_hats_ prefixed types
+    if team_type.startswith("six_hats_"):
+        team_type = team_type.replace("six_hats_", "")
+
+    return create_six_hats_team(team_type, model_config)
+
+
+# Completely remove old UnifiedTeamFactory and other legacy classes
+# This file now only contains Six Thinking Hats implementations

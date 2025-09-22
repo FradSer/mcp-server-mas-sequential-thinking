@@ -13,7 +13,7 @@ from agno.team.team import Team
 from pydantic import ValidationError
 
 from .adaptive_routing import ComplexityLevel, ProcessingStrategy
-from .agno_workflow_router import AgnoWorkflowRouter, WorkflowResult
+from .agno_workflow_router import SixHatsWorkflowRouter, SixHatsWorkflowResult
 from .constants import (
     DefaultTimeouts,
     DefaultValues,
@@ -177,21 +177,34 @@ class TeamInitializer(ServerInitializer):
         logger.info(f"Creating {config.team_mode} team")
 
         try:
-            # Create team using unified factory
+            # Create Six Hats team using unified factory
             model_config = get_model_config()
-            self._team = create_team_by_type(config.team_mode, model_config)
+
+            # Map legacy team modes to Six Hats equivalents
+            six_hats_mode_mapping = {
+                "standard": "philosophical",
+                "enhanced": "full",
+                "hybrid": "creative",
+                "enhanced_specialized": "decision",
+            }
+
+            # Use Six Hats mapping
+            six_hats_mode = six_hats_mode_mapping.get(config.team_mode, config.team_mode)
+            logger.info(f"Creating Six Hats team: {six_hats_mode} (from {config.team_mode})")
+
+            self._team = create_team_by_type(six_hats_mode, model_config)
 
             if not self._team:
                 raise TeamCreationError(
-                    f"Failed to create team of type '{config.team_mode}'"
+                    f"Failed to create Six Hats team of type '{six_hats_mode}'"
                 )
 
-            logger.info(f"Team initialized successfully: {self._team.name}")
+            logger.info(f"Six Hats team initialized successfully: {self._team.name}")
 
         except Exception as e:
             if not isinstance(e, TeamCreationError):
                 raise TeamCreationError(
-                    f"Team initialization failed for type '{config.team_mode}': {e}"
+                    f"Six Hats team initialization failed for type '{config.team_mode}': {e}"
                 ) from e
             raise
 
@@ -284,14 +297,14 @@ class ThoughtProcessor(LoggingMixin):
         self._metrics_logger = MetricsLogger()
         self._performance_tracker = PerformanceTracker()
 
-        # Initialize Agno workflow (only option)
-        self._initialize_agno_workflow()
+        # Initialize Six Hats workflow (only option)
+        self._initialize_six_hats_workflow()
 
-    def _initialize_agno_workflow(self) -> None:
-        """Initialize Agno-compliant workflow router."""
-        logger.info("Initializing Agno Workflow Router")
-        self._agno_router = AgnoWorkflowRouter()
-        logger.info("✅ Agno Workflow Router ready")
+    def _initialize_six_hats_workflow(self) -> None:
+        """Initialize Six Thinking Hats workflow router."""
+        logger.info("Initializing Six Hats Workflow Router")
+        self._agno_router = SixHatsWorkflowRouter()
+        logger.info("✅ Six Hats Workflow Router ready")
 
     def _extract_response_content(self, response) -> str:
         """Extract clean content from Agno RunOutput objects."""
@@ -319,25 +332,25 @@ class ThoughtProcessor(LoggingMixin):
         self._log_thought_data(thought_data)
         self._session.add_thought(thought_data)
 
-        # Always use Agno-compliant workflow processing
-        return await self._process_with_agno_workflow(thought_data, start_time)
+        # Always use Six Hats workflow processing
+        return await self._process_with_six_hats_workflow(thought_data, start_time)
 
-    async def _process_with_agno_workflow(
+    async def _process_with_six_hats_workflow(
         self, thought_data: ThoughtData, start_time: float
     ) -> str:
-        """Process thought using Agno-compliant workflow."""
+        """Process thought using Six Thinking Hats workflow."""
         input_prompt = self._build_context_prompt(thought_data)
         self._log_context_building(thought_data, input_prompt)
 
-        # Execute Agno workflow
-        workflow_result: WorkflowResult = (
+        # Execute Six Hats workflow
+        workflow_result: SixHatsWorkflowResult = (
             await self._agno_router.process_thought_workflow(thought_data, input_prompt)
         )
 
         final_response = self._format_response(workflow_result.content, thought_data)
         total_time = time.time() - start_time
 
-        # Log workflow completion with Agno-specific metrics
+        # Log workflow completion with Six Hats metrics
         self._log_workflow_completion(
             thought_data, workflow_result, total_time, final_response
         )
@@ -442,11 +455,11 @@ class ThoughtProcessor(LoggingMixin):
     def _log_workflow_completion(
         self,
         thought_data: ThoughtData,
-        workflow_result: WorkflowResult,
+        workflow_result: SixHatsWorkflowResult,
         total_time: float,
         final_response: str,
     ) -> None:
-        """Log workflow completion with Agno-specific metrics."""
+        """Log workflow completion with Six Hats specific metrics."""
         # Basic completion info
         completion_metrics = {
             f"Thought #{thought_data.thoughtNumber}": "processed successfully",
@@ -457,7 +470,7 @@ class ThoughtProcessor(LoggingMixin):
             "Total time": f"{total_time:.3f}s",
             "Response length": f"{len(final_response)} chars",
         }
-        self._log_metrics_block("🎯 AGNO WORKFLOW COMPLETION:", completion_metrics)
+        self._log_metrics_block("🎩 SIX HATS WORKFLOW COMPLETION:", completion_metrics)
         self._log_separator()
 
         # Performance metrics
@@ -907,7 +920,7 @@ async def get_thought_processor() -> ThoughtProcessor:
             _server_state = ServerState()
             await _server_state.initialize(config)
 
-        logger.info("Initializing ThoughtProcessor with Agno workflow")
+        logger.info("Initializing ThoughtProcessor with Six Hats workflow")
         _thought_processor = ThoughtProcessor(_server_state.session)
 
     return _thought_processor
