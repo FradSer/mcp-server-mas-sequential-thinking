@@ -99,7 +99,7 @@ class TestThoughtDataValidation:
             )
 
     @pytest.mark.parametrize(
-        "thought_type,expected_prefix",
+        ("thought_type", "expected_prefix"),
         [
             (ThoughtType.STANDARD, "Thought"),
             (ThoughtType.REVISION, "Revision"),

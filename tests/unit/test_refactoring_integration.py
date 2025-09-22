@@ -552,7 +552,7 @@ class TestRefactoredComponentsIntegration:
         assert 0.0 <= efficiency <= 1.0
 
         # Test low complexity scenario
-        result2, efficiency2, session2 = processor.process_complex_request(
+        result2, _efficiency2, session2 = processor.process_complex_request(
             "Simple task",
             25.0,  # Low complexity
         )

@@ -51,10 +51,10 @@ class TestAgentFactory:
             mock_agent_instance = Mock()
             mock_agent_class.return_value = mock_agent_instance
 
-            agent = AgentFactory.create_agent("Test", "Role", self.mock_model, [])
+            AgentFactory.create_agent("Test", "Role", self.mock_model, [])
 
             mock_agent_class.assert_called_once()
-            args, kwargs = mock_agent_class.call_args
+            _args, kwargs = mock_agent_class.call_args
             assert kwargs["instructions"] == []
 
     def test_create_planner_basic_complexity(self):
@@ -63,11 +63,11 @@ class TestAgentFactory:
             mock_agent = Mock()
             mock_create.return_value = mock_agent
 
-            agent = AgentFactory.create_planner(self.mock_model, "basic")
+            AgentFactory.create_planner(self.mock_model, "basic")
 
             # 验证调用了create_agent并使用了正确的参数
             mock_create.assert_called_once()
-            args, kwargs = mock_create.call_args
+            args, _kwargs = mock_create.call_args
 
             assert args[0] == "Planner"
             assert args[1] == "Strategic Planner"
@@ -84,10 +84,10 @@ class TestAgentFactory:
             mock_agent = Mock()
             mock_create.return_value = mock_agent
 
-            agent = AgentFactory.create_planner(self.mock_model, "advanced")
+            AgentFactory.create_planner(self.mock_model, "advanced")
 
             mock_create.assert_called_once()
-            args, kwargs = mock_create.call_args
+            args, _kwargs = mock_create.call_args
 
             # 验证高级复杂度的指令
             instructions = args[3]
@@ -100,10 +100,10 @@ class TestAgentFactory:
             mock_agent = Mock()
             mock_create.return_value = mock_agent
 
-            agent = AgentFactory.create_analyzer(self.mock_model, "basic")
+            AgentFactory.create_analyzer(self.mock_model, "basic")
 
             mock_create.assert_called_once()
-            args, kwargs = mock_create.call_args
+            args, _kwargs = mock_create.call_args
 
             assert args[0] == "Analyzer"
             assert args[1] == "Core Analyst"
@@ -117,10 +117,10 @@ class TestAgentFactory:
             mock_agent = Mock()
             mock_create.return_value = mock_agent
 
-            agent = AgentFactory.create_analyzer(self.mock_model, "advanced")
+            AgentFactory.create_analyzer(self.mock_model, "advanced")
 
             mock_create.assert_called_once()
-            args, kwargs = mock_create.call_args
+            args, _kwargs = mock_create.call_args
 
             instructions = args[3]
             assert "comprehensive" in " ".join(instructions).lower()
@@ -131,10 +131,10 @@ class TestAgentFactory:
             mock_agent = Mock()
             mock_create.return_value = mock_agent
 
-            agent = AgentFactory.create_researcher(self.mock_model)
+            AgentFactory.create_researcher(self.mock_model)
 
             mock_create.assert_called_once()
-            args, kwargs = mock_create.call_args
+            args, _kwargs = mock_create.call_args
 
             assert args[0] == "Researcher"
             assert args[1] == "Information Gatherer"
@@ -151,10 +151,10 @@ class TestAgentFactory:
             mock_agent = Mock()
             mock_create.return_value = mock_agent
 
-            agent = AgentFactory.create_critic(self.mock_model)
+            AgentFactory.create_critic(self.mock_model)
 
             mock_create.assert_called_once()
-            args, kwargs = mock_create.call_args
+            args, _kwargs = mock_create.call_args
 
             assert args[0] == "Critic"
             assert args[1] == "Quality Controller"
@@ -171,10 +171,10 @@ class TestAgentFactory:
             mock_agent = Mock()
             mock_create.return_value = mock_agent
 
-            agent = AgentFactory.create_synthesizer(self.mock_model)
+            AgentFactory.create_synthesizer(self.mock_model)
 
             mock_create.assert_called_once()
-            args, kwargs = mock_create.call_args
+            args, _kwargs = mock_create.call_args
 
             assert args[0] == "Synthesizer"
             assert args[1] == "Response Coordinator"
@@ -271,7 +271,7 @@ class TestAgentFactoryEdgeCases:
 
             # 应该处理无效的复杂度级别（使用默认值或抛出异常）
             try:
-                agent = AgentFactory.create_planner(mock_model, "invalid_level")
+                AgentFactory.create_planner(mock_model, "invalid_level")
                 # 如果没有抛出异常，应该使用某种默认行为
                 mock_create.assert_called_once()
             except (KeyError, ValueError):
@@ -286,7 +286,7 @@ class TestAgentFactoryEdgeCases:
             mock_create.return_value = Mock()
 
             try:
-                agent = AgentFactory.create_analyzer(mock_model, "invalid_level")
+                AgentFactory.create_analyzer(mock_model, "invalid_level")
                 mock_create.assert_called_once()
             except (KeyError, ValueError):
                 pass
@@ -300,7 +300,7 @@ class TestAgentFactoryEdgeCases:
             ) as mock_agent_class:
                 mock_agent_class.return_value = Mock()
 
-                agent = AgentFactory.create_agent("Test", "Role", None, ["instruction"])
+                AgentFactory.create_agent("Test", "Role", None, ["instruction"])
                 mock_agent_class.assert_called_once()
         except Exception:
             # 如果抛出异常也是可以接受的

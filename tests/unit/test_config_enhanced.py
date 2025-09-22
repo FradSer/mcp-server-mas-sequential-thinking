@@ -22,7 +22,7 @@ class TestProviderStrategies:
     """Test all provider strategy implementations."""
 
     @pytest.mark.parametrize(
-        "provider_name,strategy_class",
+        ("provider_name", "strategy_class"),
         [
             ("deepseek", DeepSeekStrategy),
             ("groq", GroqStrategy),

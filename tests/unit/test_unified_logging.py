@@ -10,15 +10,13 @@ import tempfile
 from pathlib import Path
 from unittest.mock import patch
 
-import pytest
-
 from src.mcp_server_mas_sequential_thinking.logging_config import (
     JSONFormatter,
     LogFormat,
-    LogLevel,
-    LogTarget,
     LoggerFactory,
     LoggingConfig,
+    LogLevel,
+    LogTarget,
     MetricsConfig,
     MetricsLogger,
     PerformanceMonitor,
@@ -26,7 +24,6 @@ from src.mcp_server_mas_sequential_thinking.logging_config import (
     ProcessingSnapshot,
     SensitiveDataFilter,
     SmartLogLevel,
-    SmartLogger,
     configure_smart_logging,
     get_logger,
     get_smart_log_level,

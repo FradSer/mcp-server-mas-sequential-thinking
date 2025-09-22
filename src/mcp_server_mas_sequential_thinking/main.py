@@ -9,17 +9,17 @@ from dotenv import load_dotenv
 from mcp.server.fastmcp import FastMCP
 from pydantic import ValidationError
 
-from .constants import ProcessingDefaults, ValidationLimits
+from .config import ProcessingDefaults, ValidationLimits
+from .core import ThoughtProcessingError
 
 # Import refactored modules
-from .server_core import (
+from .services import (
     ServerConfig,
     ServerState,
     ThoughtProcessor,
     create_server_lifespan,
     create_validated_thought_data,
 )
-from .types import ThoughtProcessingError
 from .utils import setup_logging
 
 # Initialize environment and logging
@@ -96,7 +96,7 @@ def sequential_thinking_prompt(problem: str, context: str = "") -> list[dict]:
 Process Guidelines:
 1. Estimate appropriate number of total thoughts based on problem complexity
 2. Begin with: "Plan comprehensive analysis for: {problem}"
-3. Use revisions (isRevision=True) to improve previous thoughts  
+3. Use revisions (isRevision=True) to improve previous thoughts
 4. Use branching (branchFromThought, branchId) for alternative approaches
 5. Each thought should be detailed with clear reasoning
 6. Progress systematically through analysis phases
@@ -188,14 +188,14 @@ async def sequentialthinking(
 
     except ValidationError as e:
         error_msg = f"Input validation failed for thought #{thoughtNumber}: {e}"
-        logger.error(error_msg)
+        logger.exception(error_msg)
         return f"Validation Error: {e}"
 
     except ThoughtProcessingError as e:
         error_msg = f"Processing failed for thought #{thoughtNumber}: {e}"
-        logger.error(error_msg)
+        logger.exception(error_msg)
         if hasattr(e, "metadata") and e.metadata:
-            logger.error(f"Error metadata: {e.metadata}")
+            logger.exception(f"Error metadata: {e.metadata}")
         return f"Processing Error: {e}"
 
     except Exception as e:

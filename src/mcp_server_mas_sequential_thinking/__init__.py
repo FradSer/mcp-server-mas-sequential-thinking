@@ -1,6 +1,7 @@
-"""MCP Sequential Thinking Server with Adaptive Architecture
+"""MCP Sequential Thinking Server with Adaptive Architecture.
 
-A sophisticated Multi-Agent System (MAS) for sequential thinking with intelligent routing,
+A sophisticated Multi-Agent System (MAS) for sequential thinking with intelligent
+routing,
 cost optimization, and persistent memory management.
 
 ADAPTIVE ARCHITECTURE FEATURES:
@@ -30,7 +31,9 @@ Usage:
     main.run()
 
     # Adaptive processing
-    from mcp_server_mas_sequential_thinking.adaptive_server import create_adaptive_processor
+    from mcp_server_mas_sequential_thinking.adaptive_server import (
+        create_adaptive_processor
+    )
     processor = create_adaptive_processor()
     result = await processor.process_thought_adaptive(thought_data)
 
@@ -57,24 +60,6 @@ Performance Benefits:
 
 __version__ = "0.6.0-adaptive"
 
-# Export adaptive routing components
-from .adaptive_routing import (
-    AdaptiveRouter,
-    ComplexityLevel,
-    ProcessingStrategy,
-)
-from .adaptive_server import AdaptiveThoughtProcessor, create_adaptive_processor
-from .cost_optimization import (
-    BudgetConstraints,
-    CostOptimizer,
-    ProviderProfile,
-    create_cost_optimizer,
-)
-from .models import ThoughtData, ThoughtType
-
-# Export core components for external use
-from .modernized_config import get_available_providers, get_model_config
-from .persistent_memory import PersistentMemoryManager, create_persistent_memory
-from .server_core import ServerConfig, ThoughtProcessor
-from .unified_agents import UnifiedAgentFactory, create_agent
-from .unified_team import create_team_by_type
+def get_version() -> str:
+    """Get package version."""
+    return __version__

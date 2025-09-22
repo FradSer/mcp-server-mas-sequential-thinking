@@ -119,7 +119,7 @@ class TestAgentFactory:
         """Test creating agents with valid types."""
         mock_model = MagicMock()
 
-        for agent_type in AgentFactory.CAPABILITIES.keys():
+        for agent_type in AgentFactory.CAPABILITIES:
             agent = AgentFactory.create_agent(agent_type, mock_model)
 
             assert agent.name == agent_type.title()
@@ -167,7 +167,7 @@ class TestAgentFactory:
 
         assert len(agents) == len(AgentFactory.CAPABILITIES)
 
-        for agent_type in AgentFactory.CAPABILITIES.keys():
+        for agent_type in AgentFactory.CAPABILITIES:
             assert agent_type in agents
             assert agents[agent_type].name == agent_type.title()
             assert agents[agent_type].model == mock_model
@@ -297,7 +297,7 @@ class TestAgentSpecializations:
 
     def test_agent_instruction_consistency(self):
         """Test that all agents have consistent instruction structure."""
-        for agent_type, capability in AgentFactory.CAPABILITIES.items():
+        for capability in AgentFactory.CAPABILITIES.values():
             instructions = capability.get_instructions()
 
             # All should have 4 core instructions

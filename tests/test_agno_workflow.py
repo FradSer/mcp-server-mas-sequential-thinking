@@ -48,8 +48,7 @@ def agno_router(mock_model_config):
         "src.mcp_server_mas_sequential_thinking.agno_workflow_router.get_model_config"
     ) as mock_get_config:
         mock_get_config.return_value = mock_model_config
-        router = AgnoWorkflowRouter()
-        return router
+        return AgnoWorkflowRouter()
 
 
 class TestAgnoWorkflowRouter:

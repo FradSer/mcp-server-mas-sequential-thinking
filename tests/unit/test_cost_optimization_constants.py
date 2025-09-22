@@ -255,7 +255,7 @@ class TestCostOptimizationConstantsEdgeCases:
         # 应该能安全执行除法
         result = 1.0 / safe_divisor
         assert result > 0
-        assert not float("inf") == result
+        assert float("inf") != result
 
     def test_normalization_factor_scaling(self):
         """测试归一化因子的缩放效果"""
