@@ -1,14 +1,13 @@
 """Agent optimization integration module - patches existing system with improvements."""
 
-import logging
 import time
-from typing import Optional
 
+from .logging_config import get_logger
 from .models import ThoughtData
 from .optimized_routing import ProcessingMode, create_optimized_router
-from .smart_logging import configure_smart_logging, log_thought_processing, LogLevel
+from .logging_config import SmartLogLevel, configure_smart_logging
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class OptimizedAgentSystem:
@@ -20,11 +19,11 @@ class OptimizedAgentSystem:
 
         # Configure logging based on mode
         if processing_mode == ProcessingMode.FAST:
-            configure_smart_logging(LogLevel.CRITICAL_ONLY)
+            configure_smart_logging(SmartLogLevel.CRITICAL_ONLY)
         elif processing_mode == ProcessingMode.BALANCED:
-            configure_smart_logging(LogLevel.PERFORMANCE)
+            configure_smart_logging(SmartLogLevel.PERFORMANCE)
         else:  # DEEP
-            configure_smart_logging(LogLevel.ROUTING)
+            configure_smart_logging(SmartLogLevel.ROUTING)
 
         logger.info(f"🚀 Optimized Agent System initialized in {processing_mode.value} mode")
 
@@ -215,14 +214,14 @@ class SmartResponseFormatter:
         import re
 
         # Replace complex mathematical expressions with simpler explanations
-        content = re.sub(r'\$\$.*?\$\$', '[数学公式]', content, flags=re.DOTALL)
-        content = re.sub(r'\\[a-zA-Z]+\{[^}]*\}', '[数学符号]', content)
+        content = re.sub(r"\$\$.*?\$\$", "[数学公式]", content, flags=re.DOTALL)
+        content = re.sub(r"\\[a-zA-Z]+\{[^}]*\}", "[数学符号]", content)
 
         # Reduce excessive sectioning
-        content = re.sub(r'#{4,}', '###', content)  # Max 3 levels
+        content = re.sub(r"#{4,}", "###", content)  # Max 3 levels
 
         # Add simplification note
-        if '[数学公式]' in content or '[数学符号]' in content:
+        if "[数学公式]" in content or "[数学符号]" in content:
             content += "\n\n*注：已简化数学表达以提高可读性*"
 
         return content
@@ -230,20 +229,18 @@ class SmartResponseFormatter:
     def _optimize_length(self, content: str) -> str:
         """Optimize content length while preserving key information."""
         # Split into sections
-        sections = content.split('\n\n')
+        sections = content.split("\n\n")
 
         # Prioritize sections by importance
         important_sections = []
         for section in sections:
             # Keep sections with key indicators
             if any(indicator in section.lower() for indicator in
-                   ['总结', '结论', '核心', '关键', '重要', '主要']):
-                important_sections.append(section)
-            elif len(section) > 100:  # Keep substantial content
+                   ["总结", "结论", "核心", "关键", "重要", "主要"]) or len(section) > 100:
                 important_sections.append(section)
 
         # Reconstruct with optimal length
-        optimized = '\n\n'.join(important_sections[:5])  # Max 5 sections
+        optimized = "\n\n".join(important_sections[:5])  # Max 5 sections
 
         if len(optimized) > self.formatting_rules["max_reasonable_length"]:
             # Further truncation

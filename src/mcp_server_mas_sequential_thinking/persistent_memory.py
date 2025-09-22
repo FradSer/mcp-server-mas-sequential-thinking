@@ -1,6 +1,5 @@
 """Persistent memory management with SQLAlchemy and memory pruning."""
 
-import logging
 import os
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -23,9 +22,10 @@ from sqlalchemy.orm import DeclarativeBase, Session, relationship, sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from .constants import DatabaseConstants, DefaultSettings
+from .logging_config import get_logger
 from .models import ThoughtData
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class Base(DeclarativeBase):

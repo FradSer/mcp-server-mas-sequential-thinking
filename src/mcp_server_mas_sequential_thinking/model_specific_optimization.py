@@ -1,10 +1,10 @@
 """Model-specific optimization for different LLM providers."""
 
-import logging
 import re
-from typing import Dict, Optional
 
-logger = logging.getLogger(__name__)
+from .logging_config import get_logger
+
+logger = get_logger(__name__)
 
 
 class ModelCharacteristics:
@@ -55,15 +55,14 @@ class DeepSeekV3Optimizer:
         ]
 
         self.over_structure_patterns = [
-            r'#{3,}',  # Too many heading levels
-            r'\|\s*.*\s*\|',  # Tables
-            r'```[\s\S]*?```',  # Code blocks for non-code content
-            r'^\d+\.\s+.*→.*→',  # Complex numbered flows
+            r"#{3,}",  # Too many heading levels
+            r"\|\s*.*\s*\|",  # Tables
+            r"```[\s\S]*?```",  # Code blocks for non-code content
+            r"^\d+\.\s+.*→.*→",  # Complex numbered flows
         ]
 
     def optimize_prompt_for_deepseek(self, original_prompt: str, question_type: str = "philosophical") -> str:
         """Optimize prompt specifically for DeepSeek V3 to get better responses."""
-
         # Base optimization for all question types
         optimized_prompt = f"""请用简单、人性化的语言回答，避免过度理论化。
 
@@ -110,7 +109,6 @@ class DeepSeekV3Optimizer:
 
     def post_process_deepseek_response(self, response: str) -> str:
         """Post-process DeepSeek V3 response to remove problematic patterns."""
-
         # Remove excessive academic language
         response = self._simplify_academic_language(response)
 
@@ -148,7 +146,7 @@ class DeepSeekV3Optimizer:
     def _remove_tech_solutions(self, text: str) -> str:
         """Remove inappropriate technical solutions."""
         # Remove sentences containing tech buzzwords
-        lines = text.split('\n')
+        lines = text.split("\n")
         filtered_lines = []
 
         for line in lines:
@@ -162,31 +160,30 @@ class DeepSeekV3Optimizer:
             if not has_tech_overkill or "技术" in line:  # Keep if explicitly about technology
                 filtered_lines.append(line)
 
-        return '\n'.join(filtered_lines)
+        return "\n".join(filtered_lines)
 
     def _simplify_structure(self, text: str) -> str:
         """Simplify overly complex structure."""
         # Remove excessive headers (keep max 2 levels)
-        text = re.sub(r'#{4,}', '###', text)
+        text = re.sub(r"#{4,}", "###", text)
 
         # Remove complex tables for simple content
-        lines = text.split('\n')
+        lines = text.split("\n")
         filtered_lines = []
         in_table = False
 
         for line in lines:
-            if '|' in line and '-' in line:  # Table separator
+            if "|" in line and "-" in line:  # Table separator
                 in_table = True
                 continue
-            elif '|' in line and in_table:  # Table content
+            if "|" in line and in_table:  # Table content
                 continue
-            else:
-                in_table = False
-                filtered_lines.append(line)
+            in_table = False
+            filtered_lines.append(line)
 
         # Remove code blocks that aren't actually code
-        text = '\n'.join(filtered_lines)
-        text = re.sub(r'```[^`]*?```', '', text, flags=re.DOTALL)
+        text = "\n".join(filtered_lines)
+        text = re.sub(r"```[^`]*?```", "", text, flags=re.DOTALL)
 
         return text
 
@@ -197,49 +194,49 @@ class DeepSeekV3Optimizer:
 
         if not any(indicator in text for indicator in human_indicators):
             # Add a more human opening
-            if text.startswith('#'):
-                text = re.sub(r'^#[^#]*\n', '', text)
+            if text.startswith("#"):
+                text = re.sub(r"^#[^#]*\n", "", text)
 
             text = f"这是一个很有意思的问题。{text}"
 
         # Soften overly definitive statements
-        text = re.sub(r'必须', '可以考虑', text)
-        text = re.sub(r'应该建立', '也许可以', text)
-        text = re.sub(r'需要实施', '可以尝试', text)
+        text = re.sub(r"必须", "可以考虑", text)
+        text = re.sub(r"应该建立", "也许可以", text)
+        text = re.sub(r"需要实施", "可以尝试", text)
 
         return text
 
-    def assess_response_quality(self, response: str, question: str) -> Dict[str, float]:
+    def assess_response_quality(self, response: str, question: str) -> dict[str, float]:
         """Assess how well the response matches the question."""
         scores = {}
 
         # Academic overload score (lower is better)
         academic_count = sum(1 for indicator in self.academic_indicators if indicator in response)
-        scores['academic_overload'] = min(academic_count / 10, 1.0)
+        scores["academic_overload"] = min(academic_count / 10, 1.0)
 
         # Tech solution inappropriateness (lower is better)
         tech_count = sum(1 for indicator in self.tech_solution_indicators if indicator in response)
         is_tech_question = any(word in question for word in ["技术", "科技", "AI", "计算机"])
-        scores['tech_inappropriateness'] = 0 if is_tech_question else min(tech_count / 5, 1.0)
+        scores["tech_inappropriateness"] = 0 if is_tech_question else min(tech_count / 5, 1.0)
 
         # Structure complexity (lower is better)
         structure_score = 0
         for pattern in self.over_structure_patterns:
             matches = len(re.findall(pattern, response, re.MULTILINE))
             structure_score += matches
-        scores['structure_complexity'] = min(structure_score / 5, 1.0)
+        scores["structure_complexity"] = min(structure_score / 5, 1.0)
 
         # Human relatability (higher is better)
         human_words = ["感受", "体验", "想法", "认为", "觉得", "可能", "或许", "有时", "通常"]
         human_count = sum(1 for word in human_words if word in response)
-        scores['human_relatability'] = min(human_count / 5, 1.0)
+        scores["human_relatability"] = min(human_count / 5, 1.0)
 
         # Overall quality (higher is better)
-        scores['overall_quality'] = (
-            (1 - scores['academic_overload']) * 0.3 +
-            (1 - scores['tech_inappropriateness']) * 0.2 +
-            (1 - scores['structure_complexity']) * 0.2 +
-            scores['human_relatability'] * 0.3
+        scores["overall_quality"] = (
+            (1 - scores["academic_overload"]) * 0.3 +
+            (1 - scores["tech_inappropriateness"]) * 0.2 +
+            (1 - scores["structure_complexity"]) * 0.2 +
+            scores["human_relatability"] * 0.3
         )
 
         return scores
@@ -254,36 +251,30 @@ class ModelOptimizer:
 
     def optimize_for_model(self, prompt: str, question_type: str = "general") -> str:
         """Optimize prompt based on model characteristics."""
-
         if "deepseek" in self.model_name:
             return self.deepseek_optimizer.optimize_prompt_for_deepseek(prompt, question_type)
-        elif "claude" in self.model_name:
+        if "claude" in self.model_name:
             # Claude generally produces good responses, minimal optimization needed
             return f"{prompt}\n\n请用自然、易懂的语言回答，保持人性化的表达。"
-        elif "gpt" in self.model_name:
+        if "gpt" in self.model_name:
             # GPT tends to be verbose, ask for conciseness
             return f"{prompt}\n\n请简洁明了地回答，避免过度展开。"
-        else:
-            # Generic optimization
-            return f"{prompt}\n\n请用简单、实用的语言回答。"
+        # Generic optimization
+        return f"{prompt}\n\n请用简单、实用的语言回答。"
 
     def post_process_response(self, response: str) -> str:
         """Post-process response based on model characteristics."""
-
         if "deepseek" in self.model_name:
             return self.deepseek_optimizer.post_process_deepseek_response(response)
-        else:
-            # Basic post-processing for other models
-            return response
+        # Basic post-processing for other models
+        return response
 
-    def get_quality_assessment(self, response: str, question: str) -> Dict[str, float]:
+    def get_quality_assessment(self, response: str, question: str) -> dict[str, float]:
         """Get quality assessment for the response."""
-
         if "deepseek" in self.model_name:
             return self.deepseek_optimizer.assess_response_quality(response, question)
-        else:
-            # Basic assessment for other models
-            return {"overall_quality": 0.7}  # Assume decent quality
+        # Basic assessment for other models
+        return {"overall_quality": 0.7}  # Assume decent quality
 
 
 # Factory function

@@ -1,16 +1,16 @@
 """Retry handling utilities for robust processing."""
 
 import asyncio
-import logging
 import time
 from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any, TypeVar
 
 from .constants import DefaultTimeouts, PerformanceMetrics
+from .logging_config import get_logger
 from .types import ThoughtProcessingError
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 T = TypeVar("T")
 

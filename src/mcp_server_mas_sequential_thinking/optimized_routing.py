@@ -1,10 +1,9 @@
 """Optimized routing system with intelligent complexity thresholds and cost awareness."""
 
-import logging
 from dataclasses import dataclass
 from enum import Enum
-from typing import Optional
 
+from .logging_config import get_logger
 from .models import ThoughtData
 from .six_hats_core import HatColor
 from .six_hats_router import (
@@ -13,10 +12,9 @@ from .six_hats_router import (
     ProblemCharacteristics,
     ProblemType,
     RoutingDecision,
-    SixHatsIntelligentRouter,
 )
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class ProcessingMode(Enum):
@@ -130,7 +128,7 @@ class OptimizedSequenceLibrary:
     }
 
     @classmethod
-    def get_strategy(cls, strategy_name: str) -> Optional[HatSequenceStrategy]:
+    def get_strategy(cls, strategy_name: str) -> HatSequenceStrategy | None:
         """Get strategy by name."""
         return cls.STRATEGIES.get(strategy_name)
 
@@ -156,9 +154,8 @@ class CostAwareRouter:
             ProcessingMode.DEEP: 2.0        # Allow higher costs for quality
         }
 
-    def route_thought(self, thought_data: ThoughtData, force_complexity: Optional[float] = None) -> RoutingDecision:
+    def route_thought(self, thought_data: ThoughtData, force_complexity: float | None = None) -> RoutingDecision:
         """Route thought with cost awareness and intelligent thresholds."""
-
         # Calculate or use forced complexity
         if force_complexity is not None:
             complexity_score = force_complexity
@@ -226,12 +223,11 @@ class CostAwareRouter:
         """Determine processing level with optimized thresholds."""
         if complexity_score <= self.thresholds.SINGLE_MAX:
             return HatComplexity.SINGLE
-        elif complexity_score <= self.thresholds.DOUBLE_MAX:
+        if complexity_score <= self.thresholds.DOUBLE_MAX:
             return HatComplexity.DOUBLE
-        elif complexity_score <= self.thresholds.TRIPLE_MAX:
+        if complexity_score <= self.thresholds.TRIPLE_MAX:
             return HatComplexity.TRIPLE
-        else:
-            return HatComplexity.FULL
+        return HatComplexity.FULL
 
     def _select_cost_aware_strategy(
         self,
@@ -240,7 +236,6 @@ class CostAwareRouter:
         complexity_score: float
     ) -> HatSequenceStrategy:
         """Select strategy with cost awareness."""
-
         # Get available strategies for this level
         candidates = self.sequence_library.get_strategies_by_complexity(level)
 
@@ -248,12 +243,11 @@ class CostAwareRouter:
             # Fallback to simpler level
             if level == HatComplexity.FULL:
                 return self._select_cost_aware_strategy(thought_data, HatComplexity.TRIPLE, complexity_score)
-            elif level == HatComplexity.TRIPLE:
+            if level == HatComplexity.TRIPLE:
                 return self._select_cost_aware_strategy(thought_data, HatComplexity.DOUBLE, complexity_score)
-            elif level == HatComplexity.DOUBLE:
+            if level == HatComplexity.DOUBLE:
                 return self._select_cost_aware_strategy(thought_data, HatComplexity.SINGLE, complexity_score)
-            else:
-                return self.sequence_library.get_strategy("single_blue")  # Ultimate fallback
+            return self.sequence_library.get_strategy("single_blue")  # Ultimate fallback
 
         # Select based on content type and cost awareness
         content = thought_data.thought.lower()
@@ -268,30 +262,25 @@ class CostAwareRouter:
         if level == HatComplexity.SINGLE:
             if is_factual:
                 return self.sequence_library.get_strategy("single_white")
-            elif is_creative:
+            if is_creative:
                 return self.sequence_library.get_strategy("single_green")
-            else:
-                return self.sequence_library.get_strategy("single_blue")
+            return self.sequence_library.get_strategy("single_blue")
 
-        elif level == HatComplexity.DOUBLE:
+        if level == HatComplexity.DOUBLE:
             if is_factual or is_evaluative:
                 return self.sequence_library.get_strategy("efficient_factual")
-            else:
-                return self.sequence_library.get_strategy("efficient_creative")
+            return self.sequence_library.get_strategy("efficient_creative")
 
-        elif level == HatComplexity.TRIPLE:
+        if level == HatComplexity.TRIPLE:
             if is_philosophical:
                 return self.sequence_library.get_strategy("balanced_philosophy")
-            else:
-                return self.sequence_library.get_strategy("balanced_analysis")
+            return self.sequence_library.get_strategy("balanced_analysis")
 
-        else:  # FULL
-            # Only use deep exploration for truly complex scenarios
-            if complexity_score > 40 and self.mode != ProcessingMode.FAST:
-                return self.sequence_library.get_strategy("deep_exploration")
-            else:
-                # Downgrade to triple for cost efficiency
-                return self.sequence_library.get_strategy("balanced_philosophy")
+        # Only use deep exploration for truly complex scenarios
+        if complexity_score > 40 and self.mode != ProcessingMode.FAST:
+            return self.sequence_library.get_strategy("deep_exploration")
+        # Downgrade to triple for cost efficiency
+        return self.sequence_library.get_strategy("balanced_philosophy")
 
     def _generate_cost_justification(self, strategy: HatSequenceStrategy, complexity_score: float) -> str:
         """Generate reasoning that explains cost-benefit tradeoff."""

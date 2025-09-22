@@ -1,15 +1,15 @@
 """Adaptive routing system for intelligent complexity-based agent selection."""
 
-import logging
 import re
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from enum import Enum
 
 from .complexity_analyzer import ComplexityAnalyzer
+from .logging_config import get_logger
 from .models import ThoughtData
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class ComplexityLevel(Enum):

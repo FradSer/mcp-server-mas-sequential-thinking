@@ -4,16 +4,15 @@
 完全移除旧的复杂度路由，专注于六帽思维方法论。
 """
 
-import logging
 import time
 from dataclasses import dataclass
-from typing import Any
 
 from agno.workflow.router import Router
 from agno.workflow.step import Step
 from agno.workflow.types import StepInput, StepOutput
 from agno.workflow.workflow import Workflow
 
+from .logging_config import get_logger
 from .models import ThoughtData
 from .modernized_config import get_model_config
 
@@ -21,10 +20,9 @@ from .modernized_config import get_model_config
 from .six_hats_processor import (
     SixHatsSequentialProcessor,
     create_six_hats_step_output,
-    process_with_six_hats,
 )
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 @dataclass

@@ -4,7 +4,6 @@ Eliminates code duplication in workflow executors by providing a common pattern
 for input extraction, complexity analysis, and error handling.
 """
 
-import logging
 import time
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
@@ -15,6 +14,7 @@ from agno.team import Team
 from agno.workflow.types import StepInput, StepOutput
 
 from .adaptive_routing import BasicComplexityAnalyzer, ComplexityAnalyzer
+from .logging_config import get_logger
 from .models import ThoughtData
 from .processing_constants import (
     LoggingLimits,
@@ -22,7 +22,7 @@ from .processing_constants import (
     is_content_sufficient_quality,
 )
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 @dataclass(frozen=True)

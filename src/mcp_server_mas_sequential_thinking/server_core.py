@@ -13,7 +13,7 @@ from agno.team.team import Team
 from pydantic import ValidationError
 
 from .adaptive_routing import ComplexityLevel, ProcessingStrategy
-from .agno_workflow_router import SixHatsWorkflowRouter, SixHatsWorkflowResult
+from .agno_workflow_router import SixHatsWorkflowResult, SixHatsWorkflowRouter
 from .constants import (
     DefaultTimeouts,
     DefaultValues,
@@ -21,7 +21,7 @@ from .constants import (
     PerformanceMetrics,
     ProcessingDefaults,
 )
-from .metrics_logger import MetricsLogger, PerformanceTracker
+from .logging_config import MetricsLogger, PerformanceTracker
 from .models import ThoughtData
 from .modernized_config import check_required_api_keys, get_model_config
 from .response_processor import ResponseExtractor, ResponseProcessor

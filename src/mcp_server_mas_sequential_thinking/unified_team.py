@@ -4,19 +4,19 @@
 基于Edward de Bono的六帽思维方法论，支持智能路由和动态序列。
 """
 
-import logging
 from dataclasses import dataclass
 from typing import Any
 
 from agno.team.team import Team
 
+from .logging_config import get_logger
 from .modernized_config import ModelConfig, get_model_config
 
 # Import Six Hats support
 from .six_hats_core import HatColor, SixHatsAgentFactory
 from .six_hats_router import SixHatsIntelligentRouter
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 @dataclass(frozen=True)

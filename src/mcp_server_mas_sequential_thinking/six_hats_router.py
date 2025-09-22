@@ -7,15 +7,15 @@
 - 完整六帽：复杂问题全面处理
 """
 
-import logging
 from dataclasses import dataclass, field
 from enum import Enum
 
 from .adaptive_routing import BasicComplexityAnalyzer, ComplexityMetrics
+from .logging_config import get_logger
 from .models import ThoughtData
 from .six_hats_core import HatColor, HatComplexity
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class ProblemType(Enum):

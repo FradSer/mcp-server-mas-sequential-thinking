@@ -1,6 +1,5 @@
 """Adaptive server integration combining routing, memory, and cost optimization."""
 
-import logging
 import os
 import uuid
 from datetime import datetime
@@ -8,12 +7,13 @@ from typing import Any
 
 from .adaptive_routing import AdaptiveRouter, ProcessingStrategy, RoutingDecision
 from .cost_optimization import CostOptimizer, get_cost_optimizer_from_env
+from .logging_config import get_logger
 from .models import ThoughtData
 from .persistent_memory import PersistentMemoryManager, get_database_url_from_env
 from .server_core import ThoughtProcessor
 from .unified_team import create_team_by_type
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class AdaptiveThoughtProcessor:

@@ -18,7 +18,6 @@ from .server_core import (
     ThoughtProcessor,
     create_server_lifespan,
     create_validated_thought_data,
-    get_thought_processor,
 )
 from .types import ThoughtProcessingError
 from .utils import setup_logging

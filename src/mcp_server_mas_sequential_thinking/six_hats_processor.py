@@ -4,19 +4,19 @@
 支持单帽到六帽的智能序列处理，解决"综合+评审"分离问题。
 """
 
-import logging
 import time
 from dataclasses import dataclass
 from typing import Any
 
 from agno.workflow.types import StepOutput
 
+from .logging_config import get_logger
 from .models import ThoughtData
 from .modernized_config import get_model_config
 from .six_hats_core import HatColor, HatComplexity, SixHatsAgentFactory
 from .six_hats_router import RoutingDecision, SixHatsIntelligentRouter
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 @dataclass

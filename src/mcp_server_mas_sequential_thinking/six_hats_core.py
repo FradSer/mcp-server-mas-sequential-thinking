@@ -4,7 +4,6 @@
 严格遵循"一次一顶帽子"原则，支持单帽到六帽的智能序列。
 """
 
-import logging
 from abc import abstractmethod
 from dataclasses import dataclass
 from enum import Enum
@@ -13,7 +12,9 @@ from agno.agent import Agent
 from agno.models.base import Model
 from agno.tools.reasoning import ReasoningTools
 
-logger = logging.getLogger(__name__)
+from .logging_config import get_logger
+
+logger = get_logger(__name__)
 
 
 class HatColor(Enum):
@@ -335,28 +336,33 @@ class BlueHatCapability(SixHatsCapability):
         return [
             "",
             "BLUE HAT SPECIFIC GUIDELINES:",
-            "• Summarize other hats' insights using everyday language, not academic frameworks",
-            "• Remove overly technical content from other hats' contributions",
+            "• START BY RESTATING THE ORIGINAL QUESTION - this is your north star",
+            "• Your primary goal: Answer the original question using insights from other hats",
+            "• Avoid generic rehashing - focus specifically on the question asked",
+            "• Use other hats' contributions as evidence/perspectives to build your answer",
             "• Provide practical, actionable insights users can understand",
-            "• Synthesize insights from all other hat perspectives",
-            "• Ensure all viewpoints are considered and balanced",
-            "• Provide unified conclusions and next steps",
+            "",
+            "CRITICAL QUESTION-FOCUSED APPROACH:",
+            "1. Begin with: 'Based on our analysis of [original question]...'",
+            "2. Extract ONLY the insights from other hats that directly address the question",
+            "3. Ignore generic statements - focus on question-relevant content",
+            "4. Build a coherent answer that uses multiple perspectives as support",
+            "5. End with a clear, direct response to what was originally asked",
             "",
             "KEY RESPONSIBILITIES:",
-            "- Summarize contributions from each hat",
-            "- Identify patterns and conflicts between perspectives",
-            "- Synthesize a coherent, balanced understanding",
-            "- Suggest next thinking steps if needed",
-            "- Ensure the thinking process stays focused",
-            "- Provide final integrated recommendations",
+            "- Return to the original question and answer it directly",
+            "- Use other hats' insights as building blocks for your answer",
+            "- Synthesize perspectives into a cohesive response to the specific question",
+            "- Avoid academic summarization - focus on practical question-answering",
+            "- Ensure your entire response serves the original question",
             "",
             "FINAL OUTPUT REQUIREMENTS:",
-            "• This is the user's ONLY final answer - make it easy to understand and useful",
-            "• Remove excessive technical jargon from other hats' contributions",
-            "• Balance different viewpoints but express in human-friendly language",
-            "• For philosophical questions: acknowledge complexity but give understandable perspectives",
-            "• Avoid tables, formulas, excessive headers - keep structure simple",
-            "• Control length: 500-800 words maximum, clear but not overly structured",
+            "• This is the user's ONLY answer - it must directly address their question",
+            "• Don't just summarize - synthesize into a clear answer",
+            "• Remove content that doesn't directly relate to the original question",
+            "• For philosophical questions: provide thoughtful answers, not just analysis",
+            "• Structure: Question restatement → Key insights → Direct answer",
+            "• Control length: 300-600 words, focused on answering the question",
         ]
 
 

@@ -1,6 +1,5 @@
 """Cost optimization framework for dynamic provider selection and budget control."""
 
-import logging
 import os
 from dataclasses import asdict, dataclass, field
 from datetime import datetime
@@ -13,8 +12,9 @@ from .constants import (
     QualityThresholds,
     TokenCosts,
 )
+from .logging_config import get_logger
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class CostTier(Enum):

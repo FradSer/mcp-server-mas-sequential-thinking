@@ -4,13 +4,13 @@
 基于Edward de Bono的六帽思维方法论。
 """
 
-import logging
 import os
 from dataclasses import dataclass
-from typing import Any
 
 from agno.agent import Agent
 from agno.models.base import Model
+
+from .logging_config import get_logger
 
 # Import Six Hats support
 from .six_hats_core import (
@@ -20,7 +20,7 @@ from .six_hats_core import (
     get_all_hat_colors,
 )
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 # Conditional import of ExaTools for research capabilities
 _EXA_AVAILABLE = bool(os.environ.get("EXA_API_KEY"))
