@@ -916,9 +916,7 @@ async def get_thought_processor() -> ThoughtProcessor:
 
     if _thought_processor is None:
         if _server_state is None:
-            config = ServerConfig.from_environment()
-            _server_state = ServerState()
-            await _server_state.initialize(config)
+            raise RuntimeError("Server not properly initialized - _server_state is None. Ensure app_lifespan is running.")
 
         logger.info("Initializing ThoughtProcessor with Six Hats workflow")
         _thought_processor = ThoughtProcessor(_server_state.session)
