@@ -6,20 +6,19 @@ workflow routing, optimization, and six hats routing functionality.
 
 from .complexity_types import ComplexityLevel, ProcessingStrategy
 from .agno_workflow_router import SixHatsWorkflowResult, SixHatsWorkflowRouter
-from .optimized_routing import CostAwareRouter, create_optimized_router
 from .six_hats_router import SixHatsIntelligentRouter, create_six_hats_router
+from .ai_complexity_analyzer import AIComplexityAnalyzer
 
 __all__ = [
-    # From adaptive_routing
+    # From complexity_types
     "ComplexityLevel",
-    # From optimized_routing
-    "CostAwareRouter",
     "ProcessingStrategy",
+    # From ai_complexity_analyzer
+    "AIComplexityAnalyzer",
     # From six_hats_router
     "SixHatsIntelligentRouter",
+    "create_six_hats_router",
     # From agno_workflow_router
     "SixHatsWorkflowResult",
     "SixHatsWorkflowRouter",
-    "create_optimized_router",
-    "create_six_hats_router",
 ]

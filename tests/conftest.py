@@ -9,8 +9,8 @@ from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
-from src.mcp_server_mas_sequential_thinking.models import ThoughtData
-from src.mcp_server_mas_sequential_thinking.session import SessionMemory
+from mcp_server_mas_sequential_thinking.core.models import ThoughtData
+from mcp_server_mas_sequential_thinking.core.session import SessionMemory
 
 
 @pytest.fixture(scope="session")
