@@ -15,6 +15,7 @@ from .constants import ProcessingDefaults, ValidationLimits
 from .server_core import (
     ServerConfig,
     ServerState,
+    ThoughtProcessor,
     create_server_lifespan,
     create_validated_thought_data,
     get_thought_processor,
@@ -28,12 +29,13 @@ logger = setup_logging()
 
 # Global server state
 _server_state: ServerState | None = None
+_thought_processor: ThoughtProcessor | None = None
 
 
 @asynccontextmanager
 async def app_lifespan(app) -> AsyncIterator[None]:
     """Simplified application lifespan using refactored server core."""
-    global _server_state
+    global _server_state, _thought_processor
 
     logger.info("Starting Sequential Thinking Server")
 
@@ -43,6 +45,7 @@ async def app_lifespan(app) -> AsyncIterator[None]:
         yield
 
     _server_state = None
+    _thought_processor = None
     logger.info("Server stopped")
 
 
@@ -155,7 +158,9 @@ async def sequentialthinking(
         ValidationError: When input validation fails
         RuntimeError: When server state is invalid
     """
-    if _server_state is None:
+    # Capture server state locally to avoid async race conditions
+    current_server_state = _server_state
+    if current_server_state is None:
         return "Server Error: Server not initialized"
 
     try:
@@ -171,9 +176,13 @@ async def sequentialthinking(
             needsMoreThoughts=needsMoreThoughts,
         )
 
-        # Process through team using global processor with workflow support
-        processor = await get_thought_processor()
-        result = await processor.process_thought(thought_data)
+        # Use captured state directly to avoid race conditions
+        global _thought_processor
+        if _thought_processor is None:
+            logger.info("Initializing ThoughtProcessor with Six Hats workflow")
+            _thought_processor = ThoughtProcessor(current_server_state.session)
+
+        result = await _thought_processor.process_thought(thought_data)
 
         logger.info(f"Successfully processed thought #{thoughtNumber}")
         return result
