@@ -100,10 +100,10 @@ Process Guidelines:
 6. Progress systematically through analysis phases
 
 System Architecture:
-- Multi-agent coordination team with specialized roles
-- Planner, Researcher, Analyzer, Critic, and Synthesizer agents
-- Intelligent delegation based on thought complexity
-- Comprehensive synthesis of specialist responses
+- Six Thinking Hats methodology with intelligent routing
+- White, Red, Black, Yellow, Green, and Blue hat perspectives
+- Adaptive hat sequence based on thought complexity and type
+- Comprehensive integration through Blue Hat synthesis
 
 Ready to begin systematic analysis."""
 
