@@ -119,8 +119,8 @@ For using GitHub Models specifically:
          "env": {
             "LLM_PROVIDER": "github",
             "GITHUB_TOKEN": "ghp_your_github_personal_access_token",
-            "GITHUB_TEAM_MODEL_ID": "openai/gpt-5", // Optional: Team coordinator model (default: openai/gpt-5)
-            "GITHUB_AGENT_MODEL_ID": "openai/gpt-5-min", // Optional: Specialist agents model (default: openai/gpt-5-min)
+            "GITHUB_ENHANCED_MODEL_ID": "openai/gpt-5", // Optional: Enhanced model for complex synthesis (default: openai/gpt-5)
+            "GITHUB_STANDARD_MODEL_ID": "openai/gpt-5-min", // Optional: Standard model for individual processing (default: openai/gpt-5-min)
             "EXA_API_KEY": "your_exa_api_key" // Only if using Exa for research tasks
          }
       }
@@ -164,23 +164,23 @@ npx -y @smithery/cli install @FradSer/mcp-server-mas-sequential-thinking --clien
     # Optional: Base URL override (e.g., for custom endpoints)
     # LLM_BASE_URL="your_base_url_if_needed"
 
-    # Optional: Specify different models for Team Coordinator and Specialist Agents
+    # Optional: Specify different models for Enhanced (Complex Synthesis) and Standard (Individual Processing)
     # Defaults are set within the code based on the provider if these are not set.
     # Example for Groq:
-    # GROQ_TEAM_MODEL_ID="llama3-70b-8192"
-    # GROQ_AGENT_MODEL_ID="llama3-8b-8192"
+    # GROQ_ENHANCED_MODEL_ID="deepseek-r1-distill-llama-70b"  # For complex synthesis (Blue Hat)
+    # GROQ_STANDARD_MODEL_ID="qwen/qwen3-32b"  # For individual hat processing
     # Example for DeepSeek:
-    # DEEPSEEK_TEAM_MODEL_ID="deepseek-chat" # Note: `deepseek-reasoner` is not recommended as it doesn't support function calling
-    # DEEPSEEK_AGENT_MODEL_ID="deepseek-chat" # Recommended for specialists
+    # DEEPSEEK_ENHANCED_MODEL_ID="deepseek-chat"  # For complex synthesis
+    # DEEPSEEK_STANDARD_MODEL_ID="deepseek-chat"  # For individual processing
     # Example for GitHub Models:
-    # GITHUB_TEAM_MODEL_ID="openai/gpt-5" # Team coordinator (default: openai/gpt-5)
-    # GITHUB_AGENT_MODEL_ID="openai/gpt-5-min" # Specialist agents (default: openai/gpt-5-min)
+    # GITHUB_ENHANCED_MODEL_ID="openai/gpt-5"  # Enhanced model for synthesis
+    # GITHUB_STANDARD_MODEL_ID="openai/gpt-5-min"  # Standard model for processing
     # Example for OpenRouter:
-    # OPENROUTER_TEAM_MODEL_ID="deepseek/deepseek-r1" # Example, adjust as needed
-    # OPENROUTER_AGENT_MODEL_ID="deepseek/deepseek-chat" # Example, adjust as needed
+    # OPENROUTER_ENHANCED_MODEL_ID="deepseek/deepseek-r1"  # Example, adjust as needed
+    # OPENROUTER_STANDARD_MODEL_ID="deepseek/deepseek-chat"  # Example, adjust as needed
     # Example for Kimi K2:
-    # KIMI_TEAM_MODEL_ID="moonshotai/kimi-k2" # Uses Moonshot's Kimi K2 via OpenRouter
-    # KIMI_AGENT_MODEL_ID="moonshotai/kimi-k2" # Same model for both team and agents, optimized for tool use
+    # KIMI_ENHANCED_MODEL_ID="moonshotai/kimi-k2"  # Uses Moonshot's Kimi K2 via OpenRouter
+    # KIMI_STANDARD_MODEL_ID="moonshotai/kimi-k2"  # Same model for both, optimized for tool use
 
     # --- External Tools ---
     # Required ONLY if the Researcher agent is used and needs Exa
@@ -188,9 +188,9 @@ npx -y @smithery/cli install @FradSer/mcp-server-mas-sequential-thinking --clien
     ```
 
     **Note on Model Selection:**
-    - The `TEAM_MODEL_ID` is used by the Coordinator (`Team` object). This role benefits from strong reasoning, synthesis, and delegation capabilities. Consider using a more powerful model (e.g., `deepseek-chat`, `claude-3-opus`, `gpt-4-turbo`) here, potentially balancing capability with cost/speed.
-    - The `AGENT_MODEL_ID` is used by the specialist agents (Planner, Researcher, etc.). These handle focused sub-tasks. A faster or more cost-effective model (e.g., `deepseek-chat`, `claude-3-sonnet`, `llama3-8b`) might be suitable, depending on task complexity and budget/performance needs.
-    - Defaults are provided in the code (e.g., in `main.py`) if these environment variables are not set. Experimentation is encouraged to find the optimal balance for your use case.
+    - The `ENHANCED_MODEL_ID` is used for complex synthesis tasks (like Blue Hat thinking). This role benefits from strong reasoning, synthesis, and integration capabilities. Consider using a more powerful model (e.g., `deepseek-chat`, `claude-3-opus`, `gpt-5`) here, potentially balancing capability with cost/speed.
+    - The `STANDARD_MODEL_ID` is used for individual hat processing (White, Red, Black, Yellow, Green hats). These handle focused thinking perspectives. A faster or more cost-effective model (e.g., `deepseek-chat`, `claude-3-sonnet`, `qwen3-32b`) might be suitable, depending on task complexity and budget/performance needs.
+    - Defaults are provided in the code (e.g., in the configuration files) if these environment variables are not set. Experimentation is encouraged to find the optimal balance for your use case.
 
     **GitHub Models Setup and Available Models:**
     
@@ -202,16 +202,16 @@ npx -y @smithery/cli install @FradSer/mcp-server-mas-sequential-thinking --clien
        - The token format will be `ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx`
     
     2. **Available Models and Use Cases:**
-       - **`openai/gpt-5`** (Default for Team Coordinator):
+       - **`openai/gpt-5`** (Default for Enhanced Model):
          - Latest GPT-5 model
          - Best for complex reasoning, coordination, and synthesis tasks
-         - Higher token cost but superior performance for the Team Coordinator role
+         - Higher token cost but superior performance for synthesis and integration
          - Excellent function calling capabilities
-       
-       - **`openai/gpt-5-min`** (Default for Specialist Agents):
+
+       - **`openai/gpt-5-min`** (Default for Standard Model):
          - Lightweight version of GPT-5
          - Optimized for speed and cost-efficiency
-         - Ideal for focused sub-tasks handled by specialist agents
+         - Ideal for focused individual hat processing (White, Red, Black, Yellow, Green)
          - Good balance of performance and cost for high-volume operations
        
        - **`openai/gpt-4o`**:
@@ -225,15 +225,15 @@ npx -y @smithery/cli install @FradSer/mcp-server-mas-sequential-thinking --clien
          - May have limitations with complex reasoning tasks
     
     3. **Recommended Configurations:**
-       - **High Performance:** `GITHUB_TEAM_MODEL_ID="openai/gpt-5"`, `GITHUB_AGENT_MODEL_ID="openai/gpt-5-min"`
-       - **Balanced:** `GITHUB_TEAM_MODEL_ID="openai/gpt-5"`, `GITHUB_AGENT_MODEL_ID="openai/gpt-3.5-turbo"`
-       - **Budget-Conscious:** `GITHUB_TEAM_MODEL_ID="openai/gpt-5-min"`, `GITHUB_AGENT_MODEL_ID="openai/gpt-3.5-turbo"`
+       - **High Performance:** `GITHUB_ENHANCED_MODEL_ID="openai/gpt-5"`, `GITHUB_STANDARD_MODEL_ID="openai/gpt-5-min"`
+       - **Balanced:** `GITHUB_ENHANCED_MODEL_ID="openai/gpt-5"`, `GITHUB_STANDARD_MODEL_ID="openai/gpt-3.5-turbo"`
+       - **Budget-Conscious:** `GITHUB_ENHANCED_MODEL_ID="openai/gpt-5-min"`, `GITHUB_STANDARD_MODEL_ID="openai/gpt-3.5-turbo"`
     
     4. **Token Usage Considerations with GitHub Models:**
        - GitHub Models usage counts toward GitHub's rate limits and pricing
        - Monitor your usage through GitHub's billing dashboard
        - Consider the Multi-Agent System's high token consumption when budgeting
-       - The default configuration (openai/gpt-5 + openai/gpt-5-min) provides the best balance of performance and cost
+       - The default configuration (openai/gpt-5 + openai/gpt-5-min) provides the best balance of performance and cost for Six Thinking Hats methodology
 
 3.  **Install Dependencies:**
     It's highly recommended to use a virtual environment.

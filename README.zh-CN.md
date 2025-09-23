@@ -122,17 +122,20 @@
     # 可选: 基础 URL 覆盖 (例如, 用于自定义 DeepSeek 端点)
     # LLM_BASE_URL="你的_base_url_如果需要"
 
-    # 可选: 为团队协调器和专家智能体指定不同的模型
+    # 可选: 为增强模型（复杂综合）和标准模型（单独处理）指定不同的模型
     # 如果未设置这些环境变量，则代码会根据提供商设置默认值。
     # Groq 示例:
-    # GROQ_TEAM_MODEL_ID="llama3-70b-8192"
-    # GROQ_AGENT_MODEL_ID="llama3-8b-8192"
+    # GROQ_ENHANCED_MODEL_ID="deepseek-r1-distill-llama-70b"  # 用于复杂综合（蓝帽）
+    # GROQ_STANDARD_MODEL_ID="qwen/qwen3-32b"  # 用于单独帽子处理
     # DeepSeek 示例:
-    # DEEPSEEK_TEAM_MODEL_ID="deepseek-chat" # 注意：不推荐使用 `deepseek-reasoner`，因为它不支持函数调用
-    # DEEPSEEK_AGENT_MODEL_ID="deepseek-chat" # 推荐用于专家智能体
+    # DEEPSEEK_ENHANCED_MODEL_ID="deepseek-chat"  # 用于复杂综合
+    # DEEPSEEK_STANDARD_MODEL_ID="deepseek-chat"  # 用于单独处理
+    # GitHub Models 示例:
+    # GITHUB_ENHANCED_MODEL_ID="openai/gpt-5"  # 增强模型用于综合
+    # GITHUB_STANDARD_MODEL_ID="openai/gpt-5-min"  # 标准模型用于处理
     # OpenRouter 示例:
-    # OPENROUTER_TEAM_MODEL_ID="deepseek/deepseek-r1" # 示例，按需调整
-    # OPENROUTER_AGENT_MODEL_ID="deepseek/deepseek-chat" # 示例，按需调整
+    # OPENROUTER_ENHANCED_MODEL_ID="deepseek/deepseek-r1"  # 示例，按需调整
+    # OPENROUTER_STANDARD_MODEL_ID="deepseek/deepseek-chat"  # 示例，按需调整
 
     # --- 外部工具 ---
     # 仅当研究员智能体被使用且需要 Exa 时才必需
@@ -140,9 +143,9 @@
     ```
 
     **关于模型选择的说明:**
-    - `TEAM_MODEL_ID` 由协调器（`Team` 对象）使用。该角色受益于强大的推理、综合和委派能力。考虑在此处使用更强大的模型（例如 `deepseek-chat`、`claude-3-opus` 或 `gpt-4-turbo`），可能需要在能力与成本/速度之间进行权衡。
-    - `AGENT_MODEL_ID` 由专家智能体（规划器、研究员等）使用。这些智能体处理集中的子任务。更快或更具成本效益的模型（例如 `deepseek-chat`、`claude-3-sonnet`、`llama3-8b`）可能更适合，具体取决于任务复杂性以及预算/性能需求。
-    - 如果未设置这些环境变量，代码中提供了默认值（例如在 `main.py` 中）。鼓励进行实验，以找到适合您用例的最佳平衡点。
+    - `ENHANCED_MODEL_ID` 用于复杂综合任务（如蓝帽思维）。该角色受益于强大的推理、综合和整合能力。考虑在此处使用更强大的模型（例如 `deepseek-chat`、`claude-3-opus`、`gpt-5`），可能需要在能力与成本/速度之间进行权衡。
+    - `STANDARD_MODEL_ID` 用于单独帽子处理（白、红、黑、黄、绿帽）。这些处理专注的思维视角。更快或更具成本效益的模型（例如 `deepseek-chat`、`claude-3-sonnet`、`qwen3-32b`）可能更适合，具体取决于任务复杂性以及预算/性能需求。
+    - 如果未设置这些环境变量，代码中提供了默认值（例如在配置文件中）。鼓励进行实验，以找到适合您用例的最佳平衡点。
 
 3.  **安装依赖：**
     强烈建议使用虚拟环境。
