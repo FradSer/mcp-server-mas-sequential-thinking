@@ -1,13 +1,13 @@
 """Routing module for MCP Sequential Thinking Server.
 
 This module contains routing and workflow logic including adaptive routing,
-workflow routing, optimization, and six hats routing functionality.
+workflow routing, optimization, and multi-thinking routing functionality.
 """
 
-from .complexity_types import ComplexityLevel, ProcessingStrategy
-from .agno_workflow_router import SixHatsWorkflowResult, SixHatsWorkflowRouter
-from .six_hats_router import SixHatsIntelligentRouter, create_six_hats_router
+from .agno_workflow_router import MultiThinkingWorkflowResult, MultiThinkingWorkflowRouter
 from .ai_complexity_analyzer import AIComplexityAnalyzer
+from .complexity_types import ComplexityLevel, ProcessingStrategy
+from .multi_thinking_router import MultiThinkingIntelligentRouter, create_multi_thinking_router
 
 __all__ = [
     # From complexity_types
@@ -15,10 +15,10 @@ __all__ = [
     "ProcessingStrategy",
     # From ai_complexity_analyzer
     "AIComplexityAnalyzer",
-    # From six_hats_router
-    "SixHatsIntelligentRouter",
-    "create_six_hats_router",
+    # From multi_thinking_router
+    "MultiThinkingIntelligentRouter",
+    "create_multi_thinking_router",
     # From agno_workflow_router
-    "SixHatsWorkflowResult",
-    "SixHatsWorkflowRouter",
+    "MultiThinkingWorkflowResult",
+    "MultiThinkingWorkflowRouter",
 ]

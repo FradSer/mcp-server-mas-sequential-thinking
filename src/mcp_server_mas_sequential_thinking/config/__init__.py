@@ -20,7 +20,7 @@ from .processing_constants import (
     ProcessingLimits,
     QualityThresholds,
     RetryConfiguration,
-    SixHatsConfiguration,
+    MultiThinkingConfiguration,
 )
 
 __all__ = [
@@ -37,7 +37,7 @@ __all__ = [
     "ProcessingLimits",
     "QualityThresholds",
     "RetryConfiguration",
-    "SixHatsConfiguration",
+    "MultiThinkingConfiguration",
     "ValidationLimits",
     # From modernized_config
     "check_required_api_keys",

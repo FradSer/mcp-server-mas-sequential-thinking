@@ -55,14 +55,14 @@ class RetryConfiguration:
 
 
 @dataclass(frozen=True)
-class SixHatsConfiguration:
-    """Configuration constants for Six Thinking Hats processing."""
+class MultiThinkingConfiguration:
+    """Configuration constants for Multi-Thinking processing."""
 
     SUITABILITY_MIN_INDICATORS: Final[int] = 2
-    """Minimum indicators required for Six Hats suitability."""
+    """Minimum indicators required for Multi-Thinking suitability."""
 
     MIN_COMPLEX_LENGTH: Final[int] = 50
-    """Minimum content length for complex Six Hats processing."""
+    """Minimum content length for complex Multi-Thinking processing."""
 
     COST_REDUCTION_MAX: Final[float] = 85.0
     """Maximum cost reduction percentage cap."""
@@ -81,8 +81,8 @@ class CostEstimation:
     MULTI_AGENT_BASE_COST: Final[int] = 600
     """Base cost for multi-agent processing."""
 
-    HAT_PROCESSING_COST: Final[int] = 50
-    """Cost per hat in Six Hats processing."""
+    THINKING_PROCESSING_COST: Final[int] = 50
+    """Cost per thinking direction in Multi-Thinking processing."""
 
     TIME_COST_MULTIPLIER: Final[float] = 0.1
     """Multiplier for time-based cost calculation."""
@@ -152,8 +152,8 @@ ERROR_INDICATORS: Final[tuple[str, ...]] = (
     "无效",
 )
 
-# Six Hats suitability indicators
-SIX_HATS_INDICATORS: Final[tuple[str, ...]] = (
+# Multi-Thinking suitability indicators
+MULTI_THINKING_INDICATORS: Final[tuple[str, ...]] = (
     # Creative/innovative thinking
     "creative",
     "innovative",
@@ -229,17 +229,17 @@ def count_complex_keywords(text: str) -> int:
     return sum(1 for keyword in COMPLEX_KEYWORDS if keyword in text_lower)
 
 
-def is_suitable_for_six_hats(text: str) -> bool:
-    """Quick heuristic to determine if Six Hats would be beneficial."""
+def is_suitable_for_multi_thinking(text: str) -> bool:
+    """Quick heuristic to determine if Multi-Thinking would be beneficial."""
     text_lower = text.lower()
     indicator_count = sum(
-        1 for indicator in SIX_HATS_INDICATORS if indicator in text_lower
+        1 for indicator in MULTI_THINKING_INDICATORS if indicator in text_lower
     )
 
     has_questions = "?" in text or "？" in text
-    is_complex_length = len(text) > SixHatsConfiguration.MIN_COMPLEX_LENGTH
+    is_complex_length = len(text) > MultiThinkingConfiguration.MIN_COMPLEX_LENGTH
     has_multiple_indicators = (
-        indicator_count >= SixHatsConfiguration.SUITABILITY_MIN_INDICATORS
+        indicator_count >= MultiThinkingConfiguration.SUITABILITY_MIN_INDICATORS
     )
 
     return has_multiple_indicators or (has_questions and is_complex_length)
