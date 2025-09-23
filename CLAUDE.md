@@ -27,65 +27,125 @@ grep "ERROR\|WARNING" ~/.sequential_thinking/logs/sequential_thinking.log  # Err
 
 ## Project Overview
 
-Multi-Agent System (MAS) for sequential thinking built with **Agno v2.0** framework and served via MCP. Features **AI-powered intelligent routing** with modern Python packaging (src layout, Python 3.10+).
+**Pure Six Thinking Hats Implementation** built with **Agno v2.0** framework and served via MCP. Features **intelligent routing** with clean architecture (src layout, Python 3.10+). The system processes thoughts through Edward de Bono's Six Thinking Hats methodology with AI-powered routing and model optimization.
 
-### Architecture
+### Core Architecture
 
 **Entry Point:** `src/mcp_server_mas_sequential_thinking/main.py`
-- FastMCP application with server lifespan management
-- Delegates to specialized modules: `server_core.py`, `models.py`, `team.py`, `agents.py`
+- FastMCP application with `sequentialthinking` tool
+- Uses refactored service-based architecture with dependency injection
+- Global state management via `ServerState` and `ThoughtProcessor`
 
-**Agent System (Agno v2.0):**
-- **Coordinator:** Team leader with v2 attributes (`respond_directly=False`, `delegate_task_to_all_members=False`)
-- **Specialists:** Planner, Researcher, Analyzer, Critic, Synthesizer using ReasoningTools
-- **Performance:** ~10,000x faster agent creation, ~50x less memory vs LangGraph
+**Six Hats Processing Flow:**
+```
+External LLM → sequentialthinking tool → ThoughtProcessor → WorkflowExecutor → SixHatsWorkflowRouter → SixHatsSequentialProcessor → Individual Hat Agents → Synthesis
+```
 
-**Core Modules:**
-- `ThoughtProcessor`: Central async processing logic
-- `SessionMemory`: In-memory state with branch support
-- `ai_routing.py`: Complexity analysis and routing decisions
-- `adaptive_routing.py`: Performance-based route optimization
+**Core Services (Dependency Injection):**
+- **ThoughtProcessor**: Main orchestrator using specialized services
+- **WorkflowExecutor**: Manages Six Hats workflow execution
+- **ContextBuilder**: Builds context-aware prompts
+- **ResponseFormatter**: Formats final responses
+- **SessionMemory**: Tracks thought history and branching (no Team dependency)
+
+**Six Hats Routing System:**
+- **SixHatsIntelligentRouter**: Complexity analysis determines hat sequence
+- **SixHatsSequentialProcessor**: Executes chosen hat sequence with model optimization
+- **HatComplexity levels**: SINGLE, DOUBLE, TRIPLE, FULL sequences
+- **Model Intelligence**: Enhanced model for Blue Hat synthesis, Standard model for individual hats
 
 ### Configuration & Data Flow
 
 **Environment Variables:**
-- `LLM_PROVIDER`: Provider selection (deepseek, groq, openrouter, ollama, github)
+- `LLM_PROVIDER`: Provider selection (deepseek, groq, openrouter, ollama, github, anthropic)
 - `{PROVIDER}_API_KEY`: API keys (e.g., `DEEPSEEK_API_KEY`, `GITHUB_TOKEN`)
-- `{PROVIDER}_{TEAM|AGENT}_MODEL_ID`: Model selection for coordinator vs specialists
-- `EXA_API_KEY`: Research capabilities
-- `AI_CONFIDENCE_THRESHOLD`: Routing confidence threshold (default: 0.7)
+- `{PROVIDER}_ENHANCED_MODEL_ID`: Enhanced model for complex synthesis (Blue Hat)
+- `{PROVIDER}_STANDARD_MODEL_ID`: Standard model for individual hat processing
+- `EXA_API_KEY`: Research capabilities (if using research agents)
 
-**Processing Flow:**
-1. External LLM → `sequentialthinking` tool → ThoughtData validation
-2. **AI Routing:** Complexity analysis selects strategy (`single_agent`, `hybrid`, `multi_agent`)
-3. Coordinator delegates to specialists → synthesis → response
-4. SessionMemory tracks history with branch support
+**Model Strategy:**
+- **Enhanced Models**: Used for Blue Hat (metacognitive) thinking - complex synthesis, integration
+- **Standard Models**: Used for individual hat processing (White, Red, Black, Yellow, Green)
+- **Intelligent Selection**: System automatically chooses appropriate model based on hat type
+
+**Processing Strategies:**
+1. **Single Hat**: Simple focused thinking (White Hat facts, Red Hat emotions, etc.)
+2. **Double Hat**: Two-step sequences (e.g., White→Blue for factual synthesis)
+3. **Triple Hat**: Core philosophical thinking (White→Green→Blue)
+4. **Full Sequence**: Complete Six Hats methodology with Blue Hat orchestration
+
+### Key Modules
+
+**Core Framework:**
+- `core/session.py`: SessionMemory for thought history (simplified, no Team dependency)
+- `core/models.py`: ThoughtData validation and core data structures
+- `config/modernized_config.py`: Provider strategies with Enhanced/Standard model configuration
+
+**Six Hats Implementation:**
+- `processors/six_hats_processor.py`: Main Six Hats sequential processor
+- `processors/six_hats_core.py`: Hat definitions, agent factory, core logic
+- `routing/six_hats_router.py`: Intelligent routing based on thought complexity
+- `routing/agno_workflow_router.py`: Agno Workflow integration layer
+
+**Service Layer:**
+- `services/thought_processor_refactored.py`: Main thought processor with dependency injection
+- `services/workflow_executor.py`: Six Hats workflow execution
+- `services/context_builder.py`: Context-aware prompt building
+- `services/response_formatter.py`: Response formatting and extraction
 
 ### Testing & Key Notes
 
 **Test Organization:**
 - Unit tests: `tests/unit/` | Integration: `tests/` root
 - Async configuration: `tests/pytest.ini` with `asyncio_mode = auto`
-- Fixtures: `tests/conftest.py` | Factories: `tests/helpers/`
+- Factories: `tests/helpers/` for test data creation
+- Key test files: `test_agno_workflow.py`, `test_github_provider.py`
 
-**Important Characteristics:**
-- **High token usage**: 3-6x consumption due to multi-agent architecture
+**Architecture Characteristics:**
+- **Clean Architecture**: Dependency injection, separation of concerns, service-based design
+- **Six Hats Focus**: Pure implementation without legacy multi-agent complexity
+- **Model Optimization**: Smart model selection (Enhanced for synthesis, Standard for processing)
 - **Modern Python**: Dataclasses, type hints, async/await, pattern matching
 - **Environment-based config**: No config files, all via environment variables
 - **Structured logging**: Rotation to `~/.sequential_thinking/logs/`
 
-## Agno v2.0 Migration Notes
+## Enhanced/Standard Model Configuration
 
-**Key Changes:**
-- Team coordination: `respond_directly=False`, `delegate_task_to_all_members=False`
-- Tools: `ThinkingTools` → `ReasoningTools` (`agno.tools.reasoning`)
-- Memory: `enable_memory` → `enable_user_memories`
-- Version: Requires `agno>=2.0.5`
+**Naming Convention (NEW):**
+- `{PROVIDER}_ENHANCED_MODEL_ID`: For complex synthesis tasks (Blue Hat thinking)
+- `{PROVIDER}_STANDARD_MODEL_ID`: For individual hat processing
 
-**Performance Gains:**
-- ~10,000x faster agent creation vs LangGraph
-- ~50x less memory usage
-- Microsecond-level initialization
+**Examples:**
+```bash
+# GitHub Models
+GITHUB_ENHANCED_MODEL_ID="openai/gpt-5"      # Blue Hat synthesis
+GITHUB_STANDARD_MODEL_ID="openai/gpt-5-min"  # Individual hats
 
-**Compatibility:** Backward compatible, all APIs and environment variables unchanged
-- **deepwiki MCP reference**: For agno framework documentation, use repoName: `agno-agi/agno`
+# DeepSeek
+DEEPSEEK_ENHANCED_MODEL_ID="deepseek-chat"   # Both synthesis and processing
+DEEPSEEK_STANDARD_MODEL_ID="deepseek-chat"
+
+# Anthropic
+ANTHROPIC_ENHANCED_MODEL_ID="claude-3-5-sonnet-20241022"  # Synthesis
+ANTHROPIC_STANDARD_MODEL_ID="claude-3-5-haiku-20241022"   # Processing
+```
+
+**Usage Strategy:**
+- **Enhanced Model**: Blue Hat (metacognitive orchestrator) uses enhanced model for final synthesis
+- **Standard Model**: Individual hats (White, Red, Black, Yellow, Green) use standard model
+- **Automatic Selection**: System chooses model based on hat type and complexity
+
+## Agno v2.0 Integration
+
+**Framework Features:**
+- **Workflow Integration**: Uses Agno Workflow system for Six Hats processing
+- **Agent Factory**: Creates specialized hat agents with ReasoningTools
+- **Performance**: ~10,000x faster agent creation, ~50x less memory vs LangGraph
+- **Version**: Requires `agno>=2.0.5`
+
+**Key Integration Points:**
+- `SixHatsWorkflowRouter`: Bridges MCP and Agno Workflow systems
+- `SixHatsAgentFactory`: Creates individual hat agents using Agno v2.0
+- **StepOutput**: Workflow results converted to Agno StepOutput format
+
+**For Agno Documentation**: Use deepwiki MCP reference with repoName: `agno-agi/agno`
