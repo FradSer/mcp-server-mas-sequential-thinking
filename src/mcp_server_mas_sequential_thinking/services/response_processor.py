@@ -123,8 +123,12 @@ class ResponseProcessor:
     def _log_response_details(self, processed: ProcessedResponse, context: str) -> None:
         """Log detailed response information."""
         logger.info(f"📝 {context.upper()} RESPONSE:")
-        logger.info(f"  Type: {processed.metadata['response_type']}")
-        logger.info(f"  Length: {processed.metadata['content_length']} chars")
+        if processed.metadata:
+            logger.info(f"  Type: {processed.metadata.get('response_type', 'unknown')}")
+            logger.info(f"  Length: {processed.metadata.get('content_length', 0)} chars")
+        else:
+            logger.info("  Type: unknown")
+            logger.info(f"  Length: {len(processed.content)} chars")
 
         if processed.processing_time:
             logger.info(f"  Processing time: {processed.processing_time:.3f}s")

@@ -1,5 +1,6 @@
 """Refactored MCP Sequential Thinking Server with separated concerns and reduced complexity."""
 
+import asyncio
 import sys
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
@@ -26,9 +27,10 @@ from .utils import setup_logging
 load_dotenv()
 logger = setup_logging()
 
-# Global server state
+# Global server state with thread safety
 _server_state: ServerState | None = None
 _thought_processor: ThoughtProcessor | None = None
+_processor_lock = asyncio.Lock()
 
 
 @asynccontextmanager
@@ -53,13 +55,45 @@ mcp = FastMCP(lifespan=app_lifespan)
 
 
 def sanitize_and_validate_input(text: str, max_length: int, field_name: str) -> str:
-    """Sanitize and validate input with efficient error handling and modern idioms."""
+    """Sanitize and validate input with comprehensive security checks."""
     # Early validation with guard clause
     if not text or not text.strip():
         raise ValueError(f"{field_name} cannot be empty")
 
-    # Sanitize once with chained operations
-    sanitized_text = escape(text.strip())
+    # Strip and normalize whitespace first
+    text = text.strip()
+
+    # Check for potential prompt injection patterns
+    injection_patterns = [
+        # System/role instruction injections
+        "system:", "user:", "assistant:", "role:",
+        # Prompt escape attempts
+        "ignore previous", "ignore all", "disregard",
+        # Code execution attempts
+        "```python", "```bash", "exec(", "eval(", "__import__",
+        # Instruction manipulation
+        "new instructions", "override", "instead of",
+        # Data extraction attempts
+        "print(", "console.log", "alert(", "document.cookie",
+    ]
+
+    text_lower = text.lower()
+    for pattern in injection_patterns:
+        if pattern in text_lower:
+            raise ValueError(
+                f"Potential security risk detected in {field_name}. "
+                f"Input contains suspicious pattern: '{pattern}'"
+            )
+
+    # Additional security checks
+    if text.count('"') > 10 or text.count("'") > 10:
+        raise ValueError(
+            f"Excessive quotation marks detected in {field_name}. "
+            "This may indicate an injection attempt."
+        )
+
+    # Sanitize HTML entities and special characters
+    sanitized_text = escape(text)
 
     # Length validation with descriptive error
     if len(sanitized_text) > max_length:
@@ -177,9 +211,10 @@ async def sequentialthinking(
 
         # Use captured state directly to avoid race conditions
         global _thought_processor
-        if _thought_processor is None:
-            logger.info("Initializing ThoughtProcessor with Multi-Thinking workflow")
-            _thought_processor = ThoughtProcessor(current_server_state.session)
+        async with _processor_lock:
+            if _thought_processor is None:
+                logger.info("Initializing ThoughtProcessor with Multi-Thinking workflow")
+                _thought_processor = ThoughtProcessor(current_server_state.session)
 
         result = await _thought_processor.process_thought(thought_data)
 

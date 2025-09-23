@@ -31,7 +31,7 @@ class RetryConfig:
 class RetryHandler:
     """Handles retry logic with configurable strategies."""
 
-    def __init__(self, config: RetryConfig = None) -> None:
+    def __init__(self, config: RetryConfig | None = None) -> None:
         """Initialize retry handler with configuration."""
         self.config = config or RetryConfig()
 

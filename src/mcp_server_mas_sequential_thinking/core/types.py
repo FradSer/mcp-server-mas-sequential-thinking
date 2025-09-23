@@ -1,12 +1,18 @@
 """Type definitions for better type safety."""
 
+from __future__ import annotations
+
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any, Protocol, TypedDict
+from typing import TYPE_CHECKING, Any, Protocol, TypedDict
 
 from agno.agent import Agent
 from agno.models.base import Model
 from agno.team.team import Team
+
+if TYPE_CHECKING:
+    from mcp_server_mas_sequential_thinking.config.modernized_config import ModelConfig
+    from mcp_server_mas_sequential_thinking.core.models import ThoughtData
 
 # Type aliases for better semantic meaning
 ThoughtNumber = int
@@ -55,7 +61,7 @@ class CoordinationPlan:
     @classmethod
     def from_routing_decision(
         cls, routing_decision: Any, thought_data: Any
-    ) -> "CoordinationPlan":
+    ) -> CoordinationPlan:
         """Create coordination plan from adaptive routing decision."""
         # Map ProcessingStrategy to ExecutionMode
         strategy_to_mode = {
@@ -164,7 +170,7 @@ class AgentFactory(Protocol):
 class TeamBuilder(Protocol):
     """Protocol for team builder implementations."""
 
-    def build_team(self, config: ConfigDict, agent_factory: "AgentFactory") -> Team:
+    def build_team(self, config: ConfigDict, agent_factory: AgentFactory) -> Team:
         """Build a team with specified configuration and agent factory."""
         ...
 
@@ -190,7 +196,7 @@ class ComplexityAnalyzer(Protocol):
 class ThoughtProcessor(Protocol):
     """Protocol for thought processing with type safety."""
 
-    async def process_thought(self, thought_data: "ThoughtData") -> str:
+    async def process_thought(self, thought_data: ThoughtData) -> str:
         """Process a thought and return the result."""
         ...
 
@@ -198,7 +204,7 @@ class ThoughtProcessor(Protocol):
 class SessionManager(Protocol):
     """Protocol for session management with type safety."""
 
-    def add_thought(self, thought_data: "ThoughtData") -> None:
+    def add_thought(self, thought_data: ThoughtData) -> None:
         """Add a thought to the session."""
         ...
 
@@ -214,7 +220,7 @@ class SessionManager(Protocol):
 class ConfigurationProvider(Protocol):
     """Protocol for configuration management with type safety."""
 
-    def get_model_config(self, provider_name: str | None = None) -> "ModelConfig":
+    def get_model_config(self, provider_name: str | None = None) -> ModelConfig:
         """Get model configuration."""
         ...
 

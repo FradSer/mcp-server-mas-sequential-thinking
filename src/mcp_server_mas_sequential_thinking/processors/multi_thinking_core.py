@@ -79,7 +79,7 @@ class ThinkingCapability:
     timing_config: ThinkingTimingConfig
 
     # Enhanced features
-    tools: list[type] = None
+    tools: list[type] | None = None
     reasoning_level: int = 1
     memory_enabled: bool = False
 
@@ -404,7 +404,7 @@ class MultiThinkingAgentFactory:
     }
 
     def __init__(self) -> None:
-        self._agent_cache = {}  # Cache for created agents
+        self._agent_cache: dict[str, Agent] = {}  # Cache for created agents
 
     def create_thinking_agent(
         self,
@@ -432,7 +432,7 @@ class MultiThinkingAgentFactory:
             role=capability.role,
             description=capability.description,
             model=model,
-            tools=capability.tools,
+            tools=capability.tools if capability.tools else None,
             instructions=capability.get_instructions(context, previous_results),
             markdown=True,
             **kwargs,

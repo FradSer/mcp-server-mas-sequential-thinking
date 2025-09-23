@@ -19,22 +19,55 @@ class GitHubOpenAI(OpenAIChat):
 
     @staticmethod
     def _validate_github_token(token: str) -> None:
-        """Validate GitHub token format with comprehensive checks."""
+        """Validate GitHub token format with comprehensive security checks."""
         if not token:
             raise ValueError("GitHub token is required but not provided")
 
-        # Valid GitHub token prefixes
-        valid_prefixes = ("ghp_", "github_pat_", "gho_", "ghu_")
+        # Strip whitespace and validate basic format
+        token = token.strip()
 
-        if not any(token.startswith(prefix) for prefix in valid_prefixes):
+        # Valid GitHub token prefixes with their expected lengths
+        token_specs = {
+            "ghp_": 40,      # Classic personal access token
+            "github_pat_": lambda t: len(t) >= 93,  # Fine-grained PAT (variable length)
+            "gho_": 40,      # OAuth app token
+            "ghu_": 40,      # User-to-server token
+            "ghs_": 40,      # Server-to-server token
+        }
+
+        # Check token prefix and length
+        valid_token = False
+        for prefix, expected_length in token_specs.items():
+            if token.startswith(prefix):
+                if callable(expected_length):
+                    if expected_length(token):
+                        valid_token = True
+                        break
+                elif len(token) == expected_length:
+                    valid_token = True
+                    break
+
+        if not valid_token:
             raise ValueError(
-                f"Invalid GitHub token format. Token must start with one of: {', '.join(valid_prefixes)}"
+                "Invalid GitHub token format. Token must be a valid GitHub personal access token, "
+                "OAuth token, or fine-grained personal access token with correct prefix and length."
             )
 
-        # Length validation for classic tokens
-        if token.startswith("ghp_") and len(token) != 40:
+        # Enhanced entropy validation to prevent fake tokens
+        token_body = token[4:] if token.startswith("ghp_") else token.split("_", 1)[1] if "_" in token else token
+
+        # Check for minimum entropy (character diversity)
+        unique_chars = len(set(token_body.lower()))
+        if unique_chars < 15:  # GitHub tokens should have high entropy
             raise ValueError(
-                "Invalid GitHub classic PAT length. Expected 40 characters."
+                "GitHub token appears to have insufficient entropy. Please ensure you're using a real GitHub token."
+            )
+
+        # Check for obvious fake patterns
+        fake_patterns = ["test", "fake", "demo", "example", "placeholder", "your_token"]
+        if any(pattern in token.lower() for pattern in fake_patterns):
+            raise ValueError(
+                "GitHub token appears to be a placeholder or test value. Please use a real GitHub token."
             )
 
     def __init__(self, **kwargs) -> None:

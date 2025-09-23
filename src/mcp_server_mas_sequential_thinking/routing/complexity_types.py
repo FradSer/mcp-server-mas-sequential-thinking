@@ -62,7 +62,7 @@ class RoutingDecision:
     reasoning: str
     estimated_token_usage: tuple[int, int]  # (min, max)
     estimated_cost: float
-    specialist_recommendations: list[str] = None
+    specialist_recommendations: list[str] | None = None
 
     def __post_init__(self):
         if self.specialist_recommendations is None:

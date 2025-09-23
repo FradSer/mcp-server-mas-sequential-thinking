@@ -26,7 +26,7 @@ class WorkflowExecutor:
             session: The session memory instance for accessing team and context
         """
         self._session = session
-        self._agno_router = None
+        self._agno_router: Any = None
         self._initialize_multi_thinking_workflow()
 
     def _initialize_multi_thinking_workflow(self) -> None:
@@ -36,7 +36,9 @@ class WorkflowExecutor:
         """
         logger.info("Initializing Multi-Thinking Workflow Router")
         # Dynamic import to avoid circular dependency
-        from mcp_server_mas_sequential_thinking.routing import MultiThinkingWorkflowRouter
+        from mcp_server_mas_sequential_thinking.routing import (
+            MultiThinkingWorkflowRouter,
+        )
 
         self._agno_router = MultiThinkingWorkflowRouter()
         logger.info("✅ Multi-Thinking Workflow Router ready")
