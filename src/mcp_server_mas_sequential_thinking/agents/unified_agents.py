@@ -1,12 +1,12 @@
-"""Six Thinking Hats Agent Factory - Complete Rewrite.
+"""Multi-Thinking Agent Factory - Complete Rewrite.
 
-纯净的Six Thinking Hats实现，无任何Legacy代码。
-基于Edward de Bono的六帽思维方法论。
+纯净的多向思维实现，无任何Legacy代码。
+基于多向思维方法论。
 """
 
 import os
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from agno.agent import Agent
 from agno.models.base import Model
@@ -40,7 +40,7 @@ class SixHatsTeamConfig:
     """Six Hats team configuration."""
 
     name: str
-    hat_sequence: List[HatColor]
+    hat_sequence: list[HatColor]
     description: str
 
 
@@ -57,7 +57,7 @@ class SixHatsAgentManager:
         hat_color: HatColor,
         model: Model,
         context: str = "",
-        previous_results: Optional[Dict[str, Any]] = None,
+        previous_results: dict[str, Any] | None = None,
         **kwargs: Any,
     ) -> Agent:
         """Create a single Six Thinking Hats agent."""
@@ -67,14 +67,14 @@ class SixHatsAgentManager:
 
     def create_hat_sequence_agents(
         self,
-        hat_sequence: List[HatColor],
+        hat_sequence: list[HatColor],
         model: Model,
         context: str = "",
         **kwargs: Any,
-    ) -> List[Agent]:
+    ) -> list[Agent]:
         """Create a sequence of Six Hats agents."""
-        agents: List[Agent] = []
-        previous_results: Dict[str, Any] = {}
+        agents: list[Agent] = []
+        previous_results: dict[str, Any] = {}
 
         for hat_color in hat_sequence:
             agent = self.create_hat_agent(
@@ -84,7 +84,7 @@ class SixHatsAgentManager:
 
         return agents
 
-    def get_predefined_sequences(self) -> Dict[str, List[HatColor]]:
+    def get_predefined_sequences(self) -> dict[str, list[HatColor]]:
         """Get predefined Six Hats sequences."""
         return {
             "single_white": [HatColor.WHITE],
@@ -123,7 +123,7 @@ class SixHatsAgentManager:
             ],
         }
 
-    def get_available_hat_colors(self) -> List[HatColor]:
+    def get_available_hat_colors(self) -> list[HatColor]:
         """Get all available hat colors."""
         return get_all_hat_colors()
 
@@ -142,7 +142,7 @@ class SixHatsTeamFactory:
 
     def create_team_by_sequence(
         self, sequence_name: str, model: Model, **kwargs: Any
-    ) -> Dict[str, Agent]:
+    ) -> dict[str, Agent]:
         """Create a team based on predefined sequence."""
         sequences = self._agent_manager.get_predefined_sequences()
 
@@ -153,7 +153,7 @@ class SixHatsTeamFactory:
             )
 
         hat_sequence = sequences[sequence_name]
-        agents: Dict[str, Agent] = {}
+        agents: dict[str, Agent] = {}
 
         for i, hat_color in enumerate(hat_sequence):
             agent_key = (
@@ -172,13 +172,13 @@ class SixHatsTeamFactory:
 
     def create_custom_team(
         self,
-        hat_sequence: List[HatColor],
+        hat_sequence: list[HatColor],
         model: Model,
         team_name: str = "custom",
         **kwargs: Any,
-    ) -> Dict[str, Agent]:
+    ) -> dict[str, Agent]:
         """Create a custom Six Hats team."""
-        agents: Dict[str, Agent] = {}
+        agents: dict[str, Agent] = {}
 
         for i, hat_color in enumerate(hat_sequence):
             agent_key = (
@@ -195,7 +195,7 @@ class SixHatsTeamFactory:
         )
         return agents
 
-    def get_available_sequences(self) -> List[str]:
+    def get_available_sequences(self) -> list[str]:
         """Get available predefined sequences."""
         return list(self._agent_manager.get_predefined_sequences().keys())
 
@@ -212,26 +212,26 @@ def create_hat_agent(hat_color: HatColor, model: Model, **kwargs: Any) -> Agent:
 
 def create_six_hats_team(
     sequence_name: str, model: Model, **kwargs: Any
-) -> Dict[str, Agent]:
+) -> dict[str, Agent]:
     """Create a Six Thinking Hats team by sequence name."""
     return _six_hats_factory.create_team_by_sequence(sequence_name, model, **kwargs)
 
 
 def create_custom_six_hats_team(
-    hat_sequence: List[HatColor], model: Model, team_name: str = "custom", **kwargs: Any
-) -> Dict[str, Agent]:
+    hat_sequence: list[HatColor], model: Model, team_name: str = "custom", **kwargs: Any
+) -> dict[str, Agent]:
     """Create a custom Six Thinking Hats team."""
     return _six_hats_factory.create_custom_team(
         hat_sequence, model, team_name, **kwargs
     )
 
 
-def get_available_sequences() -> List[str]:
+def get_available_sequences() -> list[str]:
     """Get available Six Hats sequences."""
     return _six_hats_factory.get_available_sequences()
 
 
-def get_available_hats() -> List[HatColor]:
+def get_available_hats() -> list[HatColor]:
     """Get available hat colors."""
     return _six_hats_factory._agent_manager.get_available_hat_colors()
 
@@ -260,7 +260,7 @@ class UnifiedAgentFactory:
 
     def create_team_agents(
         self, model: Model, team_type: str = "six_hats_triple"
-    ) -> Dict[str, Agent]:
+    ) -> dict[str, Agent]:
         """Create team agents - Six Hats only."""
         if team_type.startswith("six_hats_"):
             sequence_name = team_type.replace("six_hats_", "")
@@ -270,7 +270,7 @@ class UnifiedAgentFactory:
         # Default to triple sequence
         return create_six_hats_team("triple_factual", model)
 
-    def get_available_team_types(self) -> List[str]:
+    def get_available_team_types(self) -> list[str]:
         """Get available team types - Six Hats sequences only."""
         sequences = get_available_sequences()
         return [f"six_hats_{seq}" for seq in sequences]
@@ -288,6 +288,6 @@ def create_agent(agent_type: str, model: Model, **kwargs: Any) -> Agent:
 
 def create_team_agents(
     model: Model, team_type: str = "six_hats_triple"
-) -> Dict[str, Agent]:
+) -> dict[str, Agent]:
     """Backward compatible team creation."""
     return _factory.create_team_agents(model, team_type)

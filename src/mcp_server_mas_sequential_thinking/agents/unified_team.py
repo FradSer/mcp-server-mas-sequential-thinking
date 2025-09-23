@@ -1,7 +1,7 @@
-"""Six Thinking Hats Team Factory - Complete Rewrite.
+"""Multi-Thinking Team Factory - Complete Rewrite.
 
-纯净的Six Thinking Hats团队实现，无任何Legacy代码。
-基于Edward de Bono的六帽思维方法论，支持智能路由和动态序列。
+纯净的多向思维团队实现，无任何Legacy代码。
+基于多向思维方法论，支持智能路由和动态序列。
 """
 
 from dataclasses import dataclass
