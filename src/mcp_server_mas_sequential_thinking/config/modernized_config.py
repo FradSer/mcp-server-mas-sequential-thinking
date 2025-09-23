@@ -59,29 +59,29 @@ class ModelConfig:
     """Immutable configuration for model provider and settings."""
 
     provider_class: Type[Model]
-    team_model_id: str
-    agent_model_id: str
+    enhanced_model_id: str
+    standard_model_id: str
     api_key: Optional[str] = None
 
-    def create_team_model(self) -> Model:
-        """Create team model instance with configuration."""
+    def create_enhanced_model(self) -> Model:
+        """Create enhanced model instance (used for complex synthesis like Blue Hat)."""
         # Enable prompt caching for Anthropic models
         if self.provider_class == Claude:
             return self.provider_class(
-                id=self.team_model_id,
+                id=self.enhanced_model_id,
                 cache_system_prompt=True,  # Enable Anthropic prompt caching
             )
-        return self.provider_class(id=self.team_model_id)
+        return self.provider_class(id=self.enhanced_model_id)
 
-    def create_agent_model(self) -> Model:
-        """Create agent model instance with configuration."""
+    def create_standard_model(self) -> Model:
+        """Create standard model instance (used for individual hat processing)."""
         # Enable prompt caching for Anthropic models
         if self.provider_class == Claude:
             return self.provider_class(
-                id=self.agent_model_id,
+                id=self.standard_model_id,
                 cache_system_prompt=True,  # Enable Anthropic prompt caching
             )
-        return self.provider_class(id=self.agent_model_id)
+        return self.provider_class(id=self.standard_model_id)
 
 
 @runtime_checkable
@@ -107,13 +107,13 @@ class BaseProviderStrategy(ABC):
 
     @property
     @abstractmethod
-    def default_team_model(self) -> str:
-        """Return default team model ID."""
+    def default_enhanced_model(self) -> str:
+        """Return default enhanced model ID (for complex synthesis)."""
 
     @property
     @abstractmethod
-    def default_agent_model(self) -> str:
-        """Return default agent model ID."""
+    def default_standard_model(self) -> str:
+        """Return default standard model ID (for individual processing)."""
 
     @property
     @abstractmethod
@@ -129,11 +129,11 @@ class BaseProviderStrategy(ABC):
         """Get complete configuration with environment overrides."""
         prefix = self.__class__.__name__.replace("Strategy", "").upper()
 
-        team_model = self._get_env_with_fallback(
-            f"{prefix}_TEAM_MODEL_ID", self.default_team_model
+        enhanced_model = self._get_env_with_fallback(
+            f"{prefix}_ENHANCED_MODEL_ID", self.default_enhanced_model
         )
-        agent_model = self._get_env_with_fallback(
-            f"{prefix}_AGENT_MODEL_ID", self.default_agent_model
+        standard_model = self._get_env_with_fallback(
+            f"{prefix}_STANDARD_MODEL_ID", self.default_standard_model
         )
 
         # Get API key with enhanced validation and None handling
@@ -144,8 +144,8 @@ class BaseProviderStrategy(ABC):
 
         return ModelConfig(
             provider_class=self.provider_class,
-            team_model_id=team_model,
-            agent_model_id=agent_model,
+            enhanced_model_id=enhanced_model,
+            standard_model_id=standard_model,
             api_key=api_key,
         )
 
@@ -156,10 +156,10 @@ class BaseProviderStrategy(ABC):
         if self.api_key_name:
             env_vars[self.api_key_name] = False  # Required
 
-        # Common optional environment variables
+        # Enhanced/standard environment variables (optional)
         prefix = self.__class__.__name__.replace("Strategy", "").upper()
-        env_vars[f"{prefix}_TEAM_MODEL_ID"] = True  # Optional
-        env_vars[f"{prefix}_AGENT_MODEL_ID"] = True  # Optional
+        env_vars[f"{prefix}_ENHANCED_MODEL_ID"] = True  # Optional
+        env_vars[f"{prefix}_STANDARD_MODEL_ID"] = True  # Optional
 
         return env_vars
 
@@ -169,8 +169,8 @@ class DeepSeekStrategy(BaseProviderStrategy):
     """DeepSeek provider strategy."""
 
     provider_class = DeepSeek
-    default_team_model = "deepseek-chat"
-    default_agent_model = "deepseek-chat"
+    default_enhanced_model = "deepseek-chat"
+    default_standard_model = "deepseek-chat"
     api_key_name = "DEEPSEEK_API_KEY"
 
 
@@ -178,8 +178,8 @@ class GroqStrategy(BaseProviderStrategy):
     """Groq provider strategy."""
 
     provider_class = Groq
-    default_team_model = "deepseek-r1-distill-llama-70b"
-    default_agent_model = "qwen/qwen3-32b"
+    default_enhanced_model = "deepseek-r1-distill-llama-70b"
+    default_standard_model = "qwen/qwen3-32b"
     api_key_name = "GROQ_API_KEY"
 
 
@@ -187,8 +187,8 @@ class OpenRouterStrategy(BaseProviderStrategy):
     """OpenRouter provider strategy."""
 
     provider_class = OpenRouter
-    default_team_model = "deepseek/deepseek-chat-v3-0324"
-    default_agent_model = "deepseek/deepseek-r1"
+    default_enhanced_model = "deepseek/deepseek-chat-v3-0324"
+    default_standard_model = "deepseek/deepseek-r1"
     api_key_name = "OPENROUTER_API_KEY"
 
 
@@ -196,8 +196,8 @@ class OllamaStrategy(BaseProviderStrategy):
     """Ollama provider strategy (no API key required)."""
 
     provider_class = Ollama
-    default_team_model = "devstral:24b"
-    default_agent_model = "devstral:24b"
+    default_enhanced_model = "devstral:24b"
+    default_standard_model = "devstral:24b"
     api_key_name = None
 
 
@@ -209,11 +209,11 @@ class GitHubStrategy(BaseProviderStrategy):
         return GitHubOpenAI
 
     @property
-    def default_team_model(self) -> str:
+    def default_enhanced_model(self) -> str:
         return "openai/gpt-5"
 
     @property
-    def default_agent_model(self) -> str:
+    def default_standard_model(self) -> str:
         return "openai/gpt-5-min"
 
     @property
@@ -229,11 +229,11 @@ class AnthropicStrategy(BaseProviderStrategy):
         return Claude
 
     @property
-    def default_team_model(self) -> str:
+    def default_enhanced_model(self) -> str:
         return "claude-3-5-sonnet-20241022"
 
     @property
-    def default_agent_model(self) -> str:
+    def default_standard_model(self) -> str:
         return "claude-3-5-haiku-20241022"
 
     @property

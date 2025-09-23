@@ -135,8 +135,14 @@ class SixHatsSequentialProcessor:
         hat_color = decision.strategy.hat_sequence[0]
         logger.info(f"  🎩 SINGLE HAT MODE: {hat_color.value}")
 
-        # 创建单个帽子agent
-        model = self.model_config.create_agent_model()
+        # 为蓝帽子使用增强模型，其他帽子使用标准模型
+        if hat_color == HatColor.BLUE:
+            model = self.model_config.create_enhanced_model()
+            logger.info("    🚀 Using enhanced model for Blue Hat synthesis")
+        else:
+            model = self.model_config.create_standard_model()
+            logger.info("    📎 Using standard model for individual hat processing")
+
         agent = self.hat_factory.create_hat_agent(hat_color, model, context, {})
 
         # 执行处理
@@ -157,11 +163,17 @@ class SixHatsSequentialProcessor:
         hat1, hat2 = decision.strategy.hat_sequence
         logger.info(f"  🎩 DOUBLE HAT SEQUENCE: {hat1.value} → {hat2.value}")
 
-        model = self.model_config.create_agent_model()
         individual_results = {}
 
         # 第一顶帽子
-        agent1 = self.hat_factory.create_hat_agent(hat1, model, context, {})
+        if hat1 == HatColor.BLUE:
+            model1 = self.model_config.create_enhanced_model()
+            logger.info(f"    🚀 Using enhanced model for {hat1.value} hat")
+        else:
+            model1 = self.model_config.create_standard_model()
+            logger.info(f"    📎 Using standard model for {hat1.value} hat")
+
+        agent1 = self.hat_factory.create_hat_agent(hat1, model1, context, {})
         result1 = await agent1.arun(input=thought_data.thought)
         content1 = self._extract_content(result1)
         individual_results[hat1.value] = content1
@@ -169,9 +181,16 @@ class SixHatsSequentialProcessor:
         logger.info(f"    ✅ {hat1.value} hat completed")
 
         # 第二顶帽子（基于第一顶帽子的结果）
+        if hat2 == HatColor.BLUE:
+            model2 = self.model_config.create_enhanced_model()
+            logger.info(f"    🚀 Using enhanced model for {hat2.value} hat synthesis")
+        else:
+            model2 = self.model_config.create_standard_model()
+            logger.info(f"    📎 Using standard model for {hat2.value} hat")
+
         previous_results = {hat1.value: content1}
         agent2 = self.hat_factory.create_hat_agent(
-            hat2, model, context, previous_results
+            hat2, model2, context, previous_results
         )
 
         # 构建第二帽子的输入
@@ -189,10 +208,14 @@ Now apply {hat2.value} hat thinking to this.
 
         logger.info(f"    ✅ {hat2.value} hat completed")
 
-        # 对于双帽序列，直接组合结果
-        final_content = self._combine_dual_hat_results(
-            hat1, content1, hat2, content2, thought_data.thought
-        )
+        # 如果最后一个是蓝帽，直接使用其结果作为最终回答
+        if hat2 == HatColor.BLUE:
+            final_content = content2
+        else:
+            # 否则，组合结果
+            final_content = self._combine_dual_hat_results(
+                hat1, content1, hat2, content2, thought_data.thought
+            )
 
         return {
             "final_content": final_content,
@@ -208,13 +231,20 @@ Now apply {hat2.value} hat thinking to this.
             f"  🎩 TRIPLE HAT SEQUENCE: {' → '.join(hat.value for hat in hat_sequence)}"
         )
 
-        model = self.model_config.create_agent_model()
         individual_results = {}
         previous_results = {}
 
         # 顺序执行三个帽子
         for i, hat_color in enumerate(hat_sequence):
             logger.info(f"    🎩 Processing {hat_color.value} hat ({i + 1}/3)")
+
+            # 为蓝帽子使用增强模型，其他帽子使用标准模型
+            if hat_color == HatColor.BLUE:
+                model = self.model_config.create_enhanced_model()
+                logger.info(f"      🚀 Using enhanced model for {hat_color.value} hat synthesis")
+            else:
+                model = self.model_config.create_standard_model()
+                logger.info(f"      📎 Using standard model for {hat_color.value} hat")
 
             agent = self.hat_factory.create_hat_agent(
                 hat_color, model, context, previous_results
@@ -260,7 +290,6 @@ Now apply {hat2.value} hat thinking to this.
             f"  🎩 FULL HAT SEQUENCE: {' → '.join(hat.value for hat in hat_sequence)}"
         )
 
-        model = self.model_config.create_agent_model()
         individual_results = {}
         previous_results = {}
 
@@ -269,6 +298,14 @@ Now apply {hat2.value} hat thinking to this.
             logger.info(
                 f"    🎩 Processing {hat_color.value} hat ({i + 1}/{len(hat_sequence)})"
             )
+
+            # 为蓝帽子使用增强模型，其他帽子使用标准模型
+            if hat_color == HatColor.BLUE:
+                model = self.model_config.create_enhanced_model()
+                logger.info(f"      🚀 Using enhanced model for {hat_color.value} hat synthesis")
+            else:
+                model = self.model_config.create_standard_model()
+                logger.info(f"      📎 Using standard model for {hat_color.value} hat")
 
             agent = self.hat_factory.create_hat_agent(
                 hat_color, model, context, previous_results
@@ -352,21 +389,26 @@ Now apply {hat2.value} hat thinking to this.
     ) -> str:
         """构建蓝帽整合输入."""
         input_parts = [
-            f"Original thought: {original_thought}",
+            f"Original question: {original_thought}",
             "",
-            "All hat perspectives to integrate:",
+            "Collected perspectives from different thinking modes:",
         ]
 
         for hat_name, content in all_results.items():
             if hat_name != "blue":  # 避免包含之前的蓝帽结果
-                input_parts.append(f"  {hat_name.title()} hat: {content}")
+                input_parts.append(f"• {hat_name.title()} perspective: {content}")
 
         input_parts.extend(
             [
                 "",
-                "As the Blue Hat (metacognitive orchestrator), provide a unified, comprehensive integration of all perspectives.",
-                "This should be the FINAL, COMPLETE response that users will see.",
-                "Do not separate synthesis and critique - provide one coherent answer.",
+                "TASK: As the Blue Hat (metacognitive thinking), synthesize all perspectives into ONE comprehensive, unified answer.",
+                "REQUIREMENTS:",
+                "1. Provide a single, coherent response directly addressing the original question",
+                "2. Integrate insights from all perspectives naturally",
+                "3. Do NOT list or separate different 'hat' perspectives in your response",
+                "4. Do NOT use section headers like 'White Hat says' or 'Red Hat perspective'",
+                "5. Write as a unified voice providing the final answer",
+                "6. This will be the ONLY response the user sees - make it complete and standalone",
             ]
         )
 
@@ -381,16 +423,18 @@ Now apply {hat2.value} hat thinking to this.
         original_thought: str,
     ) -> str:
         """组合双帽结果."""
-        return f"""Based on the thought: "{original_thought}"
+        # 如果第二个是蓝帽，直接返回其结果（应该已经是综合的）
+        if hat2 == HatColor.BLUE:
+            return content2
 
-{hat1.value.title()} Hat Perspective:
-{content1}
-
-{hat2.value.title()} Hat Perspective:
-{content2}
-
-Integrated Understanding:
-These two perspectives complement each other - the {hat1.value} hat provides {self._get_hat_contribution(hat1)}, while the {hat2.value} hat offers {self._get_hat_contribution(hat2)}. Together, they give us a balanced view that considers both aspects important for this situation."""
+        # 否则创建简单的综合回答
+        if hat1 == HatColor.WHITE and hat2 == HatColor.RED:
+            return f"Regarding '{original_thought}': The factual analysis shows {content1.lower()} while emotionally, {content2.lower()} These perspectives combine to suggest a balanced approach that considers both objective realities and human responses."
+        elif hat1 == HatColor.BLACK and hat2 == HatColor.YELLOW:
+            return f"Considering '{original_thought}': While there are important concerns to address - {content1.lower().strip('.')} - there are also significant opportunities - {content2.lower()} Taking both into account leads to a measured approach that manages risks while pursuing benefits."
+        else:
+            # 通用综合
+            return f"Analyzing '{original_thought}': Drawing from different thinking approaches, we can see that {content1.lower().strip('.')} Additionally, {content2.lower()} Integrating these insights provides a comprehensive understanding of the situation."
 
     def _synthesize_triple_results(
         self,
@@ -399,21 +443,29 @@ These two perspectives complement each other - the {hat1.value} hat provides {se
         original_thought: str,
     ) -> str:
         """综合三帽结果."""
-        synthesis_parts = [f'Thinking about: "{original_thought}"', ""]
-
+        # 尝试创建一个真正综合的回答，而不是列出各个帽子
+        content_pieces = []
         for hat_color in hat_sequence:
             hat_name = hat_color.value
             content = results.get(hat_name, "")
             if content:
-                synthesis_parts.append(f"{hat_name.title()} Hat: {content}")
-                synthesis_parts.append("")
+                # 提取核心见解，而不是原始帽子输出
+                clean_content = content.strip().rstrip('.!')
+                content_pieces.append(clean_content)
 
-        synthesis_parts.append("Integrated Conclusion:")
-        synthesis_parts.append(
-            f"This analysis using {len(hat_sequence)} thinking perspectives reveals a multi-faceted understanding. Each hat contributes its unique viewpoint, creating a comprehensive approach to the question."
-        )
+        if len(content_pieces) >= 3:
+            # 三个或更多视角的综合
+            return f"""Considering the question '{original_thought}', a comprehensive analysis reveals several key insights.
 
-        return "\n".join(synthesis_parts)
+{content_pieces[0].lower()}, which provides the foundational understanding. Building on this, {content_pieces[1].lower()}, adding important nuance to our perspective. Furthermore, {content_pieces[2].lower() if len(content_pieces) > 2 else ''}
+
+Integrating these multiple thinking approaches, the answer emerges as a balanced synthesis that acknowledges the complexity while providing clear direction."""
+        elif len(content_pieces) == 2:
+            return f"Addressing '{original_thought}': {content_pieces[0].lower()}, and additionally, {content_pieces[1].lower()} Together, these insights provide a well-rounded understanding."
+        elif len(content_pieces) == 1:
+            return f"Regarding '{original_thought}': {content_pieces[0]}"
+        else:
+            return f"After thorough consideration of '{original_thought}', a comprehensive analysis across multiple thinking perspectives suggests this requires further exploration."
 
     def _synthesize_full_results(
         self,

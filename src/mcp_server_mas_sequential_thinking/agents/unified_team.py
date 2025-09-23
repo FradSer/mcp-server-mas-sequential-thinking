@@ -51,8 +51,8 @@ class SixHatsTeamBuilder:
         logger.info(f"Building Six Hats team: {self.config.name}")
 
         # Create models
-        team_model = model_config.provider_class(id=model_config.team_model_id)
-        agent_model = model_config.provider_class(id=model_config.agent_model_id)
+        team_model = model_config.provider_class(id=model_config.enhanced_model_id)
+        agent_model = model_config.provider_class(id=model_config.standard_model_id)
 
         # Create hat agents for the sequence
         hat_agents = []

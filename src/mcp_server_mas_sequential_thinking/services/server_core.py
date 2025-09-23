@@ -9,11 +9,8 @@ from pathlib import Path
 from typing import Any
 
 # Lazy import to break circular dependency
-from agno.team.team import Team
 from pydantic import ValidationError
 
-# Lazy import to break circular dependency
-from mcp_server_mas_sequential_thinking.agents import create_team_by_type
 from mcp_server_mas_sequential_thinking.config import (
     DefaultTimeouts,
     DefaultValues,
@@ -25,7 +22,6 @@ from mcp_server_mas_sequential_thinking.config import (
 from mcp_server_mas_sequential_thinking.core import (
     ConfigurationError,
     SessionMemory,
-    TeamCreationError,
     ThoughtData,
 )
 from mcp_server_mas_sequential_thinking.utils import setup_logging
@@ -158,64 +154,6 @@ class EnvironmentInitializer(ServerInitializer):
         """No cleanup needed for environment."""
 
 
-class TeamInitializer(ServerInitializer):
-    """Handles team creation and configuration."""
-
-    def __init__(self) -> None:
-        self._team: Team | None = None
-
-    async def initialize(self, config: ServerConfig) -> None:
-        """Initialize team based on configuration with enhanced error handling."""
-        logger.info(f"Creating {config.team_mode} team")
-
-        try:
-            # Create Six Hats team using unified factory
-            model_config = get_model_config()
-
-            # Map legacy team modes to Six Hats equivalents
-            six_hats_mode_mapping = {
-                "standard": "philosophical",
-                "enhanced": "full",
-                "hybrid": "creative",
-                "enhanced_specialized": "decision",
-            }
-
-            # Use Six Hats mapping
-            six_hats_mode = six_hats_mode_mapping.get(
-                config.team_mode, config.team_mode
-            )
-            logger.info(
-                f"Creating Six Hats team: {six_hats_mode} (from {config.team_mode})"
-            )
-
-            self._team = create_team_by_type(six_hats_mode, model_config)
-
-            if not self._team:
-                raise TeamCreationError(
-                    f"Failed to create Six Hats team of type '{six_hats_mode}'"
-                )
-
-            logger.info(f"Six Hats team initialized successfully: {self._team.name}")
-
-        except Exception as e:
-            if not isinstance(e, TeamCreationError):
-                raise TeamCreationError(
-                    f"Six Hats team initialization failed for type '{config.team_mode}': {e}"
-                ) from e
-            raise
-
-    async def cleanup(self) -> None:
-        """Clean up team resources."""
-        self._team = None
-
-    @property
-    def team(self) -> Team:
-        """Get initialized team."""
-        if self._team is None:
-            raise RuntimeError("Team not initialized")
-        return self._team
-
-
 class ServerState:
     """Manages server state with proper lifecycle and separation of concerns."""
 
@@ -224,10 +162,6 @@ class ServerState:
         self._session: SessionMemory | None = None
         self._initializers = [
             EnvironmentInitializer(),
-            TeamInitializer(),
-        ]
-        self._team_initializer = self._initializers[
-            ProcessingDefaults.TEAM_INITIALIZER_INDEX
         ]
 
     async def initialize(self, config: ServerConfig) -> None:
@@ -238,10 +172,10 @@ class ServerState:
         for initializer in self._initializers:
             await initializer.initialize(config)
 
-        # Create session with initialized team
-        self._session = SessionMemory(team=self._team_initializer.team)
+        # Create session - no team needed in new architecture
+        self._session = SessionMemory()
 
-        logger.info("Server state initialized successfully")
+        logger.info("Server state initialized successfully with Six Hats workflow")
 
     async def cleanup(self) -> None:
         """Clean up all server components."""
