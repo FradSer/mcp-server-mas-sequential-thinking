@@ -27,7 +27,7 @@ grep "ERROR\|WARNING" ~/.sequential_thinking/logs/sequential_thinking.log  # Err
 
 ## Project Overview
 
-**Pure Six Thinking Hats Implementation** built with **Agno v2.0** framework and served via MCP. Features **intelligent routing** with clean architecture (src layout, Python 3.10+). The system processes thoughts through Edward de Bono's Six Thinking Hats methodology with AI-powered routing and model optimization.
+**Pure Multi-Thinking Implementation** built with **Agno v2.0** framework and served via MCP. Features **intelligent routing** with clean architecture (src layout, Python 3.10+). The system processes thoughts through multi-directional thinking methodology with AI-powered routing and model optimization.
 
 ### Core Architecture
 
@@ -36,21 +36,21 @@ grep "ERROR\|WARNING" ~/.sequential_thinking/logs/sequential_thinking.log  # Err
 - Uses refactored service-based architecture with dependency injection
 - Global state management via `ServerState` and `ThoughtProcessor`
 
-**Six Hats Processing Flow:**
+**Multi-Thinking Processing Flow:**
 ```
-External LLM → sequentialthinking tool → ThoughtProcessor → WorkflowExecutor → SixHatsWorkflowRouter → SixHatsSequentialProcessor → Individual Hat Agents → Synthesis
+External LLM → sequentialthinking tool → ThoughtProcessor → WorkflowExecutor → MultiThinkingWorkflowRouter → MultiThinkingSequentialProcessor → Individual Thinking Agents → Synthesis
 ```
 
 **Core Services (Dependency Injection):**
 - **ThoughtProcessor**: Main orchestrator using specialized services
-- **WorkflowExecutor**: Manages Six Hats workflow execution
+- **WorkflowExecutor**: Manages Multi-Thinking workflow execution
 - **ContextBuilder**: Builds context-aware prompts
 - **ResponseFormatter**: Formats final responses
 - **SessionMemory**: Tracks thought history and branching (no Team dependency)
 
-**Six Hats Routing System:**
-- **SixHatsIntelligentRouter**: Complexity analysis determines hat sequence
-- **SixHatsSequentialProcessor**: Executes chosen hat sequence with model optimization
+**Multi-Thinking Routing System:**
+- **MultiThinkingIntelligentRouter**: Complexity analysis determines hat sequence
+- **MultiThinkingSequentialProcessor**: Executes chosen hat sequence with model optimization
 - **HatComplexity levels**: SINGLE, DOUBLE, TRIPLE, FULL sequences
 - **Model Intelligence**: Enhanced model for Blue Hat synthesis, Standard model for individual hats
 
@@ -72,7 +72,7 @@ External LLM → sequentialthinking tool → ThoughtProcessor → WorkflowExecut
 1. **Single Hat**: Simple focused thinking (White Hat facts, Red Hat emotions, etc.)
 2. **Double Hat**: Two-step sequences (e.g., White→Blue for factual synthesis)
 3. **Triple Hat**: Core philosophical thinking (White→Green→Blue)
-4. **Full Sequence**: Complete Six Hats methodology with Blue Hat orchestration
+4. **Full Sequence**: Complete Multi-Thinking methodology with Blue Hat orchestration
 
 ### Key Modules
 
@@ -81,15 +81,15 @@ External LLM → sequentialthinking tool → ThoughtProcessor → WorkflowExecut
 - `core/models.py`: ThoughtData validation and core data structures
 - `config/modernized_config.py`: Provider strategies with Enhanced/Standard model configuration
 
-**Six Hats Implementation:**
-- `processors/six_hats_processor.py`: Main Six Hats sequential processor
-- `processors/six_hats_core.py`: Hat definitions, agent factory, core logic
-- `routing/six_hats_router.py`: Intelligent routing based on thought complexity
+**Multi-Thinking Implementation:**
+- `processors/multi_thinking_processor.py`: Main Multi-Thinking sequential processor
+- `processors/multi_thinking_core.py`: Hat definitions, agent factory, core logic
+- `routing/multi_thinking_router.py`: Intelligent routing based on thought complexity
 - `routing/agno_workflow_router.py`: Agno Workflow integration layer
 
 **Service Layer:**
 - `services/thought_processor_refactored.py`: Main thought processor with dependency injection
-- `services/workflow_executor.py`: Six Hats workflow execution
+- `services/workflow_executor.py`: Multi-Thinking workflow execution
 - `services/context_builder.py`: Context-aware prompt building
 - `services/response_formatter.py`: Response formatting and extraction
 
@@ -103,7 +103,7 @@ External LLM → sequentialthinking tool → ThoughtProcessor → WorkflowExecut
 
 **Architecture Characteristics:**
 - **Clean Architecture**: Dependency injection, separation of concerns, service-based design
-- **Six Hats Focus**: Pure implementation without legacy multi-agent complexity
+- **Multi-Thinking Focus**: Pure implementation without legacy multi-agent complexity
 - **Model Optimization**: Smart model selection (Enhanced for synthesis, Standard for processing)
 - **Modern Python**: Dataclasses, type hints, async/await, pattern matching
 - **Environment-based config**: No config files, all via environment variables
@@ -138,14 +138,14 @@ ANTHROPIC_STANDARD_MODEL_ID="claude-3-5-haiku-20241022"   # Processing
 ## Agno v2.0 Integration
 
 **Framework Features:**
-- **Workflow Integration**: Uses Agno Workflow system for Six Hats processing
+- **Workflow Integration**: Uses Agno Workflow system for Multi-Thinking processing
 - **Agent Factory**: Creates specialized hat agents with ReasoningTools
 - **Performance**: ~10,000x faster agent creation, ~50x less memory vs LangGraph
 - **Version**: Requires `agno>=2.0.5`
 
 **Key Integration Points:**
-- `SixHatsWorkflowRouter`: Bridges MCP and Agno Workflow systems
-- `SixHatsAgentFactory`: Creates individual hat agents using Agno v2.0
+- `MultiThinkingWorkflowRouter`: Bridges MCP and Agno Workflow systems
+- `MultiThinkingAgentFactory`: Creates individual hat agents using Agno v2.0
 - **StepOutput**: Workflow results converted to Agno StepOutput format
 
 **For Agno Documentation**: Use deepwiki MCP reference with repoName: `agno-agi/agno`
