@@ -32,49 +32,49 @@ from mcp_server_mas_sequential_thinking.processors.multi_thinking_processor impo
 
 @dataclass
 class MultiThinkingWorkflowResult:
-    """Result from Six Hats workflow execution."""
+    """Result from Multi-Thinking workflow execution."""
 
     content: str
     strategy_used: str
     processing_time: float
     complexity_score: float
     step_name: str
-    hat_sequence: list[str]
+    thinking_sequence: list[str]
     cost_reduction: float
 
 
 class MultiThinkingWorkflowRouter:
-    """Pure Six Thinking Hats workflow router using Agno v2.0."""
+    """Pure Multi-Thinking workflow router using Agno v2.0."""
 
     def __init__(self) -> None:
-        """Initialize Six Hats workflow router."""
+        """Initialize Multi-Thinking workflow router."""
         self.model_config = get_model_config()
 
-        # Initialize Six Hats processor
-        self.six_hats_processor = MultiThinkingSequentialProcessor()
+        # Initialize Multi-Thinking processor
+        self.multi_thinking_processor = MultiThinkingSequentialProcessor()
 
-        # Create Six Hats processing step
-        self.six_hats_step = self._create_six_hats_step()
+        # Create Multi-Thinking processing step
+        self.multi_thinking_step = self._create_multi_thinking_step()
 
-        # Create router that always selects Six Hats
+        # Create router that always selects Multi-Thinking
         self.router = Router(
-            name="six_hats_router",
-            selector=self._six_hats_selector,
-            choices=[self.six_hats_step],
+            name="multi_thinking_router",
+            selector=self._multi_thinking_selector,
+            choices=[self.multi_thinking_step],
         )
 
         # Create main workflow
         self.workflow = Workflow(
-            name="six_hats_thinking_workflow",
+            name="multi_thinking_workflow",
             steps=[self.router],
         )
 
-        logger.info("Six Hats Workflow Router initialized")
+        logger.info("Multi-Thinking Workflow Router initialized")
 
-    def _six_hats_selector(self, step_input: StepInput) -> list[Step]:
-        """Selector that always returns Six Hats processing."""
+    def _multi_thinking_selector(self, step_input: StepInput) -> list[Step]:
+        """Selector that always returns Multi-Thinking processing."""
         try:
-            logger.info("🎩 SIX HATS WORKFLOW ROUTING:")
+            logger.info("🎩 MULTI-THINKING WORKFLOW ROUTING:")
 
             # Extract thought content for logging
             if isinstance(step_input.input, dict):
@@ -90,24 +90,24 @@ class MultiThinkingWorkflowRouter:
                 f"  📝 Input: {thought_content[:100]}{'...' if len(thought_content) > 100 else ''}"
             )
             logger.info(f"  🔢 Progress: {thought_number}/{total_thoughts}")
-            logger.info("  ✅ Six Hats selected - exclusive thinking methodology")
+            logger.info("  ✅ Multi-Thinking selected - exclusive thinking methodology")
 
-            return [self.six_hats_step]
+            return [self.multi_thinking_step]
 
         except Exception as e:
-            logger.exception(f"Error in Six Hats selector: {e}")
-            logger.warning("Continuing with Six Hats processing despite error")
-            return [self.six_hats_step]
+            logger.exception(f"Error in Multi-Thinking selector: {e}")
+            logger.warning("Continuing with Multi-Thinking processing despite error")
+            return [self.multi_thinking_step]
 
-    def _create_six_hats_step(self) -> Step:
+    def _create_multi_thinking_step(self) -> Step:
         """Create Six Thinking Hats processing step."""
 
-        async def six_hats_executor(
+        async def multi_thinking_executor(
             step_input: StepInput, session_state: dict[str, Any]
         ) -> StepOutput:
-            """Execute Six Hats thinking process."""
+            """Execute Multi-Thinking thinking process."""
             try:
-                logger.info("🎩 SIX HATS STEP EXECUTION:")
+                logger.info("🎩 MULTI-THINKING STEP EXECUTION:")
 
                 # Extract thought content and metadata
                 if isinstance(step_input.input, dict):
@@ -140,46 +140,46 @@ class MultiThinkingWorkflowRouter:
                 logger.info(f"  📝 Input: {thought_content[:100]}...")
                 logger.info(f"  🔢 Thought: {thought_number}/{total_thoughts}")
 
-                # Process with Six Hats
-                result = await self.six_hats_processor.process_thought_with_six_hats(
+                # Process with Multi-Thinking
+                result = await self.multi_thinking_processor.process_with_multi_thinking(
                     thought_data, context
                 )
 
                 # Store metadata in session_state
                 session_state["current_strategy"] = result.strategy_used
                 session_state["current_complexity_score"] = result.complexity_score
-                session_state["six_hats_sequence"] = result.hat_sequence
+                session_state["thinking_sequence"] = result.thinking_sequence
                 session_state["cost_reduction"] = result.cost_reduction
 
-                logger.info(f"  ✅ Six Hats completed: {result.strategy_used}")
+                logger.info(f"  ✅ Multi-Thinking completed: {result.strategy_used}")
                 logger.info(f"  📊 Complexity: {result.complexity_score:.1f}")
                 logger.info(f"  💰 Cost Reduction: {result.cost_reduction:.1f}%")
 
                 return create_multi_thinking_step_output(result)
 
             except Exception as e:
-                logger.exception(f"  ❌ Six Hats execution failed: {e}")
+                logger.exception(f"  ❌ Multi-Thinking execution failed: {e}")
                 return StepOutput(
-                    content=f"Six Hats processing failed: {e!s}",
+                    content=f"Multi-Thinking processing failed: {e!s}",
                     success=False,
                     error=str(e),
-                    step_name="six_hats_error",
+                    step_name="multi_thinking_error",
                 )
 
         return Step(
-            name="six_hats_processing",
-            executor=six_hats_executor,
+            name="multi_thinking_processing",
+            executor=multi_thinking_executor,
             description="Six Thinking Hats sequential processing",
         )
 
     async def process_thought_workflow(
         self, thought_data: "ThoughtData", context_prompt: str
     ) -> MultiThinkingWorkflowResult:
-        """Process thought using Six Hats workflow."""
+        """Process thought using Multi-Thinking workflow."""
         start_time = time.time()
 
         try:
-            logger.info("🚀 SIX HATS WORKFLOW INITIALIZATION:")
+            logger.info("🚀 MULTI-THINKING WORKFLOW INITIALIZATION:")
             logger.info(
                 f"  📝 Thought: {thought_data.thought[:100]}{'...' if len(thought_data.thought) > 100 else ''}"
             )
@@ -191,7 +191,7 @@ class MultiThinkingWorkflowRouter:
                 f"  ⏰ Start Time: {time.strftime('%H:%M:%S', time.localtime(start_time))}"
             )
 
-            # Prepare workflow input for Six Hats
+            # Prepare workflow input for Multi-Thinking
             workflow_input = {
                 "thought": thought_data.thought,
                 "thought_number": thought_data.thoughtNumber,
@@ -215,10 +215,10 @@ class MultiThinkingWorkflowRouter:
             logger.info(f"  📈 Metadata: {session_state}")
 
             logger.info(
-                f"▶️  EXECUTING Six Hats workflow for thought #{thought_data.thoughtNumber}"
+                f"▶️  EXECUTING Multi-Thinking workflow for thought #{thought_data.thoughtNumber}"
             )
 
-            # Execute Six Hats workflow
+            # Execute Multi-Thinking workflow
             logger.info("🔄 WORKFLOW EXECUTION START...")
             result = await self.workflow.arun(
                 input=workflow_input, session_state=session_state
@@ -240,13 +240,13 @@ class MultiThinkingWorkflowRouter:
 
             # Get metadata from session_state
             complexity_score = session_state.get("current_complexity_score", 0.0)
-            strategy_used = session_state.get("current_strategy", "six_hats")
-            hat_sequence = session_state.get("six_hats_sequence", [])
+            strategy_used = session_state.get("current_strategy", "multi_thinking")
+            thinking_sequence = session_state.get("thinking_sequence", [])
             cost_reduction = session_state.get("cost_reduction", 0.0)
 
             logger.info("📊 WORKFLOW RESULT COMPILATION:")
             logger.info(f"  🎯 Strategy used: {strategy_used}")
-            logger.info(f"  🧠 Thinking sequence: {' → '.join(hat_sequence)}")
+            logger.info(f"  🧠 Thinking sequence: {' → '.join(thinking_sequence)}")
             logger.info(f"  📈 Complexity score: {complexity_score:.1f}")
             logger.info(f"  💰 Cost reduction: {cost_reduction:.1f}%")
             logger.info(f"  ⏱️  Processing time: {processing_time:.3f}s")
@@ -256,12 +256,12 @@ class MultiThinkingWorkflowRouter:
                 strategy_used=strategy_used,
                 processing_time=processing_time,
                 complexity_score=complexity_score,
-                step_name="six_hats_execution",
-                hat_sequence=hat_sequence,
+                step_name="multi_thinking_execution",
+                thinking_sequence=thinking_sequence,
                 cost_reduction=cost_reduction,
             )
 
-            logger.info("🎉 SIX HATS WORKFLOW COMPLETION:")
+            logger.info("🎉 MULTI-THINKING WORKFLOW COMPLETION:")
             logger.info(
                 f"  ✅ Completed: strategy={strategy_used}, "
                 f"time={processing_time:.3f}s, score={complexity_score:.1f}, "
@@ -273,16 +273,16 @@ class MultiThinkingWorkflowRouter:
         except Exception as e:
             processing_time = time.time() - start_time
             logger.exception(
-                f"Six Hats workflow execution failed after {processing_time:.3f}s: {e}"
+                f"Multi-Thinking workflow execution failed after {processing_time:.3f}s: {e}"
             )
 
             return MultiThinkingWorkflowResult(
-                content=f"Error processing thought with Six Hats: {e!s}",
+                content=f"Error processing thought with Multi-Thinking: {e!s}",
                 strategy_used="error_fallback",
                 processing_time=processing_time,
                 complexity_score=0.0,
                 step_name="error_handling",
-                hat_sequence=[],
+                thinking_sequence=[],
                 cost_reduction=0.0,
             )
 
@@ -390,7 +390,7 @@ class MultiThinkingWorkflowRouter:
             ):
                 return result
 
-            return "Six Hats processing completed successfully"
+            return "Multi-Thinking processing completed successfully"
 
         return extract_recursive(result)
 
