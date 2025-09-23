@@ -18,7 +18,7 @@ from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
 from re import Pattern
-from typing import Any
+from typing import Any, Optional
 
 
 class LogLevel(Enum):
@@ -238,7 +238,7 @@ class LoggingConfig:
 
     def create_handlers(self) -> list[logging.Handler]:
         """Create logging handlers based on configuration."""
-        handlers = []
+        handlers: list[logging.Handler] = []
 
         # Create singleton sensitive data filter for reuse
         sensitive_filter = SensitiveDataFilter()
@@ -312,18 +312,24 @@ class SmartLogger:
     def __init__(self, log_level: SmartLogLevel = SmartLogLevel.PERFORMANCE) -> None:
         self.log_level = log_level
         self.session_snapshots: list[ProcessingSnapshot] = []
-        self.logger = None  # Will be initialized later
+        self.logger: Optional[logging.Logger] = None  # Will be initialized later
 
     def _ensure_logger(self) -> None:
         """Ensure logger is initialized."""
         if self.logger is None:
             self.logger = LoggerFactory.get_logger(__name__)
 
+    def _get_logger(self) -> logging.Logger:
+        """Get logger, ensuring it's initialized."""
+        self._ensure_logger()
+        assert self.logger is not None
+        return self.logger
+
     def log_thought_start(self, thought_data) -> None:
         """Log thought processing start with minimal noise."""
         if self.log_level in [SmartLogLevel.ROUTING, SmartLogLevel.DEBUG]:
             self._ensure_logger()
-            self._ensure_logger(); self.logger.info(f"Processing thought #{thought_data.thoughtNumber}: {thought_data.thought[:60]}...")
+            self._get_logger().info(f"Processing thought #{thought_data.thoughtNumber}: {thought_data.thought[:60]}...")
 
     def log_routing_decision(
         self,
@@ -336,15 +342,15 @@ class SmartLogger:
         self._ensure_logger()
         # Always log if it's a potentially expensive decision
         if estimated_time > 120 or complexity_score > 30:
-            self._ensure_logger(); self.logger.warning(
+            self._get_logger().warning(
                 f"🚨 Expensive routing: {strategy_name} (complexity: {complexity_score:.1f}, "
                 f"est. time: {estimated_time:.0f}s)"
             )
             if reasoning and self.log_level == SmartLogLevel.DEBUG:
-                self._ensure_logger(); self.logger.info(f"Routing reasoning: {reasoning}")
+                self._get_logger().info(f"Routing reasoning: {reasoning}")
 
         elif self.log_level in [SmartLogLevel.ROUTING, SmartLogLevel.DEBUG]:
-            self._ensure_logger(); self.logger.info(f"Route: {strategy_name} (complexity: {complexity_score:.1f})")
+            self._get_logger().info(f"Route: {strategy_name} (complexity: {complexity_score:.1f})")
 
     def log_processing_complete(self, snapshot: ProcessingSnapshot) -> None:
         """Log completion with adaptive verbosity based on performance."""
@@ -360,11 +366,11 @@ class SmartLogger:
             issues.append(f"INEFFICIENT ({snapshot.efficiency_score:.2f})")
 
         if issues:
-            self._ensure_logger(); self.logger.warning(
+            self._get_logger().warning(
                 f"⚠️ Thought #{snapshot.thought_id} completed with issues: {', '.join(issues)}"
             )
         elif self.log_level in [SmartLogLevel.PERFORMANCE, SmartLogLevel.ROUTING, SmartLogLevel.DEBUG]:
-            self._ensure_logger(); self.logger.info(
+            self._get_logger().info(
                 f"✅ Thought #{snapshot.thought_id} completed "
                 f"({snapshot.processing_time:.1f}s, eff: {snapshot.efficiency_score:.2f})"
             )
@@ -379,14 +385,14 @@ class SmartLogger:
         slow_thoughts = [s for s in self.session_snapshots if s.is_slow]
         expensive_thoughts = [s for s in self.session_snapshots if s.is_expensive]
 
-        self._ensure_logger(); self.logger.info(f"📊 Session Summary: {len(self.session_snapshots)} thoughts, "
+        self._get_logger().info(f"📊 Session Summary: {len(self.session_snapshots)} thoughts, "
                        f"{total_time:.1f}s total, {avg_efficiency:.2f} avg efficiency")
 
         if slow_thoughts:
-            self._ensure_logger(); self.logger.warning(f"🐌 {len(slow_thoughts)} slow thoughts detected")
+            self._get_logger().warning(f"🐌 {len(slow_thoughts)} slow thoughts detected")
 
         if expensive_thoughts:
-            self._ensure_logger(); self.logger.warning(f"💰 {len(expensive_thoughts)} expensive thoughts detected")
+            self._get_logger().warning(f"💰 {len(expensive_thoughts)} expensive thoughts detected")
 
     def log_response_quality(self, content: str, thought_number: int) -> None:
         """Log response quality issues."""
@@ -395,13 +401,13 @@ class SmartLogger:
         # Check for academic over-complexity
         academic_indicators = content.count("$$") + content.count("\\(") + content.count("###")
         if academic_indicators > 5:
-            self._ensure_logger(); self.logger.warning(f"🎓 Thought #{thought_number}: Overly academic response detected")
+            self._get_logger().warning(f"🎓 Thought #{thought_number}: Overly academic response detected")
 
         # Check for reasonable length
         if content_length > 2000:
-            self._ensure_logger(); self.logger.warning(f"📝 Thought #{thought_number}: Very long response ({content_length} chars)")
+            self._get_logger().warning(f"📝 Thought #{thought_number}: Very long response ({content_length} chars)")
         elif self.log_level == SmartLogLevel.DEBUG:
-            self._ensure_logger(); self.logger.debug(f"Response length: {content_length} chars")
+            self._get_logger().debug(f"Response length: {content_length} chars")
 
     def force_debug_next(self) -> None:
         """Force debug level for next operations (for troubleshooting)."""
@@ -416,12 +422,18 @@ class PerformanceMonitor:
         self.baseline_time_per_thought = 30.0
         self.recent_snapshots: list[ProcessingSnapshot] = []
         self.max_recent_count = 10
-        self.logger = None  # Will be initialized later
+        self.logger: Optional[logging.Logger] = None  # Will be initialized later
 
     def _ensure_logger(self) -> None:
         """Ensure logger is initialized."""
         if self.logger is None:
             self.logger = LoggerFactory.get_logger(__name__)
+
+    def _get_logger(self) -> logging.Logger:
+        """Get logger, ensuring it's initialized."""
+        self._ensure_logger()
+        assert self.logger is not None
+        return self.logger
 
     def record_snapshot(self, snapshot: ProcessingSnapshot) -> None:
         """Record a processing snapshot and check for degradation."""
@@ -442,10 +454,10 @@ class PerformanceMonitor:
         recent_avg_time = sum(s.processing_time for s in self.recent_snapshots[-3:]) / 3
 
         if recent_efficiency < self.baseline_efficiency * 0.7:
-            self._ensure_logger(); self.logger.warning(f"📉 Performance degradation detected: efficiency dropped to {recent_efficiency:.2f}")
+            self._get_logger().warning(f"📉 Performance degradation detected: efficiency dropped to {recent_efficiency:.2f}")
 
         if recent_avg_time > self.baseline_time_per_thought * 2:
-            self._ensure_logger(); self.logger.warning(f"🐌 Processing time increased significantly: {recent_avg_time:.1f}s avg")
+            self._get_logger().warning(f"🐌 Processing time increased significantly: {recent_avg_time:.1f}s avg")
 
     def get_performance_recommendation(self) -> str | None:
         """Get recommendation for performance improvement."""
@@ -479,12 +491,18 @@ class MetricsLogger:
 
     def __init__(self, config: MetricsConfig | None = None) -> None:
         self.config = config or MetricsConfig()
-        self.logger = None  # Will be initialized later
+        self.logger: Optional[logging.Logger] = None  # Will be initialized later
 
     def _ensure_logger(self) -> None:
         """Ensure logger is initialized."""
         if self.logger is None:
             self.logger = LoggerFactory.get_logger(__name__)
+
+    def _get_logger(self) -> logging.Logger:
+        """Get logger, ensuring it's initialized."""
+        self._ensure_logger()
+        assert self.logger is not None
+        return self.logger
 
     def log_section_header(
         self, title: str, separator_length: int | None = None
@@ -622,15 +640,15 @@ class MetricsLogger:
     def _log_with_level(self, message: str, level: LogLevel) -> None:
         """Log message with specified level."""
         if level == LogLevel.DEBUG:
-            self._ensure_logger(); self.logger.debug(message)
+            self._get_logger().debug(message)
         elif level == LogLevel.WARNING:
-            self._ensure_logger(); self.logger.warning(message)
+            self._get_logger().warning(message)
         elif level == LogLevel.ERROR:
-            self._ensure_logger(); self.logger.error(message)
+            self._get_logger().error(message)
         elif level == LogLevel.CRITICAL:
-            self._ensure_logger(); self.logger.critical(message)
+            self._get_logger().critical(message)
         else:
-            self._ensure_logger(); self.logger.info(message)
+            self._get_logger().info(message)
 
 
 class PerformanceTracker:
@@ -638,7 +656,7 @@ class PerformanceTracker:
 
     def __init__(self) -> None:
         self.metrics_logger = MetricsLogger()
-        self.processing_times = []
+        self.processing_times: list[float] = []
         self.success_count = 0
         self.total_attempts = 0
 
@@ -741,6 +759,7 @@ class LoggerFactory:
         """Get the configured smart log level."""
         if not cls._config:
             cls.configure()
+        assert cls._config is not None
         return cls._config.smart_log_level
 
     @classmethod
@@ -748,6 +767,7 @@ class LoggerFactory:
         """Check if performance issues should be logged."""
         if not cls._config:
             cls.configure()
+        assert cls._config is not None
         return cls._config.log_performance_issues
 
     @classmethod
@@ -755,6 +775,7 @@ class LoggerFactory:
         """Check if response quality should be logged."""
         if not cls._config:
             cls.configure()
+        assert cls._config is not None
         return cls._config.log_response_quality
 
     @classmethod
