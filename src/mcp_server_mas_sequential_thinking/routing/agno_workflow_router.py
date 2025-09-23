@@ -8,15 +8,18 @@
 import logging
 import time
 from dataclasses import dataclass
+from typing import Any, Dict, List, TYPE_CHECKING
 
 from agno.workflow.router import Router
 from agno.workflow.step import Step
 from agno.workflow.types import StepInput, StepOutput
 from agno.workflow.workflow import Workflow
 
+if TYPE_CHECKING:
+    from mcp_server_mas_sequential_thinking.core.models import ThoughtData
+
 logger = logging.getLogger(__name__)
 from mcp_server_mas_sequential_thinking.config.modernized_config import get_model_config
-from mcp_server_mas_sequential_thinking.core.models import ThoughtData
 
 # Import Six Hats support
 from mcp_server_mas_sequential_thinking.processors.six_hats_processor import (
@@ -36,7 +39,7 @@ class SixHatsWorkflowResult:
     processing_time: float
     complexity_score: float
     step_name: str
-    hat_sequence: list[str]
+    hat_sequence: List[str]
     cost_reduction: float
 
 
@@ -68,7 +71,7 @@ class SixHatsWorkflowRouter:
 
         logger.info("Six Hats Workflow Router initialized")
 
-    def _six_hats_selector(self, step_input: StepInput) -> list[Step]:
+    def _six_hats_selector(self, step_input: StepInput) -> List[Step]:
         """Selector that always returns Six Hats processing."""
         try:
             logger.info("🎩 SIX HATS WORKFLOW ROUTING:")
@@ -83,7 +86,9 @@ class SixHatsWorkflowRouter:
                 thought_number = 1
                 total_thoughts = 1
 
-            logger.info(f"  📝 Input: {thought_content[:100]}{'...' if len(thought_content) > 100 else ''}")
+            logger.info(
+                f"  📝 Input: {thought_content[:100]}{'...' if len(thought_content) > 100 else ''}"
+            )
             logger.info(f"  🔢 Progress: {thought_number}/{total_thoughts}")
             logger.info("  ✅ Six Hats selected - exclusive thinking methodology")
 
@@ -98,7 +103,7 @@ class SixHatsWorkflowRouter:
         """Create Six Thinking Hats processing step."""
 
         async def six_hats_executor(
-            step_input: StepInput, session_state: dict
+            step_input: StepInput, session_state: Dict[str, Any]
         ) -> StepOutput:
             """Execute Six Hats thinking process."""
             try:
@@ -106,7 +111,9 @@ class SixHatsWorkflowRouter:
 
                 # Extract thought content and metadata
                 if isinstance(step_input.input, dict):
-                    thought_content = step_input.input.get("thought", str(step_input.input))
+                    thought_content = step_input.input.get(
+                        "thought", str(step_input.input)
+                    )
                     thought_number = step_input.input.get("thought_number", 1)
                     total_thoughts = step_input.input.get("total_thoughts", 1)
                     context = step_input.input.get("context", "")
@@ -116,7 +123,9 @@ class SixHatsWorkflowRouter:
                     total_thoughts = 1
                     context = ""
 
-                # Create ThoughtData
+                # Create ThoughtData - dynamic import to avoid circular dependency
+                from mcp_server_mas_sequential_thinking.core.models import ThoughtData
+
                 thought_data = ThoughtData(
                     thought=thought_content,
                     thoughtNumber=thought_number,
@@ -154,7 +163,7 @@ class SixHatsWorkflowRouter:
                     content=f"Six Hats processing failed: {e!s}",
                     success=False,
                     error=str(e),
-                    step_name="six_hats_error"
+                    step_name="six_hats_error",
                 )
 
         return Step(
@@ -164,17 +173,23 @@ class SixHatsWorkflowRouter:
         )
 
     async def process_thought_workflow(
-        self, thought_data: ThoughtData, context_prompt: str
+        self, thought_data: "ThoughtData", context_prompt: str
     ) -> SixHatsWorkflowResult:
         """Process thought using Six Hats workflow."""
         start_time = time.time()
 
         try:
             logger.info("🚀 SIX HATS WORKFLOW INITIALIZATION:")
-            logger.info(f"  📝 Thought: {thought_data.thought[:100]}{'...' if len(thought_data.thought) > 100 else ''}")
-            logger.info(f"  🔢 Thought Number: {thought_data.thoughtNumber}/{thought_data.totalThoughts}")
+            logger.info(
+                f"  📝 Thought: {thought_data.thought[:100]}{'...' if len(thought_data.thought) > 100 else ''}"
+            )
+            logger.info(
+                f"  🔢 Thought Number: {thought_data.thoughtNumber}/{thought_data.totalThoughts}"
+            )
             logger.info(f"  📋 Context Length: {len(context_prompt)} chars")
-            logger.info(f"  ⏰ Start Time: {time.strftime('%H:%M:%S', time.localtime(start_time))}")
+            logger.info(
+                f"  ⏰ Start Time: {time.strftime('%H:%M:%S', time.localtime(start_time))}"
+            )
 
             # Prepare workflow input for Six Hats
             workflow_input = {
@@ -189,7 +204,7 @@ class SixHatsWorkflowRouter:
             logger.info(f"  📏 Input Size: {len(str(workflow_input))} chars")
 
             # Initialize session_state for metadata tracking
-            session_state = {
+            session_state: Dict[str, Any] = {
                 "start_time": start_time,
                 "thought_number": thought_data.thoughtNumber,
                 "total_thoughts": thought_data.totalThoughts,
@@ -199,7 +214,9 @@ class SixHatsWorkflowRouter:
             logger.info(f"  🔑 State Keys: {list(session_state.keys())}")
             logger.info(f"  📈 Metadata: {session_state}")
 
-            logger.info(f"▶️  EXECUTING Six Hats workflow for thought #{thought_data.thoughtNumber}")
+            logger.info(
+                f"▶️  EXECUTING Six Hats workflow for thought #{thought_data.thoughtNumber}"
+            )
 
             # Execute Six Hats workflow
             logger.info("🔄 WORKFLOW EXECUTION START...")
@@ -214,8 +231,12 @@ class SixHatsWorkflowRouter:
             content = self._extract_clean_content(result)
 
             logger.info("📋 CONTENT VALIDATION:")
-            logger.info(f"  ✅ Content extracted successfully: {len(content)} characters")
-            logger.info(f"  📝 Content preview: {content[:150]}{'...' if len(content) > 150 else ''}")
+            logger.info(
+                f"  ✅ Content extracted successfully: {len(content)} characters"
+            )
+            logger.info(
+                f"  📝 Content preview: {content[:150]}{'...' if len(content) > 150 else ''}"
+            )
 
             # Get metadata from session_state
             complexity_score = session_state.get("current_complexity_score", 0.0)
@@ -251,7 +272,9 @@ class SixHatsWorkflowRouter:
 
         except Exception as e:
             processing_time = time.time() - start_time
-            logger.exception(f"Six Hats workflow execution failed after {processing_time:.3f}s: {e}")
+            logger.exception(
+                f"Six Hats workflow execution failed after {processing_time:.3f}s: {e}"
+            )
 
             return SixHatsWorkflowResult(
                 content=f"Error processing thought with Six Hats: {e!s}",
@@ -263,16 +286,25 @@ class SixHatsWorkflowRouter:
                 cost_reduction=0.0,
             )
 
-    def _extract_clean_content(self, result) -> str:
+    def _extract_clean_content(self, result: Any) -> str:
         """Extract clean content from workflow result."""
-        def extract_recursive(obj, depth=0):
+
+        def extract_recursive(obj: Any, depth: int = 0) -> str:
             """Recursively extract clean content from nested objects."""
             if depth > 10:  # Prevent infinite recursion
                 return str(obj)
 
             # Handle dictionary with common content keys
             if isinstance(obj, dict):
-                for key in ["result", "content", "message", "text", "response", "output", "answer"]:
+                for key in [
+                    "result",
+                    "content",
+                    "message",
+                    "text",
+                    "response",
+                    "output",
+                    "answer",
+                ]:
                     if key in obj:
                         return extract_recursive(obj[key], depth + 1)
                 # Fallback to any string content
@@ -304,12 +336,22 @@ class SixHatsWorkflowRouter:
                 content = obj.strip()
 
                 # Remove object representations
-                if any(content.startswith(pattern) for pattern in [
-                    "RunOutput(", "TeamRunOutput(", "StepOutput(", "WorkflowResult(",
-                    "{'result':", '{"result":', "{'content':", '{"content":',
-                ]):
+                if any(
+                    content.startswith(pattern)
+                    for pattern in [
+                        "RunOutput(",
+                        "TeamRunOutput(",
+                        "StepOutput(",
+                        "WorkflowResult(",
+                        "{'result':",
+                        '{"result":',
+                        "{'content':",
+                        '{"content":',
+                    ]
+                ):
                     # Try to extract content using regex
                     import re
+
                     patterns = [
                         (r"content='([^']*)'", 1),
                         (r'content="([^"]*)"', 1),
@@ -328,7 +370,11 @@ class SixHatsWorkflowRouter:
 
                     # Clean up object syntax
                     cleaned = re.sub(r'[{}()"\']', " ", content)
-                    cleaned = re.sub(r"\b(RunOutput|TeamRunOutput|StepOutput|content|result|success|error)\b", " ", cleaned)
+                    cleaned = re.sub(
+                        r"\b(RunOutput|TeamRunOutput|StepOutput|content|result|success|error)\b",
+                        " ",
+                        cleaned,
+                    )
                     cleaned = re.sub(r"\s+", " ", cleaned).strip()
 
                     if len(cleaned) > 20:
@@ -338,9 +384,10 @@ class SixHatsWorkflowRouter:
 
             # Fallback
             result = str(obj).strip()
-            if len(result) > 20 and not any(result.startswith(pattern) for pattern in [
-                "RunOutput(", "TeamRunOutput(", "StepOutput(", "<"
-            ]):
+            if len(result) > 20 and not any(
+                result.startswith(pattern)
+                for pattern in ["RunOutput(", "TeamRunOutput(", "StepOutput(", "<"]
+            ):
                 return result
 
             return "Six Hats processing completed successfully"

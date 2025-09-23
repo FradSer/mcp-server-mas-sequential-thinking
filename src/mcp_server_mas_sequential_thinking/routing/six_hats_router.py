@@ -11,12 +11,15 @@
 import logging
 from dataclasses import dataclass, field
 from enum import Enum
+from typing import TYPE_CHECKING
 
 from .ai_complexity_analyzer import AIComplexityAnalyzer
 from .complexity_types import ComplexityMetrics
 
+if TYPE_CHECKING:
+    from mcp_server_mas_sequential_thinking.core.models import ThoughtData
+
 logger = logging.getLogger(__name__)
-from mcp_server_mas_sequential_thinking.core.models import ThoughtData
 from mcp_server_mas_sequential_thinking.processors.six_hats_core import (
     HatColor,
     HatComplexity,
@@ -27,18 +30,20 @@ from mcp_server_mas_sequential_thinking.processors.six_hats_core import (
 
 class ProblemType(Enum):
     """问题类型分类."""
-    FACTUAL = "factual"              # 事实性问题
-    EMOTIONAL = "emotional"          # 情感性问题
-    CREATIVE = "creative"            # 创造性问题
-    EVALUATIVE = "evaluative"        # 评估性问题
+
+    FACTUAL = "factual"  # 事实性问题
+    EMOTIONAL = "emotional"  # 情感性问题
+    CREATIVE = "creative"  # 创造性问题
+    EVALUATIVE = "evaluative"  # 评估性问题
     PHILOSOPHICAL = "philosophical"  # 哲学性问题
-    DECISION = "decision"            # 决策性问题
-    GENERAL = "general"              # 一般性问题
+    DECISION = "decision"  # 决策性问题
+    GENERAL = "general"  # 一般性问题
 
 
 @dataclass
 class ProblemCharacteristics:
     """问题特征分析结果."""
+
     primary_type: ProblemType
     secondary_types: list[ProblemType] = field(default_factory=list)
 
@@ -61,6 +66,7 @@ class ProblemCharacteristics:
 @dataclass
 class HatSequenceStrategy:
     """帽子序列策略."""
+
     name: str
     complexity: HatComplexity
     hat_sequence: list[HatColor]
@@ -76,51 +82,168 @@ class ProblemAnalyzer:
     TYPE_INDICATORS = {
         ProblemType.FACTUAL: {
             # 英文关键词
-            "what", "when", "where", "who", "how many", "statistics", "data", "facts",
-            "information", "definition", "explain", "describe", "list",
+            "what",
+            "when",
+            "where",
+            "who",
+            "how many",
+            "statistics",
+            "data",
+            "facts",
+            "information",
+            "definition",
+            "explain",
+            "describe",
+            "list",
             # 中文关键词
-            "什么", "何时", "哪里", "谁", "多少", "统计", "数据", "事实",
-            "信息", "定义", "解释", "描述", "列出", "介绍"
+            "什么",
+            "何时",
+            "哪里",
+            "谁",
+            "多少",
+            "统计",
+            "数据",
+            "事实",
+            "信息",
+            "定义",
+            "解释",
+            "描述",
+            "列出",
+            "介绍",
         },
         ProblemType.EMOTIONAL: {
             # 英文关键词
-            "feel", "emotion", "sense", "intuition", "gut", "heart", "passion",
-            "worry", "excited", "concerned", "hopeful", "afraid",
+            "feel",
+            "emotion",
+            "sense",
+            "intuition",
+            "gut",
+            "heart",
+            "passion",
+            "worry",
+            "excited",
+            "concerned",
+            "hopeful",
+            "afraid",
             # 中文关键词
-            "感觉", "情感", "感受", "直觉", "内心", "担心", "兴奋", "关心", "希望", "害怕"
+            "感觉",
+            "情感",
+            "感受",
+            "直觉",
+            "内心",
+            "担心",
+            "兴奋",
+            "关心",
+            "希望",
+            "害怕",
         },
         ProblemType.CREATIVE: {
             # 英文关键词
-            "creative", "innovative", "brainstorm", "alternative", "new idea",
-            "think outside", "novel", "original", "imagination", "possibility",
+            "creative",
+            "innovative",
+            "brainstorm",
+            "alternative",
+            "new idea",
+            "think outside",
+            "novel",
+            "original",
+            "imagination",
+            "possibility",
             # 中文关键词
-            "创造", "创新", "头脑风暴", "替代", "新想法", "新颖", "原创", "想象", "可能性"
+            "创造",
+            "创新",
+            "头脑风暴",
+            "替代",
+            "新想法",
+            "新颖",
+            "原创",
+            "想象",
+            "可能性",
         },
         ProblemType.EVALUATIVE: {
             # 英文关键词
-            "evaluate", "assess", "compare", "judge", "rate", "pros and cons",
-            "advantages", "disadvantages", "better", "worse", "best",
+            "evaluate",
+            "assess",
+            "compare",
+            "judge",
+            "rate",
+            "pros and cons",
+            "advantages",
+            "disadvantages",
+            "better",
+            "worse",
+            "best",
             # 中文关键词
-            "评估", "评价", "比较", "判断", "评级", "优缺点", "优势", "劣势", "更好", "最好"
+            "评估",
+            "评价",
+            "比较",
+            "判断",
+            "评级",
+            "优缺点",
+            "优势",
+            "劣势",
+            "更好",
+            "最好",
         },
         ProblemType.PHILOSOPHICAL: {
             # 英文关键词
-            "meaning", "purpose", "existence", "philosophy", "ethics", "moral",
-            "values", "beliefs", "truth", "reality", "consciousness",
+            "meaning",
+            "purpose",
+            "existence",
+            "philosophy",
+            "ethics",
+            "moral",
+            "values",
+            "beliefs",
+            "truth",
+            "reality",
+            "consciousness",
             # 中文关键词
-            "意义", "目的", "存在", "哲学", "伦理", "道德", "价值观", "信念", "真理", "现实",
-            "意识", "生命", "死亡", "自由", "选择", "存在主义", "本质"
+            "意义",
+            "目的",
+            "存在",
+            "哲学",
+            "伦理",
+            "道德",
+            "价值观",
+            "信念",
+            "真理",
+            "现实",
+            "意识",
+            "生命",
+            "死亡",
+            "自由",
+            "选择",
+            "存在主义",
+            "本质",
         },
         ProblemType.DECISION: {
             # 英文关键词
-            "decide", "choose", "select", "option", "should", "recommend",
-            "which", "pick", "decision", "choice", "dilemma",
+            "decide",
+            "choose",
+            "select",
+            "option",
+            "should",
+            "recommend",
+            "which",
+            "pick",
+            "decision",
+            "choice",
+            "dilemma",
             # 中文关键词
-            "决定", "选择", "挑选", "选项", "应该", "推荐", "哪个", "决策", "两难"
-        }
+            "决定",
+            "选择",
+            "挑选",
+            "选项",
+            "应该",
+            "推荐",
+            "哪个",
+            "决策",
+            "两难",
+        },
     }
 
-    def analyze_problem(self, thought_data: ThoughtData) -> ProblemCharacteristics:
+    def analyze_problem(self, thought_data: "ThoughtData") -> ProblemCharacteristics:
         """分析问题类型和特征."""
         text = thought_data.thought.lower()
 
@@ -137,7 +260,8 @@ class ProblemAnalyzer:
 
         # 确定次要类型（得分 > 0）
         secondary_types = [
-            ptype for ptype, score in type_scores.items()
+            ptype
+            for ptype, score in type_scores.items()
             if score > 0 and ptype != primary_type
         ]
 
@@ -150,15 +274,23 @@ class ProblemAnalyzer:
             is_evaluative=type_scores[ProblemType.EVALUATIVE] > 0,
             is_philosophical=type_scores[ProblemType.PHILOSOPHICAL] > 0,
             is_decision=type_scores[ProblemType.DECISION] > 0,
-            needs_judgment=any(word in text for word in ["judge", "evaluate", "assess", "判断", "评价"]),
-            needs_improvement=any(word in text for word in ["improve", "better", "enhance", "改进", "改善"]),
+            needs_judgment=any(
+                word in text for word in ["judge", "evaluate", "assess", "判断", "评价"]
+            ),
+            needs_improvement=any(
+                word in text
+                for word in ["improve", "better", "enhance", "改进", "改善"]
+            ),
             question_count=text.count("?") + text.count("？"),
-            complexity_indicators=type_scores[ProblemType.PHILOSOPHICAL] + type_scores[ProblemType.DECISION],
+            complexity_indicators=type_scores[ProblemType.PHILOSOPHICAL]
+            + type_scores[ProblemType.DECISION],
             creative_indicators=type_scores[ProblemType.CREATIVE],
-            factual_indicators=type_scores[ProblemType.FACTUAL]
+            factual_indicators=type_scores[ProblemType.FACTUAL],
         )
 
-        logger.info(f"Problem analysis: primary={primary_type.value}, secondary={[t.value for t in secondary_types]}")
+        logger.info(
+            f"Problem analysis: primary={primary_type.value}, secondary={[t.value for t in secondary_types]}"
+        )
         return characteristics
 
 
@@ -174,36 +306,32 @@ class SixHatsSequenceLibrary:
             hat_sequence=[HatColor.WHITE],
             estimated_time_seconds=120,
             description="纯事实收集，快速信息处理",
-            recommended_for=[ProblemType.FACTUAL]
+            recommended_for=[ProblemType.FACTUAL],
         ),
-
         "single_intuitive": HatSequenceStrategy(
             name="单帽直觉模式",
             complexity=HatComplexity.SINGLE,
             hat_sequence=[HatColor.RED],
             estimated_time_seconds=30,
             description="快速直觉反应，30秒情感判断",
-            recommended_for=[ProblemType.EMOTIONAL]
+            recommended_for=[ProblemType.EMOTIONAL],
         ),
-
         "single_creative": HatSequenceStrategy(
             name="单帽创意模式",
             complexity=HatComplexity.SINGLE,
             hat_sequence=[HatColor.GREEN],
             estimated_time_seconds=240,
             description="创意生成模式，自由创新思考",
-            recommended_for=[ProblemType.CREATIVE]
+            recommended_for=[ProblemType.CREATIVE],
         ),
-
         "single_critical": HatSequenceStrategy(
             name="单帽批判模式",
             complexity=HatComplexity.SINGLE,
             hat_sequence=[HatColor.BLACK],
             estimated_time_seconds=120,
             description="风险识别，快速批判分析",
-            recommended_for=[ProblemType.EVALUATIVE]
+            recommended_for=[ProblemType.EVALUATIVE],
         ),
-
         # 双帽序列策略
         "evaluate_idea": HatSequenceStrategy(
             name="想法评估序列",
@@ -211,27 +339,24 @@ class SixHatsSequenceLibrary:
             hat_sequence=[HatColor.YELLOW, HatColor.BLACK],
             estimated_time_seconds=240,
             description="先看优点，再看风险，平衡评估",
-            recommended_for=[ProblemType.EVALUATIVE]
+            recommended_for=[ProblemType.EVALUATIVE],
         ),
-
         "improve_design": HatSequenceStrategy(
             name="设计改进序列",
             complexity=HatComplexity.DOUBLE,
             hat_sequence=[HatColor.BLACK, HatColor.GREEN],
             estimated_time_seconds=360,
             description="识别问题，然后创新改进",
-            recommended_for=[ProblemType.CREATIVE, ProblemType.EVALUATIVE]
+            recommended_for=[ProblemType.CREATIVE, ProblemType.EVALUATIVE],
         ),
-
         "fact_and_judge": HatSequenceStrategy(
             name="事实判断序列",
             complexity=HatComplexity.TRIPLE,
             hat_sequence=[HatColor.WHITE, HatColor.BLACK, HatColor.BLUE],
             estimated_time_seconds=360,
             description="收集事实，批判验证，蓝帽整合结论",
-            recommended_for=[ProblemType.FACTUAL, ProblemType.EVALUATIVE]
+            recommended_for=[ProblemType.FACTUAL, ProblemType.EVALUATIVE],
         ),
-
         # 三帽核心序列策略
         "problem_solving": HatSequenceStrategy(
             name="问题解决序列",
@@ -239,47 +364,57 @@ class SixHatsSequenceLibrary:
             hat_sequence=[HatColor.WHITE, HatColor.GREEN, HatColor.BLACK],
             estimated_time_seconds=480,
             description="事实→创意→评估，标准问题解决",
-            recommended_for=[ProblemType.GENERAL, ProblemType.CREATIVE]
+            recommended_for=[ProblemType.GENERAL, ProblemType.CREATIVE],
         ),
-
         "decision_making": HatSequenceStrategy(
             name="决策制定序列",
             complexity=HatComplexity.TRIPLE,
             hat_sequence=[HatColor.RED, HatColor.YELLOW, HatColor.BLACK],
             estimated_time_seconds=390,
             description="直觉→价值→风险，快速决策",
-            recommended_for=[ProblemType.DECISION]
+            recommended_for=[ProblemType.DECISION],
         ),
-
         "philosophical_thinking": HatSequenceStrategy(
             name="哲学思考序列",
             complexity=HatComplexity.TRIPLE,
             hat_sequence=[HatColor.WHITE, HatColor.GREEN, HatColor.BLUE],
             estimated_time_seconds=540,
             description="事实→创造→整合，深度哲学思考（解决综合+评审分离问题）",
-            recommended_for=[ProblemType.PHILOSOPHICAL]
+            recommended_for=[ProblemType.PHILOSOPHICAL],
         ),
-
         # 完整六帽序列
         "full_exploration": HatSequenceStrategy(
             name="全面探索序列",
             complexity=HatComplexity.FULL,
-            hat_sequence=[HatColor.BLUE, HatColor.WHITE, HatColor.RED,
-                         HatColor.YELLOW, HatColor.BLACK, HatColor.GREEN, HatColor.BLUE],
+            hat_sequence=[
+                HatColor.BLUE,
+                HatColor.WHITE,
+                HatColor.RED,
+                HatColor.YELLOW,
+                HatColor.BLACK,
+                HatColor.GREEN,
+                HatColor.BLUE,
+            ],
             estimated_time_seconds=780,
             description="完整六帽序列，全面深度分析",
-            recommended_for=[ProblemType.DECISION, ProblemType.PHILOSOPHICAL]
+            recommended_for=[ProblemType.DECISION, ProblemType.PHILOSOPHICAL],
         ),
-
         "creative_innovation": HatSequenceStrategy(
             name="创新发展序列",
             complexity=HatComplexity.FULL,
-            hat_sequence=[HatColor.BLUE, HatColor.RED, HatColor.GREEN,
-                         HatColor.WHITE, HatColor.YELLOW, HatColor.BLACK, HatColor.BLUE],
+            hat_sequence=[
+                HatColor.BLUE,
+                HatColor.RED,
+                HatColor.GREEN,
+                HatColor.WHITE,
+                HatColor.YELLOW,
+                HatColor.BLACK,
+                HatColor.BLUE,
+            ],
             estimated_time_seconds=840,
             description="创新优先的完整流程",
-            recommended_for=[ProblemType.CREATIVE]
-        )
+            recommended_for=[ProblemType.CREATIVE],
+        ),
     }
 
     @classmethod
@@ -288,18 +423,24 @@ class SixHatsSequenceLibrary:
         return cls.STRATEGIES.get(strategy_name)
 
     @classmethod
-    def get_strategies_for_problem(cls, problem_type: ProblemType) -> list[HatSequenceStrategy]:
+    def get_strategies_for_problem(
+        cls, problem_type: ProblemType
+    ) -> list[HatSequenceStrategy]:
         """获取适合特定问题类型的策略."""
         return [
-            strategy for strategy in cls.STRATEGIES.values()
+            strategy
+            for strategy in cls.STRATEGIES.values()
             if problem_type in strategy.recommended_for
         ]
 
     @classmethod
-    def get_strategies_by_complexity(cls, complexity: HatComplexity) -> list[HatSequenceStrategy]:
+    def get_strategies_by_complexity(
+        cls, complexity: HatComplexity
+    ) -> list[HatSequenceStrategy]:
         """按复杂度获取策略."""
         return [
-            strategy for strategy in cls.STRATEGIES.values()
+            strategy
+            for strategy in cls.STRATEGIES.values()
             if strategy.complexity == complexity
         ]
 
@@ -307,6 +448,7 @@ class SixHatsSequenceLibrary:
 @dataclass
 class RoutingDecision:
     """路由决策结果."""
+
     strategy: HatSequenceStrategy
     reasoning: str
     problem_characteristics: ProblemCharacteristics
@@ -327,10 +469,10 @@ class SixHatsIntelligentRouter:
             HatComplexity.SINGLE: (0, 3),
             HatComplexity.DOUBLE: (3, 10),
             HatComplexity.TRIPLE: (10, 20),
-            HatComplexity.FULL: (20, 100)
+            HatComplexity.FULL: (20, 100),
         }
 
-    async def route_thought(self, thought_data: ThoughtData) -> RoutingDecision:
+    async def route_thought(self, thought_data: "ThoughtData") -> RoutingDecision:
         """智能路由思想到最佳帽子序列."""
         logger.info("🎩 SIX HATS INTELLIGENT ROUTING:")
         logger.info(f"  📝 Input: {thought_data.thought[:100]}...")
@@ -369,11 +511,13 @@ class SixHatsIntelligentRouter:
             reasoning=reasoning,
             problem_characteristics=problem_characteristics,
             complexity_metrics=complexity_metrics,
-            estimated_cost_reduction=cost_reduction
+            estimated_cost_reduction=cost_reduction,
         )
 
         logger.info(f"  ✅ Selected Strategy: {strategy.name}")
-        logger.info(f"  🎨 Hat Sequence: {[hat.value for hat in strategy.hat_sequence]}")
+        logger.info(
+            f"  🎨 Hat Sequence: {[hat.value for hat in strategy.hat_sequence]}"
+        )
         logger.info(f"  💰 Cost Reduction: {cost_reduction:.1f}%")
 
         return decision
@@ -389,20 +533,25 @@ class SixHatsIntelligentRouter:
         self,
         complexity_level: HatComplexity,
         problem_characteristics: ProblemCharacteristics,
-        complexity_score: float
+        complexity_score: float,
     ) -> HatSequenceStrategy:
         """选择最优策略."""
         # 获取该复杂度级别的所有策略
-        candidate_strategies = self.sequence_library.get_strategies_by_complexity(complexity_level)
+        candidate_strategies = self.sequence_library.get_strategies_by_complexity(
+            complexity_level
+        )
 
         # 如果没有找到策略，使用降级处理
         if not candidate_strategies:
-            logger.warning(f"No strategies found for complexity {complexity_level}, using fallback")
+            logger.warning(
+                f"No strategies found for complexity {complexity_level}, using fallback"
+            )
             return self._get_fallback_strategy(complexity_level)
 
         # 根据问题类型筛选推荐策略
         recommended_strategies = [
-            strategy for strategy in candidate_strategies
+            strategy
+            for strategy in candidate_strategies
             if problem_characteristics.primary_type in strategy.recommended_for
         ]
 
@@ -419,7 +568,7 @@ class SixHatsIntelligentRouter:
         self,
         strategies: list[HatSequenceStrategy],
         characteristics: ProblemCharacteristics,
-        complexity_score: float
+        complexity_score: float,
     ) -> HatSequenceStrategy:
         """使用特殊逻辑选择策略."""
         # 单帽模式的特殊选择逻辑
@@ -435,13 +584,15 @@ class SixHatsIntelligentRouter:
         # 其他复杂度：返回第一个策略
         return strategies[0]
 
-    def _get_fallback_strategy(self, complexity_level: HatComplexity) -> HatSequenceStrategy:
+    def _get_fallback_strategy(
+        self, complexity_level: HatComplexity
+    ) -> HatSequenceStrategy:
         """获取降级策略."""
         fallback_map = {
             HatComplexity.SINGLE: "single_factual",
             HatComplexity.DOUBLE: "fact_and_judge",
             HatComplexity.TRIPLE: "problem_solving",
-            HatComplexity.FULL: "full_exploration"
+            HatComplexity.FULL: "full_exploration",
         }
         strategy_name = fallback_map.get(complexity_level, "single_factual")
         return self.sequence_library.get_strategy(strategy_name)
@@ -450,7 +601,7 @@ class SixHatsIntelligentRouter:
         self,
         strategy: HatSequenceStrategy,
         characteristics: ProblemCharacteristics,
-        metrics: ComplexityMetrics
+        metrics: ComplexityMetrics,
     ) -> str:
         """生成路由决策推理."""
         reasoning_parts = [
@@ -458,7 +609,7 @@ class SixHatsIntelligentRouter:
             f"Problem type: {characteristics.primary_type.value}",
             f"Complexity: {metrics.complexity_score:.1f}/100",
             f"Hat sequence: {' → '.join(hat.value for hat in strategy.hat_sequence)}",
-            f"Estimated time: {strategy.estimated_time_seconds}s"
+            f"Estimated time: {strategy.estimated_time_seconds}s",
         ]
 
         # 添加特征说明
@@ -471,7 +622,9 @@ class SixHatsIntelligentRouter:
 
         return " | ".join(reasoning_parts)
 
-    def _estimate_cost_reduction(self, strategy: HatSequenceStrategy, complexity_score: float) -> float:
+    def _estimate_cost_reduction(
+        self, strategy: HatSequenceStrategy, complexity_score: float
+    ) -> float:
         """估算相比原系统的成本降低."""
         # 原系统成本估算（基于复杂度）
         if complexity_score < 5:
@@ -500,7 +653,7 @@ def create_six_hats_router(complexity_analyzer=None) -> SixHatsIntelligentRouter
     return SixHatsIntelligentRouter(complexity_analyzer)
 
 
-async def route_thought_to_hats(thought_data: ThoughtData) -> RoutingDecision:
+async def route_thought_to_hats(thought_data: "ThoughtData") -> RoutingDecision:
     """将思想路由到最佳帽子序列."""
     router = SixHatsIntelligentRouter()
     return await router.route_thought(thought_data)

@@ -21,25 +21,28 @@ logger = logging.getLogger(__name__)
 
 class HatColor(Enum):
     """六顶思维帽子的颜色枚举."""
-    WHITE = "white"    # 事实与数据
-    RED = "red"        # 情感与直觉
-    BLACK = "black"    # 批判与风险
+
+    WHITE = "white"  # 事实与数据
+    RED = "red"  # 情感与直觉
+    BLACK = "black"  # 批判与风险
     YELLOW = "yellow"  # 乐观与价值
-    GREEN = "green"    # 创造与创新
-    BLUE = "blue"      # 元认知与整合
+    GREEN = "green"  # 创造与创新
+    BLUE = "blue"  # 元认知与整合
 
 
 class HatComplexity(Enum):
     """处理复杂度级别."""
-    SINGLE = "single"      # 单帽模式
-    DOUBLE = "double"      # 双帽序列
-    TRIPLE = "triple"      # 三帽序列
-    FULL = "full"          # 完整六帽
+
+    SINGLE = "single"  # 单帽模式
+    DOUBLE = "double"  # 双帽序列
+    TRIPLE = "triple"  # 三帽序列
+    FULL = "full"  # 完整六帽
 
 
 @dataclass(frozen=True)
 class HatTimingConfig:
     """帽子使用时间配置."""
+
     color: HatColor
     default_time_seconds: int
     min_time_seconds: int
@@ -53,7 +56,9 @@ HAT_TIMING_CONFIGS = {
     HatColor.RED: HatTimingConfig(HatColor.RED, 30, 15, 60, True),  # 快速直觉
     HatColor.BLACK: HatTimingConfig(HatColor.BLACK, 120, 60, 240, False),
     HatColor.YELLOW: HatTimingConfig(HatColor.YELLOW, 120, 60, 240, False),
-    HatColor.GREEN: HatTimingConfig(HatColor.GREEN, 240, 120, 360, False),  # 创意需要更多时间
+    HatColor.GREEN: HatTimingConfig(
+        HatColor.GREEN, 240, 120, 360, False
+    ),  # 创意需要更多时间
     HatColor.BLUE: HatTimingConfig(HatColor.BLUE, 60, 30, 120, False),
 }
 
@@ -84,7 +89,9 @@ class SixHatsCapability:
         if self.tools is None:
             object.__setattr__(self, "tools", [ReasoningTools])
 
-    def get_instructions(self, context: str = "", previous_results: dict | None = None) -> list[str]:
+    def get_instructions(
+        self, context: str = "", previous_results: dict | None = None
+    ) -> list[str]:
         """生成特定帽子的指令."""
         base_instructions = [
             f"You are wearing the {self.hat_color.value.upper()} HAT in the Six Thinking Hats methodology.",
@@ -105,17 +112,24 @@ class SixHatsCapability:
 
         # 添加上下文和前置结果
         if context:
-            base_instructions.extend([
-                "",
-                f"Context: {context}",
-            ])
+            base_instructions.extend(
+                [
+                    "",
+                    f"Context: {context}",
+                ]
+            )
 
         if previous_results:
-            base_instructions.extend([
-                "",
-                "Previous thinking results from other hats:",
-                *[f"  {hat}: {result[:100]}..." for hat, result in previous_results.items()]
-            ])
+            base_instructions.extend(
+                [
+                    "",
+                    "Previous thinking results from other hats:",
+                    *[
+                        f"  {hat}: {result[:100]}..."
+                        for hat, result in previous_results.items()
+                    ],
+                ]
+            )
 
         return base_instructions
 
@@ -390,7 +404,7 @@ class SixHatsAgentFactory:
         model: Model,
         context: str = "",
         previous_results: dict | None = None,
-        **kwargs
+        **kwargs,
     ) -> Agent:
         """创建特定颜色的帽子Agent."""
         capability = self.HAT_CAPABILITIES[hat_color]
@@ -413,7 +427,7 @@ class SixHatsAgentFactory:
             tools=capability.tools,
             instructions=capability.get_instructions(context, previous_results),
             markdown=True,
-            **kwargs
+            **kwargs,
         )
 
         # 添加特殊配置
@@ -423,7 +437,9 @@ class SixHatsAgentFactory:
         # 缓存agent
         self._agent_cache[cache_key] = agent
 
-        logger.info(f"Created {hat_color.value} hat agent with {capability.timing_config.default_time_seconds}s time limit")
+        logger.info(
+            f"Created {hat_color.value} hat agent with {capability.timing_config.default_time_seconds}s time limit"
+        )
         return agent
 
     def get_timing_config(self, hat_color: HatColor) -> HatTimingConfig:

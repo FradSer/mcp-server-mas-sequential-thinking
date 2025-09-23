@@ -6,14 +6,16 @@ with more nuanced understanding of context, semantics, and depth.
 
 import json
 import logging
-from typing import Any
+from typing import Any, Dict, Optional, TYPE_CHECKING
 
 from agno.agent import Agent
 
 from mcp_server_mas_sequential_thinking.config.modernized_config import get_model_config
-from mcp_server_mas_sequential_thinking.core.models import ThoughtData
 
 from .complexity_types import ComplexityAnalyzer, ComplexityMetrics
+
+if TYPE_CHECKING:
+    from mcp_server_mas_sequential_thinking.core.models import ThoughtData
 
 logger = logging.getLogger(__name__)
 
@@ -67,9 +69,9 @@ Analyze now:
 class AIComplexityAnalyzer(ComplexityAnalyzer):
     """AI-powered complexity analyzer using language models."""
 
-    def __init__(self, model_config=None):
+    def __init__(self, model_config: Optional[Any] = None) -> None:
         self.model_config = model_config or get_model_config()
-        self._agent = None
+        self._agent: Optional[Agent] = None
 
     def _get_agent(self) -> Agent:
         """Lazy initialization of the analysis agent."""
@@ -82,7 +84,7 @@ class AIComplexityAnalyzer(ComplexityAnalyzer):
             )
         return self._agent
 
-    async def analyze(self, thought_data: ThoughtData) -> ComplexityMetrics:
+    async def analyze(self, thought_data: "ThoughtData") -> ComplexityMetrics:
         """Analyze thought complexity using AI agent."""
         logger.info("🤖 AI COMPLEXITY ANALYSIS:")
         logger.info(f"  📝 Analyzing: {thought_data.thought[:100]}...")
@@ -108,13 +110,17 @@ class AIComplexityAnalyzer(ComplexityAnalyzer):
                 branching_references=complexity_data.get("branching_references", 0),
                 research_indicators=complexity_data.get("research_indicators", 0),
                 analysis_depth=complexity_data.get("analysis_depth", 0),
-                philosophical_depth_boost=complexity_data.get("philosophical_depth_boost", 0),
+                philosophical_depth_boost=complexity_data.get(
+                    "philosophical_depth_boost", 0
+                ),
                 analyzer_type="ai",
-                reasoning=complexity_data.get("reasoning", "AI analysis")
+                reasoning=complexity_data.get("reasoning", "AI analysis"),
             )
 
             logger.info(f"  🎯 AI Complexity Score: {metrics.complexity_score:.1f}/100")
-            logger.info(f"  💭 Reasoning: {complexity_data.get('reasoning', 'No reasoning provided')[:100]}...")
+            logger.info(
+                f"  💭 Reasoning: {complexity_data.get('reasoning', 'No reasoning provided')[:100]}..."
+            )
 
             return metrics
 
@@ -125,27 +131,27 @@ class AIComplexityAnalyzer(ComplexityAnalyzer):
 
     def _extract_response_content(self, result: Any) -> str:
         """Extract content from agent response."""
-        if hasattr(result, 'content'):
+        if hasattr(result, "content"):
             return str(result.content)
         return str(result)
 
-    def _parse_json_response(self, response_text: str) -> dict:
+    def _parse_json_response(self, response_text: str) -> Dict[str, Any]:
         """Parse JSON from AI response, handling various formats."""
         # Try to find JSON in the response
-        lines = response_text.strip().split('\n')
+        lines = response_text.strip().split("\n")
 
         for line in lines:
             line = line.strip()
-            if line.startswith('{') and line.endswith('}'):
+            if line.startswith("{") and line.endswith("}"):
                 try:
                     return json.loads(line)
                 except json.JSONDecodeError:
                     continue
 
         # Try to extract JSON from code blocks
-        if '```json' in response_text:
-            start = response_text.find('```json') + 7
-            end = response_text.find('```', start)
+        if "```json" in response_text:
+            start = response_text.find("```json") + 7
+            end = response_text.find("```", start)
             if end > start:
                 json_text = response_text[start:end].strip()
                 try:
@@ -157,10 +163,12 @@ class AIComplexityAnalyzer(ComplexityAnalyzer):
         try:
             return json.loads(response_text)
         except json.JSONDecodeError:
-            logger.warning(f"Failed to parse AI response as JSON: {response_text[:200]}")
+            logger.warning(
+                f"Failed to parse AI response as JSON: {response_text[:200]}"
+            )
             raise ValueError("Could not parse AI complexity analysis response")
 
-    def _basic_fallback_analysis(self, thought_data: ThoughtData) -> ComplexityMetrics:
+    def _basic_fallback_analysis(self, thought_data: "ThoughtData") -> ComplexityMetrics:
         """Fallback to basic analysis if AI fails."""
         logger.warning("🔄 Falling back to basic complexity analysis")
 
@@ -168,11 +176,21 @@ class AIComplexityAnalyzer(ComplexityAnalyzer):
 
         # Basic metrics
         words = len(text.split())
-        sentences = len([s for s in text.split('.') if s.strip()])
-        questions = text.count('?') + text.count('？')
+        sentences = len([s for s in text.split(".") if s.strip()])
+        questions = text.count("?") + text.count("？")
 
         # Simple heuristics
-        philosophical_terms = ['意义', '存在', '生命', '死亡', '为什么', 'why', 'meaning', 'life', 'death']
+        philosophical_terms = [
+            "意义",
+            "存在",
+            "生命",
+            "死亡",
+            "为什么",
+            "why",
+            "meaning",
+            "life",
+            "death",
+        ]
         philosophical_count = sum(1 for term in philosophical_terms if term in text)
 
         # Basic scoring
@@ -189,7 +207,7 @@ class AIComplexityAnalyzer(ComplexityAnalyzer):
             analysis_depth=philosophical_count,
             philosophical_depth_boost=min(philosophical_count * 5, 15),
             analyzer_type="basic_fallback",
-            reasoning="Fallback analysis due to AI failure"
+            reasoning="Fallback analysis due to AI failure",
         )
 
 

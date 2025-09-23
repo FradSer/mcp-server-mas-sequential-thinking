@@ -99,7 +99,6 @@ class SixHatsTeamFactory:
                     "Identify missing information that would be helpful.",
                 ],
             ),
-
             "red_hat": SixHatsTeamConfiguration(
                 name="RedHatEmotionalTeam",
                 description="Intuitive and emotional response analysis",
@@ -110,7 +109,6 @@ class SixHatsTeamFactory:
                     "Provide the human emotional perspective on the situation.",
                 ],
             ),
-
             # Core Philosophical Thinking (Default)
             "philosophical": SixHatsTeamConfiguration(
                 name="PhilosophicalThinkingTeam",
@@ -124,12 +122,16 @@ class SixHatsTeamFactory:
                     "Focus on practical wisdom while acknowledging complexity.",
                 ],
             ),
-
             # Creative Problem Solving
             "creative": SixHatsTeamConfiguration(
                 name="CreativeThinkingTeam",
                 description="Creative problem-solving and innovation",
-                hat_sequence=[HatColor.RED, HatColor.GREEN, HatColor.YELLOW, HatColor.BLUE],
+                hat_sequence=[
+                    HatColor.RED,
+                    HatColor.GREEN,
+                    HatColor.YELLOW,
+                    HatColor.BLUE,
+                ],
                 instructions=[
                     "Apply creative thinking to generate innovative solutions.",
                     "Red Hat: Express initial feelings and reactions.",
@@ -138,12 +140,16 @@ class SixHatsTeamFactory:
                     "Blue Hat: Synthesize creative insights into actionable recommendations.",
                 ],
             ),
-
             # Decision Making
             "decision": SixHatsTeamConfiguration(
                 name="DecisionMakingTeam",
                 description="Balanced decision analysis and evaluation",
-                hat_sequence=[HatColor.WHITE, HatColor.BLACK, HatColor.YELLOW, HatColor.BLUE],
+                hat_sequence=[
+                    HatColor.WHITE,
+                    HatColor.BLACK,
+                    HatColor.YELLOW,
+                    HatColor.BLUE,
+                ],
                 instructions=[
                     "Analyze decisions through multiple perspectives.",
                     "White Hat: Present relevant facts and data.",
@@ -152,19 +158,18 @@ class SixHatsTeamFactory:
                     "Blue Hat: Synthesize analysis into balanced decision guidance.",
                 ],
             ),
-
             # Comprehensive Analysis
             "full": SixHatsTeamConfiguration(
                 name="FullSixHatsThinkingTeam",
                 description="Complete Six Thinking Hats analysis",
                 hat_sequence=[
-                    HatColor.BLUE,   # Process overview
+                    HatColor.BLUE,  # Process overview
                     HatColor.WHITE,  # Facts and data
-                    HatColor.RED,    # Emotions and intuition
-                    HatColor.YELLOW, # Benefits and optimism
+                    HatColor.RED,  # Emotions and intuition
+                    HatColor.YELLOW,  # Benefits and optimism
                     HatColor.BLACK,  # Caution and criticism
                     HatColor.GREEN,  # Creativity and alternatives
-                    HatColor.BLUE    # Final synthesis
+                    HatColor.BLUE,  # Final synthesis
                 ],
                 instructions=[
                     "Apply complete Six Thinking Hats methodology for comprehensive analysis.",
@@ -180,9 +185,7 @@ class SixHatsTeamFactory:
         logger.info("Six Hats Team Factory initialized")
 
     def create_team(
-        self,
-        team_type: str = "philosophical",
-        model_config: ModelConfig | None = None
+        self, team_type: str = "philosophical", model_config: ModelConfig | None = None
     ) -> Team:
         """Create a Six Thinking Hats team."""
         if model_config is None:
@@ -197,9 +200,7 @@ class SixHatsTeamFactory:
         return builder.build_team(model_config)
 
     def create_adaptive_team(
-        self,
-        thought_content: str,
-        model_config: ModelConfig | None = None
+        self, thought_content: str, model_config: ModelConfig | None = None
     ) -> Team:
         """Create an adaptive Six Hats team based on thought content."""
         if model_config is None:
@@ -228,7 +229,7 @@ class SixHatsTeamFactory:
         self,
         hat_sequence: list[HatColor],
         team_name: str = "CustomSixHatsTeam",
-        model_config: ModelConfig | None = None
+        model_config: ModelConfig | None = None,
     ) -> Team:
         """Create a custom Six Thinking Hats team with specified sequence."""
         if model_config is None:
@@ -272,12 +273,16 @@ _six_hats_team_factory = SixHatsTeamFactory()
 
 
 # Public API functions
-def create_six_hats_team(team_type: str = "philosophical", model_config: ModelConfig | None = None) -> Team:
+def create_six_hats_team(
+    team_type: str = "philosophical", model_config: ModelConfig | None = None
+) -> Team:
     """Create a Six Thinking Hats team by type."""
     return _six_hats_team_factory.create_team(team_type, model_config)
 
 
-def create_adaptive_six_hats_team(thought_content: str, model_config: ModelConfig | None = None) -> Team:
+def create_adaptive_six_hats_team(
+    thought_content: str, model_config: ModelConfig | None = None
+) -> Team:
     """Create an adaptive Six Thinking Hats team based on content."""
     return _six_hats_team_factory.create_adaptive_team(thought_content, model_config)
 
@@ -285,10 +290,12 @@ def create_adaptive_six_hats_team(thought_content: str, model_config: ModelConfi
 def create_custom_six_hats_team(
     hat_sequence: list[HatColor],
     team_name: str = "CustomSixHatsTeam",
-    model_config: ModelConfig | None = None
+    model_config: ModelConfig | None = None,
 ) -> Team:
     """Create a custom Six Thinking Hats team."""
-    return _six_hats_team_factory.create_custom_team(hat_sequence, team_name, model_config)
+    return _six_hats_team_factory.create_custom_team(
+        hat_sequence, team_name, model_config
+    )
 
 
 def get_available_six_hats_teams() -> list[str]:
@@ -302,7 +309,9 @@ def create_team(model_config: ModelConfig | None = None) -> Team:
     return create_six_hats_team("philosophical", model_config)
 
 
-def create_team_by_type(team_type: str, model_config: ModelConfig | None = None) -> Team:
+def create_team_by_type(
+    team_type: str, model_config: ModelConfig | None = None
+) -> Team:
     """Create team by type - Six Hats only."""
     # Map legacy types to Six Hats equivalents
     team_type_mapping = {
@@ -314,7 +323,9 @@ def create_team_by_type(team_type: str, model_config: ModelConfig | None = None)
 
     # Use mapping if it's a legacy type
     if team_type in team_type_mapping:
-        logger.info(f"Mapping legacy team type '{team_type}' to Six Hats '{team_type_mapping[team_type]}'")
+        logger.info(
+            f"Mapping legacy team type '{team_type}' to Six Hats '{team_type_mapping[team_type]}'"
+        )
         team_type = team_type_mapping[team_type]
 
     # Handle six_hats_ prefixed types

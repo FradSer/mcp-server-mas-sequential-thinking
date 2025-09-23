@@ -5,7 +5,7 @@ managing workflow routing and coordination of processing strategies.
 """
 
 import time
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from mcp_server_mas_sequential_thinking.core import SessionMemory, ThoughtData
 from mcp_server_mas_sequential_thinking.utils import setup_logging
@@ -37,6 +37,7 @@ class WorkflowExecutor:
         logger.info("Initializing Six Hats Workflow Router")
         # Dynamic import to avoid circular dependency
         from mcp_server_mas_sequential_thinking.routing import SixHatsWorkflowRouter
+
         self._agno_router = SixHatsWorkflowRouter()
         logger.info("✅ Six Hats Workflow Router ready")
 
@@ -132,6 +133,7 @@ class WorkflowExecutor:
         # Try to use performance metrics constant if available
         try:
             from mcp_server_mas_sequential_thinking.config import PerformanceMetrics
+
             length = PerformanceMetrics.SEPARATOR_LENGTH
         except ImportError:
             pass
@@ -150,6 +152,7 @@ class WorkflowExecutor:
         # Use constants if available, otherwise use fallback values
         try:
             from mcp_server_mas_sequential_thinking.config import PerformanceMetrics
+
             perfect_score = PerformanceMetrics.PERFECT_EFFICIENCY_SCORE
             threshold = PerformanceMetrics.EFFICIENCY_TIME_THRESHOLD
             minimum_score = PerformanceMetrics.MINIMUM_EFFICIENCY_SCORE
@@ -175,6 +178,7 @@ class WorkflowExecutor:
         """
         try:
             from mcp_server_mas_sequential_thinking.config import PerformanceMetrics
+
             perfect_consistency = PerformanceMetrics.PERFECT_EXECUTION_CONSISTENCY
             default_consistency = PerformanceMetrics.DEFAULT_EXECUTION_CONSISTENCY
         except ImportError:

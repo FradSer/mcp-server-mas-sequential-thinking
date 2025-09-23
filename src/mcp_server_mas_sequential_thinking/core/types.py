@@ -2,7 +2,7 @@
 
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any, Protocol, TypedDict
+from typing import Any, Dict, List, Optional, Protocol, TypedDict
 
 from agno.agent import Agent
 from agno.models.base import Model
@@ -14,9 +14,9 @@ BranchId = str
 ProviderName = str
 TeamType = str
 AgentType = str
-ConfigDict = dict[str, Any]
-InstructionsList = list[str]
-SuccessCriteriaList = list[str]
+ConfigDict = Dict[str, Any]
+InstructionsList = List[str]
+SuccessCriteriaList = List[str]
 
 
 class ExecutionMode(Enum):
@@ -38,8 +38,8 @@ class CoordinationPlan:
 
     # Coordination decisions
     execution_mode: ExecutionMode
-    specialist_roles: list[str]
-    task_breakdown: list[str]
+    specialist_roles: List[str]
+    task_breakdown: List[str]
     coordination_strategy: str
 
     # Execution parameters
@@ -54,7 +54,7 @@ class CoordinationPlan:
 
     @classmethod
     def from_routing_decision(
-        cls, routing_decision, thought_data
+        cls, routing_decision: Any, thought_data: Any
     ) -> "CoordinationPlan":
         """Create coordination plan from adaptive routing decision."""
         # Map ProcessingStrategy to ExecutionMode
@@ -65,7 +65,7 @@ class CoordinationPlan:
         }
 
         # Map complexity to specialist roles
-        complexity_to_specialists = {
+        complexity_to_specialists: Dict[str, List[str]] = {
             "simple": ["general"],
             "moderate": ["planner", "analyzer"],
             "complex": ["planner", "researcher", "analyzer", "critic"],
@@ -156,7 +156,7 @@ class ModelProvider(Protocol):
 class AgentFactory(Protocol):
     """Protocol for agent factory implementations."""
 
-    def create_team_agents(self, model: Model, team_type: str) -> dict[str, Agent]:
+    def create_team_agents(self, model: Model, team_type: str) -> Dict[str, Agent]:
         """Create team agents with specified model and team type."""
         ...
 
@@ -164,7 +164,7 @@ class AgentFactory(Protocol):
 class TeamBuilder(Protocol):
     """Protocol for team builder implementations."""
 
-    def build_team(self, config: Any, agent_factory: Any) -> Team:
+    def build_team(self, config: ConfigDict, agent_factory: "AgentFactory") -> Team:
         """Build a team with specified configuration and agent factory."""
         ...
 
@@ -190,7 +190,7 @@ class ComplexityAnalyzer(Protocol):
 class ThoughtProcessor(Protocol):
     """Protocol for thought processing with type safety."""
 
-    async def process_thought(self, thought_data: Any) -> str:
+    async def process_thought(self, thought_data: "ThoughtData") -> str:
         """Process a thought and return the result."""
         ...
 
@@ -198,7 +198,7 @@ class ThoughtProcessor(Protocol):
 class SessionManager(Protocol):
     """Protocol for session management with type safety."""
 
-    def add_thought(self, thought_data: Any) -> None:
+    def add_thought(self, thought_data: "ThoughtData") -> None:
         """Add a thought to the session."""
         ...
 
@@ -206,7 +206,7 @@ class SessionManager(Protocol):
         """Find thought content by number."""
         ...
 
-    def get_branch_summary(self) -> dict[str, int]:
+    def get_branch_summary(self) -> Dict[str, int]:
         """Get summary of all branches."""
         ...
 
@@ -214,11 +214,11 @@ class SessionManager(Protocol):
 class ConfigurationProvider(Protocol):
     """Protocol for configuration management with type safety."""
 
-    def get_model_config(self, provider_name: str | None = None) -> Any:
+    def get_model_config(self, provider_name: Optional[str] = None) -> "ModelConfig":
         """Get model configuration."""
         ...
 
-    def check_required_api_keys(self, provider_name: str | None = None) -> list[str]:
+    def check_required_api_keys(self, provider_name: Optional[str] = None) -> List[str]:
         """Check for required API keys."""
         ...
 
@@ -228,50 +228,43 @@ class ValidationError(ValueError):
     """Exception raised when data validation fails."""
 
 
-
 class ConfigurationError(Exception):
     """Exception raised when configuration is invalid."""
-
 
 
 class ThoughtProcessingError(Exception):
     """Exception raised when thought processing fails."""
 
-    def __init__(self, message: str, metadata: ProcessingMetadata | None = None) -> None:
+    def __init__(
+        self, message: str, metadata: Optional[ProcessingMetadata] = None
+    ) -> None:
         super().__init__(message)
-        self.metadata = metadata or {}
+        self.metadata: ProcessingMetadata = metadata or {}
 
 
 class TeamCreationError(Exception):
     """Exception raised when team creation fails."""
 
 
-
 class RoutingDecisionError(ThoughtProcessingError):
     """Error in adaptive routing decision making."""
-
 
 
 class CostOptimizationError(ThoughtProcessingError):
     """Error in cost optimization logic."""
 
 
-
 class PersistentStorageError(ThoughtProcessingError):
     """Error in persistent memory storage."""
-
 
 
 class ModelConfigurationError(ConfigurationError):
     """Error in model configuration."""
 
 
-
 class ProviderError(Exception):
     """Error related to LLM providers."""
 
 
-
 class AgentCreationError(Exception):
     """Error in agent creation."""
-

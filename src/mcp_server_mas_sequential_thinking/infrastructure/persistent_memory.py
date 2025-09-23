@@ -36,7 +36,6 @@ class Base(DeclarativeBase):
     """Base class for SQLAlchemy models with modern typing support."""
 
 
-
 class SessionRecord(Base):
     """Database model for session storage."""
 
@@ -109,7 +108,9 @@ class ThoughtRecord(Base):
             thought_number=int(self.thoughtNumber),
             total_thoughts=int(self.totalThoughts),
             next_needed=bool(self.nextThoughtNeeded),
-            branch_from=int(self.branchFromThought) if self.branchFromThought is not None else None,
+            branch_from=int(self.branchFromThought)
+            if self.branchFromThought is not None
+            else None,
             branch_id=str(self.branchId) if self.branchId is not None else None,
             is_revision=False,
             branchFromThought=None,

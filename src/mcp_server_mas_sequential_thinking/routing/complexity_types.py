@@ -7,12 +7,15 @@ extracted from the old adaptive_routing.py to support AI-first architecture.
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from enum import Enum
+from typing import TYPE_CHECKING
 
-from mcp_server_mas_sequential_thinking.core.models import ThoughtData
+if TYPE_CHECKING:
+    from mcp_server_mas_sequential_thinking.core.models import ThoughtData
 
 
 class ProcessingStrategy(Enum):
     """Processing strategy types."""
+
     SINGLE_AGENT = "single_agent"
     MULTI_AGENT = "multi_agent"
     HYBRID = "hybrid"
@@ -20,6 +23,7 @@ class ProcessingStrategy(Enum):
 
 class ComplexityLevel(Enum):
     """Complexity levels for thought processing."""
+
     SIMPLE = "simple"
     MODERATE = "moderate"
     COMPLEX = "complex"
@@ -69,6 +73,6 @@ class ComplexityAnalyzer(ABC):
     """Abstract base class for complexity analysis."""
 
     @abstractmethod
-    async def analyze(self, thought_data: ThoughtData) -> ComplexityMetrics:
+    async def analyze(self, thought_data: "ThoughtData") -> ComplexityMetrics:
         """Analyze thought complexity and return metrics."""
         pass

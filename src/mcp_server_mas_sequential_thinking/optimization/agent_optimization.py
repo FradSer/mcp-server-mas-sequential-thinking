@@ -22,7 +22,7 @@ class AgentPerformanceOptimizer:
         strategy_name: str,
         processing_time: float,
         complexity_score: float,
-        response_length: int
+        response_length: int,
     ) -> None:
         """Record processing event for optimization."""
         record = {
@@ -31,7 +31,7 @@ class AgentPerformanceOptimizer:
             "processing_time": processing_time,
             "complexity_score": complexity_score,
             "response_length": response_length,
-            "timestamp": time.time()
+            "timestamp": time.time(),
         }
 
         self.processing_history.append(record)
@@ -56,15 +56,21 @@ class AgentPerformanceOptimizer:
         # Complexity vs time mismatch
         expected_time = record["complexity_score"] * 3  # Rough estimate
         if record["processing_time"] > expected_time * 2:
-            issues.append("INEFFICIENT: Processing time much higher than complexity suggests")
+            issues.append(
+                "INEFFICIENT: Processing time much higher than complexity suggests"
+            )
 
         # Strategy appropriateness
         if "全面探索" in record["strategy"] and record["complexity_score"] < 30:
-            issues.append("OVER_PROCESSING: Full exploration used for moderate complexity")
+            issues.append(
+                "OVER_PROCESSING: Full exploration used for moderate complexity"
+            )
 
         if issues:
             self.performance_issues.extend(issues)
-            logger.warning(f"⚠️ Performance issues detected for thought #{record['thought_id']}: {'; '.join(issues)}")
+            logger.warning(
+                f"⚠️ Performance issues detected for thought #{record['thought_id']}: {'; '.join(issues)}"
+            )
 
     def get_optimization_summary(self) -> dict:
         """Get comprehensive optimization summary."""
@@ -72,22 +78,35 @@ class AgentPerformanceOptimizer:
             return {"status": "no_data"}
 
         recent_records = self.processing_history[-10:]
-        avg_time = sum(r["processing_time"] for r in recent_records) / len(recent_records)
-        avg_complexity = sum(r["complexity_score"] for r in recent_records) / len(recent_records)
+        avg_time = sum(r["processing_time"] for r in recent_records) / len(
+            recent_records
+        )
+        avg_complexity = sum(r["complexity_score"] for r in recent_records) / len(
+            recent_records
+        )
 
         slow_count = sum(1 for r in recent_records if r["processing_time"] > 120)
-        over_processing_count = sum(1 for r in recent_records
-                                  if "全面探索" in r["strategy"] and r["complexity_score"] < 30)
+        over_processing_count = sum(
+            1
+            for r in recent_records
+            if "全面探索" in r["strategy"] and r["complexity_score"] < 30
+        )
 
         recommendations = []
         if slow_count > len(recent_records) * 0.3:
-            recommendations.append("Consider switching to FAST mode for better performance")
+            recommendations.append(
+                "Consider switching to FAST mode for better performance"
+            )
 
         if over_processing_count > 0:
-            recommendations.append("Complexity thresholds need adjustment - too many simple tasks using expensive processing")
+            recommendations.append(
+                "Complexity thresholds need adjustment - too many simple tasks using expensive processing"
+            )
 
         if avg_time > 120:
-            recommendations.append("Overall processing time too high - review routing logic")
+            recommendations.append(
+                "Overall processing time too high - review routing logic"
+            )
 
         return {
             "status": "analyzed",
@@ -96,7 +115,7 @@ class AgentPerformanceOptimizer:
             "slow_processing_rate": slow_count / len(recent_records),
             "over_processing_rate": over_processing_count / len(recent_records),
             "total_issues": len(self.performance_issues),
-            "recommendations": recommendations
+            "recommendations": recommendations,
         }
 
 
@@ -107,10 +126,12 @@ class SmartResponseFormatter:
         self.formatting_rules = {
             "academic_complexity_threshold": 0.3,  # Ratio of academic indicators
             "max_reasonable_length": 1500,
-            "optimal_length_range": (400, 800)
+            "optimal_length_range": (400, 800),
         }
 
-    def format_response(self, content: str, thought_data: ThoughtData, strategy_name: str) -> str:
+    def format_response(
+        self, content: str, thought_data: ThoughtData, strategy_name: str
+    ) -> str:
         """Format response with smart optimization."""
         # Analyze content characteristics
         analysis = self._analyze_content(content)
@@ -132,8 +153,12 @@ class SmartResponseFormatter:
         """Analyze content characteristics."""
         # Academic complexity indicators
         academic_indicators = (
-            content.count("$$") + content.count("\\(") + content.count("###") +
-            content.count("\\mathcal") + content.count("\\int") + content.count("\\sum")
+            content.count("$$")
+            + content.count("\\(")
+            + content.count("###")
+            + content.count("\\mathcal")
+            + content.count("\\int")
+            + content.count("\\sum")
         )
 
         academic_ratio = academic_indicators / max(len(content.split()), 1)
@@ -142,10 +167,15 @@ class SmartResponseFormatter:
             "length": len(content),
             "academic_indicators": academic_indicators,
             "academic_ratio": academic_ratio,
-            "is_overly_academic": academic_ratio > self.formatting_rules["academic_complexity_threshold"],
-            "is_too_long": len(content) > self.formatting_rules["max_reasonable_length"],
-            "is_optimal_length": (self.formatting_rules["optimal_length_range"][0] <=
-                                len(content) <= self.formatting_rules["optimal_length_range"][1])
+            "is_overly_academic": academic_ratio
+            > self.formatting_rules["academic_complexity_threshold"],
+            "is_too_long": len(content)
+            > self.formatting_rules["max_reasonable_length"],
+            "is_optimal_length": (
+                self.formatting_rules["optimal_length_range"][0]
+                <= len(content)
+                <= self.formatting_rules["optimal_length_range"][1]
+            ),
         }
 
     def _simplify_academic_content(self, content: str) -> str:
@@ -175,8 +205,13 @@ class SmartResponseFormatter:
         important_sections = []
         for section in sections:
             # Keep sections with key indicators
-            if any(indicator in section.lower() for indicator in
-                   ["总结", "结论", "核心", "关键", "重要", "主要"]) or len(section) > 100:
+            if (
+                any(
+                    indicator in section.lower()
+                    for indicator in ["总结", "结论", "核心", "关键", "重要", "主要"]
+                )
+                or len(section) > 100
+            ):
                 important_sections.append(section)
 
         # Reconstruct with optimal length
@@ -184,7 +219,10 @@ class SmartResponseFormatter:
 
         if len(optimized) > self.formatting_rules["max_reasonable_length"]:
             # Further truncation
-            optimized = optimized[:self.formatting_rules["max_reasonable_length"]] + "...\n\n*内容已优化长度*"
+            optimized = (
+                optimized[: self.formatting_rules["max_reasonable_length"]]
+                + "...\n\n*内容已优化长度*"
+            )
 
         return optimized
 
@@ -203,5 +241,5 @@ def get_optimization_status() -> dict:
     """Get current optimization status."""
     return {
         "performance_summary": performance_optimizer.get_optimization_summary(),
-        "optimizations_active": True
+        "optimizations_active": True,
     }

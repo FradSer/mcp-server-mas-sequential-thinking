@@ -70,7 +70,9 @@ class ThoughtData(BaseModel):
         ge=1,
         description="Estimated total thoughts",
     )
-    nextThoughtNeeded: bool = Field(..., description="Whether another thought is needed")
+    nextThoughtNeeded: bool = Field(
+        ..., description="Whether another thought is needed"
+    )
 
     # Required workflow fields
     isRevision: bool = Field(..., description="Whether this revises a previous thought")

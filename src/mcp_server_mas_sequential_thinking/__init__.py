@@ -54,6 +54,7 @@ Performance Benefits:
 
 __version__ = "0.6.0-ai-routing"
 
+
 def get_version() -> str:
     """Get package version."""
     return __version__

@@ -9,6 +9,7 @@ from mcp_server_mas_sequential_thinking.config.constants import (
     ComplexityAnalysisConstants,
 )
 from mcp_server_mas_sequential_thinking.core.models import ThoughtData
+from mcp_server_mas_sequential_thinking.routing.complexity_types import ComplexityLevel
 
 
 class LanguageType(Enum):
@@ -428,9 +429,9 @@ class ComplexityAnalyzer:
         )
 
         if score < 10:
-            return "simple"
+            return ComplexityLevel.SIMPLE.value
         if score < 25:
-            return "moderate"
+            return ComplexityLevel.MODERATE.value
         if score < 40:
-            return "complex"
-        return "highly_complex"
+            return ComplexityLevel.COMPLEX.value
+        return ComplexityLevel.HIGHLY_COMPLEX.value

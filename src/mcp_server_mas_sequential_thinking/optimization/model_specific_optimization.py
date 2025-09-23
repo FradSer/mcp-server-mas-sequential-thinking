@@ -43,15 +43,45 @@ class DeepSeekV3Optimizer:
 
     def __init__(self) -> None:
         self.academic_indicators = [
-            "框架", "模型", "维度", "矩阵", "算法", "系统", "机制",
-            "架构", "引擎", "协议", "方程", "公式", "变量", "参数",
-            "阈值", "指标", "评估", "验证", "实施", "部署"
+            "框架",
+            "模型",
+            "维度",
+            "矩阵",
+            "算法",
+            "系统",
+            "机制",
+            "架构",
+            "引擎",
+            "协议",
+            "方程",
+            "公式",
+            "变量",
+            "参数",
+            "阈值",
+            "指标",
+            "评估",
+            "验证",
+            "实施",
+            "部署",
         ]
 
         self.tech_solution_indicators = [
-            "芯片", "AI", "区块链", "量子", "基因编辑", "脑机接口",
-            "云计算", "大数据", "神经网络", "深度学习", "算力",
-            "数字化", "智能化", "自动化", "平台", "系统"
+            "芯片",
+            "AI",
+            "区块链",
+            "量子",
+            "基因编辑",
+            "脑机接口",
+            "云计算",
+            "大数据",
+            "神经网络",
+            "深度学习",
+            "算力",
+            "数字化",
+            "智能化",
+            "自动化",
+            "平台",
+            "系统",
         ]
 
         self.over_structure_patterns = [
@@ -61,7 +91,9 @@ class DeepSeekV3Optimizer:
             r"^\d+\.\s+.*→.*→",  # Complex numbered flows
         ]
 
-    def optimize_prompt_for_deepseek(self, original_prompt: str, question_type: str = "philosophical") -> str:
+    def optimize_prompt_for_deepseek(
+        self, original_prompt: str, question_type: str = "philosophical"
+    ) -> str:
         """Optimize prompt specifically for DeepSeek V3 to get better responses."""
         # Base optimization for all question types
         optimized_prompt = f"""请用简单、人性化的语言回答，避免过度理论化。
@@ -121,7 +153,6 @@ class DeepSeekV3Optimizer:
         # Add human warmth if missing
         return self._add_human_connection(response)
 
-
     def _simplify_academic_language(self, text: str) -> str:
         """Replace academic jargon with simpler language."""
         replacements = {
@@ -134,7 +165,7 @@ class DeepSeekV3Optimizer:
             "监测指标": "观察要点",
             "协调机制": "配合方式",
             "反馈循环": "相互影响",
-            "迭代优化": "不断改进"
+            "迭代优化": "不断改进",
         }
 
         for academic, simple in replacements.items():
@@ -150,13 +181,23 @@ class DeepSeekV3Optimizer:
 
         for line in lines:
             has_tech_overkill = any(
-                indicator in line for indicator in [
-                    "区块链", "量子", "基因编辑", "脑机接口", "AI芯片",
-                    "神经网络训练", "算法优化", "数据挖掘", "机器学习"
+                indicator in line
+                for indicator in [
+                    "区块链",
+                    "量子",
+                    "基因编辑",
+                    "脑机接口",
+                    "AI芯片",
+                    "神经网络训练",
+                    "算法优化",
+                    "数据挖掘",
+                    "机器学习",
                 ]
             )
 
-            if not has_tech_overkill or "技术" in line:  # Keep if explicitly about technology
+            if (
+                not has_tech_overkill or "技术" in line
+            ):  # Keep if explicitly about technology
                 filtered_lines.append(line)
 
         return "\n".join(filtered_lines)
@@ -184,7 +225,6 @@ class DeepSeekV3Optimizer:
         text = "\n".join(filtered_lines)
         return re.sub(r"```[^`]*?```", "", text, flags=re.DOTALL)
 
-
     def _add_human_connection(self, text: str) -> str:
         """Add human warmth if the response is too cold."""
         # Check if response lacks human elements
@@ -209,13 +249,21 @@ class DeepSeekV3Optimizer:
         scores = {}
 
         # Academic overload score (lower is better)
-        academic_count = sum(1 for indicator in self.academic_indicators if indicator in response)
+        academic_count = sum(
+            1 for indicator in self.academic_indicators if indicator in response
+        )
         scores["academic_overload"] = min(academic_count / 10, 1.0)
 
         # Tech solution inappropriateness (lower is better)
-        tech_count = sum(1 for indicator in self.tech_solution_indicators if indicator in response)
-        is_tech_question = any(word in question for word in ["技术", "科技", "AI", "计算机"])
-        scores["tech_inappropriateness"] = 0 if is_tech_question else min(tech_count / 5, 1.0)
+        tech_count = sum(
+            1 for indicator in self.tech_solution_indicators if indicator in response
+        )
+        is_tech_question = any(
+            word in question for word in ["技术", "科技", "AI", "计算机"]
+        )
+        scores["tech_inappropriateness"] = (
+            0 if is_tech_question else min(tech_count / 5, 1.0)
+        )
 
         # Structure complexity (lower is better)
         structure_score = 0
@@ -225,16 +273,26 @@ class DeepSeekV3Optimizer:
         scores["structure_complexity"] = min(structure_score / 5, 1.0)
 
         # Human relatability (higher is better)
-        human_words = ["感受", "体验", "想法", "认为", "觉得", "可能", "或许", "有时", "通常"]
+        human_words = [
+            "感受",
+            "体验",
+            "想法",
+            "认为",
+            "觉得",
+            "可能",
+            "或许",
+            "有时",
+            "通常",
+        ]
         human_count = sum(1 for word in human_words if word in response)
         scores["human_relatability"] = min(human_count / 5, 1.0)
 
         # Overall quality (higher is better)
         scores["overall_quality"] = (
-            (1 - scores["academic_overload"]) * 0.3 +
-            (1 - scores["tech_inappropriateness"]) * 0.2 +
-            (1 - scores["structure_complexity"]) * 0.2 +
-            scores["human_relatability"] * 0.3
+            (1 - scores["academic_overload"]) * 0.3
+            + (1 - scores["tech_inappropriateness"]) * 0.2
+            + (1 - scores["structure_complexity"]) * 0.2
+            + scores["human_relatability"] * 0.3
         )
 
         return scores
@@ -250,7 +308,9 @@ class ModelOptimizer:
     def optimize_for_model(self, prompt: str, question_type: str = "general") -> str:
         """Optimize prompt based on model characteristics."""
         if "deepseek" in self.model_name:
-            return self.deepseek_optimizer.optimize_prompt_for_deepseek(prompt, question_type)
+            return self.deepseek_optimizer.optimize_prompt_for_deepseek(
+                prompt, question_type
+            )
         if "claude" in self.model_name:
             # Claude generally produces good responses, minimal optimization needed
             return f"{prompt}\n\n请用自然、易懂的语言回答，保持人性化的表达。"
@@ -290,7 +350,6 @@ def test_deepseek_optimization() -> None:
     original_prompt = "如果生命终将结束，我们为什么要活着？"
     optimizer.optimize_prompt_for_deepseek(original_prompt, "philosophical")
 
-
     # Test response post-processing
     problematic_response = """
 # 🌐 生命意义综合求解框架
@@ -312,7 +371,6 @@ def test_deepseek_optimization() -> None:
 """
 
     optimizer.post_process_deepseek_response(problematic_response)
-
 
     # Quality assessment
     quality = optimizer.assess_response_quality(problematic_response, original_prompt)

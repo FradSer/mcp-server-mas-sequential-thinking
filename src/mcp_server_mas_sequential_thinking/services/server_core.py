@@ -181,8 +181,12 @@ class TeamInitializer(ServerInitializer):
             }
 
             # Use Six Hats mapping
-            six_hats_mode = six_hats_mode_mapping.get(config.team_mode, config.team_mode)
-            logger.info(f"Creating Six Hats team: {six_hats_mode} (from {config.team_mode})")
+            six_hats_mode = six_hats_mode_mapping.get(
+                config.team_mode, config.team_mode
+            )
+            logger.info(
+                f"Creating Six Hats team: {six_hats_mode} (from {config.team_mode})"
+            )
 
             self._team = create_team_by_type(six_hats_mode, model_config)
 
@@ -279,6 +283,7 @@ class ThoughtProcessor:
         from .thought_processor_refactored import (
             ThoughtProcessor as RefactoredProcessor,
         )
+
         self._processor = RefactoredProcessor(session)
 
     async def process_thought(self, thought_data: ThoughtData) -> str:
@@ -298,9 +303,13 @@ class ThoughtProcessor:
         """Legacy method - delegates to refactored processor."""
         return self._processor._format_response(content, thought_data)
 
-    async def _execute_single_agent_processing(self, input_prompt: str, routing_decision=None) -> str:
+    async def _execute_single_agent_processing(
+        self, input_prompt: str, routing_decision=None
+    ) -> str:
         """Legacy method - delegates to refactored processor."""
-        return await self._processor._execute_single_agent_processing(input_prompt, routing_decision)
+        return await self._processor._execute_single_agent_processing(
+            input_prompt, routing_decision
+        )
 
     async def _execute_team_processing(self, input_prompt: str) -> str:
         """Legacy method - delegates to refactored processor."""
@@ -329,7 +338,6 @@ async def create_server_lifespan() -> AsyncIterator[ServerState]:
 
 class ServerInitializationError(Exception):
     """Custom exception for server initialization failures."""
-
 
 
 def create_validated_thought_data(
@@ -369,7 +377,9 @@ async def get_thought_processor() -> ThoughtProcessor:
 
     if _thought_processor is None:
         if _server_state is None:
-            raise RuntimeError("Server not properly initialized - _server_state is None. Ensure app_lifespan is running.")
+            raise RuntimeError(
+                "Server not properly initialized - _server_state is None. Ensure app_lifespan is running."
+            )
 
         logger.info("Initializing ThoughtProcessor with Six Hats workflow")
         _thought_processor = ThoughtProcessor(_server_state.session)

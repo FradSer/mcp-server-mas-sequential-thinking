@@ -42,10 +42,10 @@ class LogLevel(Enum):
 class SmartLogLevel(Enum):
     """Smart log levels for performance-aware logging."""
 
-    CRITICAL_ONLY = "critical"      # Only errors and critical performance issues
-    PERFORMANCE = "performance"     # Include performance metrics
-    ROUTING = "routing"            # Include routing decisions
-    DEBUG = "debug"                # All details
+    CRITICAL_ONLY = "critical"  # Only errors and critical performance issues
+    PERFORMANCE = "performance"  # Include performance metrics
+    ROUTING = "routing"  # Include routing decisions
+    DEBUG = "debug"  # All details
 
     @classmethod
     def from_string(cls, level_str: str) -> "SmartLogLevel":
@@ -115,14 +115,25 @@ class SensitiveDataFilter(logging.Filter):
             r"***REDACTED_GITHUB_TOKEN***",
         ),
         (re.compile(r"sk-[A-Za-z0-9]{48,}"), r"***REDACTED_OPENAI_KEY***"),
-        (re.compile(r"(deepseek|groq|openrouter)_api_key[\":\s=]*[^\s\"'<>&]{8,}", re.IGNORECASE),
-         r"***REDACTED_API_KEY***"),
+        (
+            re.compile(
+                r"(deepseek|groq|openrouter)_api_key[\":\s=]*[^\s\"'<>&]{8,}",
+                re.IGNORECASE,
+            ),
+            r"***REDACTED_API_KEY***",
+        ),
         # Database URLs
-        (re.compile(r"(postgresql|mysql|sqlite)://[^\s\"'<>&]+", re.IGNORECASE),
-         r"***REDACTED_DATABASE_URL***"),
+        (
+            re.compile(r"(postgresql|mysql|sqlite)://[^\s\"'<>&]+", re.IGNORECASE),
+            r"***REDACTED_DATABASE_URL***",
+        ),
         # Generic secrets in environment variables
-        (re.compile(r"([A-Z_]+_SECRET|[A-Z_]+_TOKEN)[\":\s=]*[^\s\"'<>&]{8,}", re.IGNORECASE),
-         r"***REDACTED_SECRET***"),
+        (
+            re.compile(
+                r"([A-Z_]+_SECRET|[A-Z_]+_TOKEN)[\":\s=]*[^\s\"'<>&]{8,}", re.IGNORECASE
+            ),
+            r"***REDACTED_SECRET***",
+        ),
     ]
 
     def filter(self, record: logging.LogRecord) -> bool:
@@ -174,11 +185,29 @@ class JSONFormatter(logging.Formatter):
 
         # Add extra fields
         for key, value in record.__dict__.items():
-            if key not in ("name", "msg", "args", "levelname", "levelno", "pathname",
-                          "filename", "module", "lineno", "funcName", "created",
-                          "msecs", "relativeCreated", "thread", "threadName",
-                          "processName", "process", "getMessage", "exc_info",
-                          "exc_text", "stack_info"):
+            if key not in (
+                "name",
+                "msg",
+                "args",
+                "levelname",
+                "levelno",
+                "pathname",
+                "filename",
+                "module",
+                "lineno",
+                "funcName",
+                "created",
+                "msecs",
+                "relativeCreated",
+                "thread",
+                "threadName",
+                "processName",
+                "process",
+                "getMessage",
+                "exc_info",
+                "exc_text",
+                "stack_info",
+            ):
                 log_entry[key] = value
 
         return json.dumps(log_entry, ensure_ascii=False)
@@ -190,12 +219,18 @@ class LoggingConfig:
     def __init__(self) -> None:
         """Initialize logging configuration from environment."""
         self.log_level = LogLevel.from_string(os.getenv("LOG_LEVEL", "INFO"))
-        self.smart_log_level = SmartLogLevel.from_string(os.getenv("SMART_LOG_LEVEL", "performance"))
+        self.smart_log_level = SmartLogLevel.from_string(
+            os.getenv("SMART_LOG_LEVEL", "performance")
+        )
         self.log_format = LogFormat.from_string(os.getenv("LOG_FORMAT", "text"))
-        self.log_targets = LogTarget.from_string_list(os.getenv("LOG_TARGETS", "file,console"))
+        self.log_targets = LogTarget.from_string_list(
+            os.getenv("LOG_TARGETS", "file,console")
+        )
 
         # File logging configuration
-        self.log_file_max_size = self._parse_file_size(os.getenv("LOG_FILE_MAX_SIZE", "10MB"))
+        self.log_file_max_size = self._parse_file_size(
+            os.getenv("LOG_FILE_MAX_SIZE", "10MB")
+        )
         self.log_file_backup_count = int(os.getenv("LOG_FILE_BACKUP_COUNT", "5"))
 
         # Performance configuration
@@ -205,8 +240,12 @@ class LoggingConfig:
         self.log_dir = Path.home() / ".mas_sequential_thinking" / "logs"
 
         # Performance monitoring flags
-        self.log_performance_issues = os.getenv("LOG_PERFORMANCE_ISSUES", "true").lower() == "true"
-        self.log_response_quality = os.getenv("LOG_RESPONSE_QUALITY", "true").lower() == "true"
+        self.log_performance_issues = (
+            os.getenv("LOG_PERFORMANCE_ISSUES", "true").lower() == "true"
+        )
+        self.log_response_quality = (
+            os.getenv("LOG_RESPONSE_QUALITY", "true").lower() == "true"
+        )
 
     def _parse_file_size(self, size_str: str) -> int:
         """Parse file size string like '10MB' to bytes."""
@@ -233,7 +272,7 @@ class LoggingConfig:
             return JSONFormatter()
         return logging.Formatter(
             "%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-            datefmt="%Y-%m-%d %H:%M:%S"
+            datefmt="%Y-%m-%d %H:%M:%S",
         )
 
     def create_handlers(self) -> list[logging.Handler]:
@@ -279,9 +318,11 @@ class LoggingConfig:
 
 # ===== SMART LOGGING FUNCTIONALITY =====
 
+
 @dataclass
 class ProcessingSnapshot:
     """Lightweight snapshot of processing state."""
+
     thought_id: int
     complexity_score: float
     strategy_name: str
@@ -329,14 +370,16 @@ class SmartLogger:
         """Log thought processing start with minimal noise."""
         if self.log_level in [SmartLogLevel.ROUTING, SmartLogLevel.DEBUG]:
             self._ensure_logger()
-            self._get_logger().info(f"Processing thought #{thought_data.thoughtNumber}: {thought_data.thought[:60]}...")
+            self._get_logger().info(
+                f"Processing thought #{thought_data.thoughtNumber}: {thought_data.thought[:60]}..."
+            )
 
     def log_routing_decision(
         self,
         complexity_score: float,
         strategy_name: str,
         estimated_time: float,
-        reasoning: str | None = None
+        reasoning: str | None = None,
     ) -> None:
         """Log routing decision with smart verbosity."""
         self._ensure_logger()
@@ -350,7 +393,9 @@ class SmartLogger:
                 self._get_logger().info(f"Routing reasoning: {reasoning}")
 
         elif self.log_level in [SmartLogLevel.ROUTING, SmartLogLevel.DEBUG]:
-            self._get_logger().info(f"Route: {strategy_name} (complexity: {complexity_score:.1f})")
+            self._get_logger().info(
+                f"Route: {strategy_name} (complexity: {complexity_score:.1f})"
+            )
 
     def log_processing_complete(self, snapshot: ProcessingSnapshot) -> None:
         """Log completion with adaptive verbosity based on performance."""
@@ -369,7 +414,11 @@ class SmartLogger:
             self._get_logger().warning(
                 f"⚠️ Thought #{snapshot.thought_id} completed with issues: {', '.join(issues)}"
             )
-        elif self.log_level in [SmartLogLevel.PERFORMANCE, SmartLogLevel.ROUTING, SmartLogLevel.DEBUG]:
+        elif self.log_level in [
+            SmartLogLevel.PERFORMANCE,
+            SmartLogLevel.ROUTING,
+            SmartLogLevel.DEBUG,
+        ]:
             self._get_logger().info(
                 f"✅ Thought #{snapshot.thought_id} completed "
                 f"({snapshot.processing_time:.1f}s, eff: {snapshot.efficiency_score:.2f})"
@@ -381,31 +430,45 @@ class SmartLogger:
             return
 
         total_time = sum(s.processing_time for s in self.session_snapshots)
-        avg_efficiency = sum(s.efficiency_score for s in self.session_snapshots) / len(self.session_snapshots)
+        avg_efficiency = sum(s.efficiency_score for s in self.session_snapshots) / len(
+            self.session_snapshots
+        )
         slow_thoughts = [s for s in self.session_snapshots if s.is_slow]
         expensive_thoughts = [s for s in self.session_snapshots if s.is_expensive]
 
-        self._get_logger().info(f"📊 Session Summary: {len(self.session_snapshots)} thoughts, "
-                       f"{total_time:.1f}s total, {avg_efficiency:.2f} avg efficiency")
+        self._get_logger().info(
+            f"📊 Session Summary: {len(self.session_snapshots)} thoughts, "
+            f"{total_time:.1f}s total, {avg_efficiency:.2f} avg efficiency"
+        )
 
         if slow_thoughts:
-            self._get_logger().warning(f"🐌 {len(slow_thoughts)} slow thoughts detected")
+            self._get_logger().warning(
+                f"🐌 {len(slow_thoughts)} slow thoughts detected"
+            )
 
         if expensive_thoughts:
-            self._get_logger().warning(f"💰 {len(expensive_thoughts)} expensive thoughts detected")
+            self._get_logger().warning(
+                f"💰 {len(expensive_thoughts)} expensive thoughts detected"
+            )
 
     def log_response_quality(self, content: str, thought_number: int) -> None:
         """Log response quality issues."""
         content_length = len(content)
 
         # Check for academic over-complexity
-        academic_indicators = content.count("$$") + content.count("\\(") + content.count("###")
+        academic_indicators = (
+            content.count("$$") + content.count("\\(") + content.count("###")
+        )
         if academic_indicators > 5:
-            self._get_logger().warning(f"🎓 Thought #{thought_number}: Overly academic response detected")
+            self._get_logger().warning(
+                f"🎓 Thought #{thought_number}: Overly academic response detected"
+            )
 
         # Check for reasonable length
         if content_length > 2000:
-            self._get_logger().warning(f"📝 Thought #{thought_number}: Very long response ({content_length} chars)")
+            self._get_logger().warning(
+                f"📝 Thought #{thought_number}: Very long response ({content_length} chars)"
+            )
         elif self.log_level == SmartLogLevel.DEBUG:
             self._get_logger().debug(f"Response length: {content_length} chars")
 
@@ -450,14 +513,20 @@ class PerformanceMonitor:
         if len(self.recent_snapshots) < 3:
             return
 
-        recent_efficiency = sum(s.efficiency_score for s in self.recent_snapshots[-3:]) / 3
+        recent_efficiency = (
+            sum(s.efficiency_score for s in self.recent_snapshots[-3:]) / 3
+        )
         recent_avg_time = sum(s.processing_time for s in self.recent_snapshots[-3:]) / 3
 
         if recent_efficiency < self.baseline_efficiency * 0.7:
-            self._get_logger().warning(f"📉 Performance degradation detected: efficiency dropped to {recent_efficiency:.2f}")
+            self._get_logger().warning(
+                f"📉 Performance degradation detected: efficiency dropped to {recent_efficiency:.2f}"
+            )
 
         if recent_avg_time > self.baseline_time_per_thought * 2:
-            self._get_logger().warning(f"🐌 Processing time increased significantly: {recent_avg_time:.1f}s avg")
+            self._get_logger().warning(
+                f"🐌 Processing time increased significantly: {recent_avg_time:.1f}s avg"
+            )
 
     def get_performance_recommendation(self) -> str | None:
         """Get recommendation for performance improvement."""
@@ -468,7 +537,9 @@ class PerformanceMonitor:
         expensive_count = sum(1 for s in self.recent_snapshots if s.is_expensive)
 
         if slow_count > len(self.recent_snapshots) * 0.5:
-            return "Consider reducing complexity thresholds or simplifying routing logic"
+            return (
+                "Consider reducing complexity thresholds or simplifying routing logic"
+            )
 
         if expensive_count > len(self.recent_snapshots) * 0.3:
             return "Consider using more cost-effective strategies for moderate complexity tasks"
@@ -478,9 +549,11 @@ class PerformanceMonitor:
 
 # ===== METRICS LOGGING FUNCTIONALITY =====
 
+
 @dataclass
 class MetricsConfig:
     """Configuration for metrics logging."""
+
     separator_length: int = 60
     log_level: LogLevel = LogLevel.INFO
     include_separators: bool = True
@@ -634,7 +707,9 @@ class MetricsLogger:
         if isinstance(value, (list, tuple)):
             if len(value) <= 3:
                 return ", ".join(str(item) for item in value)
-            return f"{', '.join(str(item) for item in value[:3])}... ({len(value)} total)"
+            return (
+                f"{', '.join(str(item) for item in value[:3])}... ({len(value)} total)"
+            )
         return str(value)
 
     def _log_with_level(self, message: str, level: LogLevel) -> None:
@@ -694,6 +769,7 @@ class PerformanceTracker:
 
 # ===== FACTORY AND MAIN INTERFACE =====
 
+
 class LoggerFactory:
     """Factory for creating configured loggers."""
 
@@ -735,10 +811,14 @@ class LoggerFactory:
         # Unified naming strategy: use mas_sequential_thinking prefix
         if name.startswith("src.mcp_server_mas_sequential_thinking"):
             # Remove src.mcp_server prefix for cleaner logs
-            logger_name = name.replace("src.mcp_server_mas_sequential_thinking", "mas_sequential_thinking")
+            logger_name = name.replace(
+                "src.mcp_server_mas_sequential_thinking", "mas_sequential_thinking"
+            )
         elif name.startswith("mcp_server_mas_sequential_thinking"):
             # Replace mcp_server prefix
-            logger_name = name.replace("mcp_server_mas_sequential_thinking", "mas_sequential_thinking")
+            logger_name = name.replace(
+                "mcp_server_mas_sequential_thinking", "mas_sequential_thinking"
+            )
         elif name in {"__main__", "sequential_thinking"}:
             # Main application logger
             logger_name = "mas_sequential_thinking"
@@ -828,7 +908,7 @@ def log_thought_processing(
     content: str,
     token_estimate: tuple[int, int] = (0, 0),
     cost_estimate: float = 0.0,
-    reasoning: str | None = None
+    reasoning: str | None = None,
 ) -> None:
     """Unified logging function for thought processing."""
     # Log start
@@ -836,7 +916,9 @@ def log_thought_processing(
 
     # Log routing
     estimated_time = 60 if "全面探索" in strategy_name else 30
-    smart_logger.log_routing_decision(complexity_score, strategy_name, estimated_time, reasoning)
+    smart_logger.log_routing_decision(
+        complexity_score, strategy_name, estimated_time, reasoning
+    )
 
     # Create snapshot
     snapshot = ProcessingSnapshot(
@@ -846,7 +928,7 @@ def log_thought_processing(
         processing_time=processing_time,
         token_estimate=token_estimate,
         cost_estimate=cost_estimate,
-        efficiency_score=efficiency_score
+        efficiency_score=efficiency_score,
     )
 
     # Log completion
@@ -899,5 +981,5 @@ __all__ = [
     # Main functions
     "setup_logging",
     # Global instances
-    "smart_logger"
+    "smart_logger",
 ]

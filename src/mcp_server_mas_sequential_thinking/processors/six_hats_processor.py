@@ -8,13 +8,15 @@
 import logging
 import time
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, TYPE_CHECKING
 
 from agno.workflow.types import StepOutput
 
+if TYPE_CHECKING:
+    from mcp_server_mas_sequential_thinking.core.models import ThoughtData
+
 logger = logging.getLogger(__name__)
 from mcp_server_mas_sequential_thinking.config.modernized_config import get_model_config
-from mcp_server_mas_sequential_thinking.core.models import ThoughtData
 from mcp_server_mas_sequential_thinking.routing.six_hats_router import (
     RoutingDecision,
     SixHatsIntelligentRouter,
@@ -28,6 +30,7 @@ from .six_hats_core import HatColor, HatComplexity, SixHatsAgentFactory
 @dataclass
 class SixHatsProcessingResult:
     """六帽处理结果."""
+
     content: str
     strategy_used: str
     hat_sequence: list[str]
@@ -47,7 +50,7 @@ class SixHatsSequentialProcessor:
         self.router = SixHatsIntelligentRouter()
 
     async def process_thought_with_six_hats(
-        self, thought_data: ThoughtData, context_prompt: str = ""
+        self, thought_data: "ThoughtData", context_prompt: str = ""
     ) -> SixHatsProcessingResult:
         """使用六帽思维处理思想."""
         start_time = time.time()
@@ -61,7 +64,9 @@ class SixHatsSequentialProcessor:
             routing_decision = await self.router.route_thought(thought_data)
 
             logger.info(f"  🎯 Strategy: {routing_decision.strategy.name}")
-            logger.info(f"  🎨 Hat Sequence: {[hat.value for hat in routing_decision.strategy.hat_sequence]}")
+            logger.info(
+                f"  🎨 Hat Sequence: {[hat.value for hat in routing_decision.strategy.hat_sequence]}"
+            )
 
             # 步骤2: 根据复杂度执行相应处理
             if routing_decision.strategy.complexity == HatComplexity.SINGLE:
@@ -87,24 +92,30 @@ class SixHatsSequentialProcessor:
             final_result = SixHatsProcessingResult(
                 content=result["final_content"],
                 strategy_used=routing_decision.strategy.name,
-                hat_sequence=[hat.value for hat in routing_decision.strategy.hat_sequence],
+                hat_sequence=[
+                    hat.value for hat in routing_decision.strategy.hat_sequence
+                ],
                 processing_time=processing_time,
                 complexity_score=routing_decision.complexity_metrics.complexity_score,
                 cost_reduction=routing_decision.estimated_cost_reduction,
                 individual_results=result.get("individual_results", {}),
-                step_name="six_hats_processing"
+                step_name="six_hats_processing",
             )
 
             logger.info("✅ SIX HATS PROCESSING COMPLETED:")
             logger.info(f"  ⏱️  Time: {processing_time:.3f}s")
-            logger.info(f"  💰 Cost Reduction: {routing_decision.estimated_cost_reduction:.1f}%")
+            logger.info(
+                f"  💰 Cost Reduction: {routing_decision.estimated_cost_reduction:.1f}%"
+            )
             logger.info(f"  📊 Output Length: {len(final_result.content)} chars")
 
             return final_result
 
         except Exception as e:
             processing_time = time.time() - start_time
-            logger.exception(f"❌ Six Hats processing failed after {processing_time:.3f}s: {e}")
+            logger.exception(
+                f"❌ Six Hats processing failed after {processing_time:.3f}s: {e}"
+            )
 
             return SixHatsProcessingResult(
                 content=f"Six Hats processing failed: {e!s}",
@@ -114,11 +125,11 @@ class SixHatsSequentialProcessor:
                 complexity_score=0.0,
                 cost_reduction=0.0,
                 individual_results={},
-                step_name="error_handling"
+                step_name="error_handling",
             )
 
     async def _process_single_hat(
-        self, thought_data: ThoughtData, context: str, decision: RoutingDecision
+        self, thought_data: "ThoughtData", context: str, decision: RoutingDecision
     ) -> dict[str, Any]:
         """处理单帽模式."""
         hat_color = decision.strategy.hat_sequence[0]
@@ -126,9 +137,7 @@ class SixHatsSequentialProcessor:
 
         # 创建单个帽子agent
         model = self.model_config.create_agent_model()
-        agent = self.hat_factory.create_hat_agent(
-            hat_color, model, context, {}
-        )
+        agent = self.hat_factory.create_hat_agent(hat_color, model, context, {})
 
         # 执行处理
         result = await agent.arun(input=thought_data.thought)
@@ -138,11 +147,11 @@ class SixHatsSequentialProcessor:
 
         return {
             "final_content": content,
-            "individual_results": {hat_color.value: content}
+            "individual_results": {hat_color.value: content},
         }
 
     async def _process_double_hat_sequence(
-        self, thought_data: ThoughtData, context: str, decision: RoutingDecision
+        self, thought_data: "ThoughtData", context: str, decision: RoutingDecision
     ) -> dict[str, Any]:
         """处理双帽序列."""
         hat1, hat2 = decision.strategy.hat_sequence
@@ -187,15 +196,17 @@ Now apply {hat2.value} hat thinking to this.
 
         return {
             "final_content": final_content,
-            "individual_results": individual_results
+            "individual_results": individual_results,
         }
 
     async def _process_triple_hat_sequence(
-        self, thought_data: ThoughtData, context: str, decision: RoutingDecision
+        self, thought_data: "ThoughtData", context: str, decision: RoutingDecision
     ) -> dict[str, Any]:
         """处理三帽序列（核心模式）."""
         hat_sequence = decision.strategy.hat_sequence
-        logger.info(f"  🎩 TRIPLE HAT SEQUENCE: {' → '.join(hat.value for hat in hat_sequence)}")
+        logger.info(
+            f"  🎩 TRIPLE HAT SEQUENCE: {' → '.join(hat.value for hat in hat_sequence)}"
+        )
 
         model = self.model_config.create_agent_model()
         individual_results = {}
@@ -203,7 +214,7 @@ Now apply {hat2.value} hat thinking to this.
 
         # 顺序执行三个帽子
         for i, hat_color in enumerate(hat_sequence):
-            logger.info(f"    🎩 Processing {hat_color.value} hat ({i+1}/3)")
+            logger.info(f"    🎩 Processing {hat_color.value} hat ({i + 1}/3)")
 
             agent = self.hat_factory.create_hat_agent(
                 hat_color, model, context, previous_results
@@ -237,15 +248,17 @@ Now apply {hat2.value} hat thinking to this.
 
         return {
             "final_content": final_content,
-            "individual_results": individual_results
+            "individual_results": individual_results,
         }
 
     async def _process_full_hat_sequence(
-        self, thought_data: ThoughtData, context: str, decision: RoutingDecision
+        self, thought_data: "ThoughtData", context: str, decision: RoutingDecision
     ) -> dict[str, Any]:
         """处理完整六帽序列."""
         hat_sequence = decision.strategy.hat_sequence
-        logger.info(f"  🎩 FULL HAT SEQUENCE: {' → '.join(hat.value for hat in hat_sequence)}")
+        logger.info(
+            f"  🎩 FULL HAT SEQUENCE: {' → '.join(hat.value for hat in hat_sequence)}"
+        )
 
         model = self.model_config.create_agent_model()
         individual_results = {}
@@ -253,7 +266,9 @@ Now apply {hat2.value} hat thinking to this.
 
         # 顺序执行所有帽子
         for i, hat_color in enumerate(hat_sequence):
-            logger.info(f"    🎩 Processing {hat_color.value} hat ({i+1}/{len(hat_sequence)})")
+            logger.info(
+                f"    🎩 Processing {hat_color.value} hat ({i + 1}/{len(hat_sequence)})"
+            )
 
             agent = self.hat_factory.create_hat_agent(
                 hat_color, model, context, previous_results
@@ -295,7 +310,7 @@ Now apply {hat2.value} hat thinking to this.
 
         return {
             "final_content": final_content,
-            "individual_results": individual_results
+            "individual_results": individual_results,
         }
 
     def _extract_content(self, result: Any) -> str:
@@ -310,7 +325,10 @@ Now apply {hat2.value} hat thinking to this.
         return str(result).strip()
 
     def _build_sequential_input(
-        self, original_thought: str, previous_results: dict[str, str], current_hat: HatColor
+        self,
+        original_thought: str,
+        previous_results: dict[str, str],
+        current_hat: HatColor,
     ) -> str:
         """构建顺序处理的输入."""
         input_parts = [f"Original thought: {original_thought}", ""]
@@ -318,10 +336,14 @@ Now apply {hat2.value} hat thinking to this.
         if previous_results:
             input_parts.append("Previous hat perspectives:")
             for hat_name, content in previous_results.items():
-                input_parts.append(f"  {hat_name.title()} hat: {content[:200]}{'...' if len(content) > 200 else ''}")
+                input_parts.append(
+                    f"  {hat_name.title()} hat: {content[:200]}{'...' if len(content) > 200 else ''}"
+                )
             input_parts.append("")
 
-        input_parts.append(f"Now apply {current_hat.value} hat thinking to this situation.")
+        input_parts.append(
+            f"Now apply {current_hat.value} hat thinking to this situation."
+        )
 
         return "\n".join(input_parts)
 
@@ -339,17 +361,24 @@ Now apply {hat2.value} hat thinking to this.
             if hat_name != "blue":  # 避免包含之前的蓝帽结果
                 input_parts.append(f"  {hat_name.title()} hat: {content}")
 
-        input_parts.extend([
-            "",
-            "As the Blue Hat (metacognitive orchestrator), provide a unified, comprehensive integration of all perspectives.",
-            "This should be the FINAL, COMPLETE response that users will see.",
-            "Do not separate synthesis and critique - provide one coherent answer."
-        ])
+        input_parts.extend(
+            [
+                "",
+                "As the Blue Hat (metacognitive orchestrator), provide a unified, comprehensive integration of all perspectives.",
+                "This should be the FINAL, COMPLETE response that users will see.",
+                "Do not separate synthesis and critique - provide one coherent answer.",
+            ]
+        )
 
         return "\n".join(input_parts)
 
     def _combine_dual_hat_results(
-        self, hat1: HatColor, content1: str, hat2: HatColor, content2: str, original_thought: str
+        self,
+        hat1: HatColor,
+        content1: str,
+        hat2: HatColor,
+        content2: str,
+        original_thought: str,
     ) -> str:
         """组合双帽结果."""
         return f"""Based on the thought: "{original_thought}"
@@ -364,7 +393,10 @@ Integrated Understanding:
 These two perspectives complement each other - the {hat1.value} hat provides {self._get_hat_contribution(hat1)}, while the {hat2.value} hat offers {self._get_hat_contribution(hat2)}. Together, they give us a balanced view that considers both aspects important for this situation."""
 
     def _synthesize_triple_results(
-        self, results: dict[str, str], hat_sequence: list[HatColor], original_thought: str
+        self,
+        results: dict[str, str],
+        hat_sequence: list[HatColor],
+        original_thought: str,
     ) -> str:
         """综合三帽结果."""
         synthesis_parts = [f'Thinking about: "{original_thought}"', ""]
@@ -377,12 +409,17 @@ These two perspectives complement each other - the {hat1.value} hat provides {se
                 synthesis_parts.append("")
 
         synthesis_parts.append("Integrated Conclusion:")
-        synthesis_parts.append(f"This analysis using {len(hat_sequence)} thinking perspectives reveals a multi-faceted understanding. Each hat contributes its unique viewpoint, creating a comprehensive approach to the question.")
+        synthesis_parts.append(
+            f"This analysis using {len(hat_sequence)} thinking perspectives reveals a multi-faceted understanding. Each hat contributes its unique viewpoint, creating a comprehensive approach to the question."
+        )
 
         return "\n".join(synthesis_parts)
 
     def _synthesize_full_results(
-        self, results: dict[str, str], hat_sequence: list[HatColor], original_thought: str
+        self,
+        results: dict[str, str],
+        hat_sequence: list[HatColor],
+        original_thought: str,
     ) -> str:
         """综合完整六帽结果."""
         # 如果有蓝帽结果，优先使用
@@ -401,7 +438,7 @@ These two perspectives complement each other - the {hat1.value} hat provides {se
             HatColor.BLACK: "critical analysis and risk assessment",
             HatColor.YELLOW: "positive possibilities and value identification",
             HatColor.GREEN: "creative alternatives and innovative solutions",
-            HatColor.BLUE: "process management and integrated thinking"
+            HatColor.BLUE: "process management and integrated thinking",
         }
         return contributions.get(hat_color, "specialized thinking")
 
@@ -411,9 +448,13 @@ _six_hats_processor = SixHatsSequentialProcessor()
 
 
 # 便利函数
-async def process_with_six_hats(thought_data: ThoughtData, context: str = "") -> SixHatsProcessingResult:
+async def process_with_six_hats(
+    thought_data: "ThoughtData", context: str = ""
+) -> SixHatsProcessingResult:
     """使用六帽思维处理思想的便利函数."""
-    return await _six_hats_processor.process_thought_with_six_hats(thought_data, context)
+    return await _six_hats_processor.process_thought_with_six_hats(
+        thought_data, context
+    )
 
 
 def create_six_hats_step_output(result: SixHatsProcessingResult) -> StepOutput:

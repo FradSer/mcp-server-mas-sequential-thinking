@@ -65,9 +65,7 @@ class BaseExecutor(ABC):
     """Base class for workflow executors that eliminates duplication."""
 
     def __init__(
-        self,
-        strategy_name: str,
-        complexity_analyzer: ComplexityAnalyzer | None = None
+        self, strategy_name: str, complexity_analyzer: ComplexityAnalyzer | None = None
     ) -> None:
         self.strategy_name = strategy_name
         self.complexity_analyzer = complexity_analyzer or AIComplexityAnalyzer()
@@ -76,7 +74,7 @@ class BaseExecutor(ABC):
         self,
         step_input: StepInput,
         session_state: dict[str, Any],
-        processor: Agent | Team | Processor
+        processor: Agent | Team | Processor,
     ) -> StepOutput:
         """Execute the processor with standardized pattern."""
         start_time = time.time()
@@ -105,19 +103,19 @@ class BaseExecutor(ABC):
             return StepOutput(
                 content=content,
                 success=True,
-                step_name=f"{self.strategy_name}_execution"
+                step_name=f"{self.strategy_name}_execution",
             )
 
         except Exception as e:
             execution_time = time.time() - start_time
-            error_msg = str(e)[:LoggingLimits.MAX_ERROR_LOG_LENGTH]
+            error_msg = str(e)[: LoggingLimits.MAX_ERROR_LOG_LENGTH]
             self._log_execution_error(error_msg, execution_time)
 
             return StepOutput(
                 content=f"{self.strategy_name} execution failed: {error_msg}",
                 success=False,
                 error=error_msg,
-                step_name=f"{self.strategy_name}_error"
+                step_name=f"{self.strategy_name}_error",
             )
 
     def _extract_input(self, step_input: StepInput) -> ExtractedInput:
@@ -128,13 +126,10 @@ class BaseExecutor(ABC):
                 thought_number=step_input.input.get("thought_number", 1),
                 total_thoughts=step_input.input.get("total_thoughts", 1),
                 context=step_input.input.get("context", ""),
-                original_input=step_input.input
+                original_input=step_input.input,
             )
         content = str(step_input.input)
-        return ExtractedInput(
-            thought_content=content,
-            original_input=step_input.input
-        )
+        return ExtractedInput(thought_content=content, original_input=step_input.input)
 
     def _analyze_complexity(self, extracted: ExtractedInput) -> float:
         """Analyze complexity of the thought content."""
@@ -153,9 +148,7 @@ class BaseExecutor(ABC):
         return complexity_metrics.complexity_score
 
     async def _execute_processor(
-        self,
-        processor: Agent | Team | Processor,
-        extracted: ExtractedInput
+        self, processor: Agent | Team | Processor, extracted: ExtractedInput
     ) -> Any:
         """Execute the processor with extracted input."""
         # Add strategy-specific context to input
@@ -188,21 +181,25 @@ class BaseExecutor(ABC):
     def _validate_content_quality(self, content: str) -> None:
         """Validate content meets quality requirements."""
         if not is_content_sufficient_quality(content):
-            logger.warning(f"Content quality concerns for {self.strategy_name}: length={len(content)}")
+            logger.warning(
+                f"Content quality concerns for {self.strategy_name}: length={len(content)}"
+            )
 
     def _update_session_state(
         self,
         session_state: dict[str, Any],
         complexity_score: float,
-        execution_time: float
+        execution_time: float,
     ) -> None:
         """Update session state with execution metrics."""
-        session_state.update({
-            "current_strategy": self.strategy_name,
-            "current_complexity_score": complexity_score,
-            "current_complexity_level": get_complexity_level_name(complexity_score),
-            "last_execution_time": execution_time,
-        })
+        session_state.update(
+            {
+                "current_strategy": self.strategy_name,
+                "current_complexity_score": complexity_score,
+                "current_complexity_level": get_complexity_level_name(complexity_score),
+                "last_execution_time": execution_time,
+            }
+        )
 
     @abstractmethod
     def _enhance_input_for_strategy(self, extracted: ExtractedInput) -> str:
@@ -210,13 +207,17 @@ class BaseExecutor(ABC):
 
     def _log_execution_start(self, extracted: ExtractedInput) -> None:
         """Log execution start with truncated content."""
-        content_preview = extracted.thought_content[:LoggingLimits.MAX_INPUT_LOG_LENGTH]
+        content_preview = extracted.thought_content[
+            : LoggingLimits.MAX_INPUT_LOG_LENGTH
+        ]
         if len(extracted.thought_content) > LoggingLimits.MAX_INPUT_LOG_LENGTH:
             content_preview += "..."
 
         logger.info(f"🚀 {self.strategy_name.upper()} EXECUTION:")
         logger.info(f"  📝 Input: {content_preview}")
-        logger.info(f"  🔢 Progress: {extracted.thought_number}/{extracted.total_thoughts}")
+        logger.info(
+            f"  🔢 Progress: {extracted.thought_number}/{extracted.total_thoughts}"
+        )
 
     def _log_complexity_analysis(self, complexity_score: float) -> None:
         """Log complexity analysis results."""
@@ -225,16 +226,20 @@ class BaseExecutor(ABC):
 
     def _log_execution_success(self, content: str, execution_time: float) -> None:
         """Log successful execution."""
-        content_preview = content[:LoggingLimits.MAX_OUTPUT_LOG_LENGTH]
+        content_preview = content[: LoggingLimits.MAX_OUTPUT_LOG_LENGTH]
         if len(content) > LoggingLimits.MAX_OUTPUT_LOG_LENGTH:
             content_preview += "..."
 
-        logger.info(f"  ✅ Success: {self.strategy_name} completed in {execution_time:.3f}s")
+        logger.info(
+            f"  ✅ Success: {self.strategy_name} completed in {execution_time:.3f}s"
+        )
         logger.info(f"  📄 Output: {content_preview}")
 
     def _log_execution_error(self, error_msg: str, execution_time: float) -> None:
         """Log execution error."""
-        logger.error(f"  ❌ Error: {self.strategy_name} failed after {execution_time:.3f}s")
+        logger.error(
+            f"  ❌ Error: {self.strategy_name} failed after {execution_time:.3f}s"
+        )
         logger.error(f"  🚨 Details: {error_msg}")
 
 
@@ -276,7 +281,9 @@ class HybridTeamExecutor(BaseExecutor):
         if extracted.context:
             enhanced_parts.insert(1, f"Context: {extracted.context}")
 
-        enhanced_parts.append("Please coordinate between team members for a balanced analysis.")
+        enhanced_parts.append(
+            "Please coordinate between team members for a balanced analysis."
+        )
 
         return "\n\n".join(enhanced_parts)
 
@@ -297,15 +304,17 @@ class MultiAgentExecutor(BaseExecutor):
         if extracted.context:
             enhanced_parts.insert(1, f"Context: {extracted.context}")
 
-        enhanced_parts.extend([
-            "",
-            "This requires comprehensive multi-agent analysis.",
-            "Each specialist should contribute their expertise:",
-            "- Strategic planning and roadmap development",
-            "- In-depth research and information gathering",
-            "- Critical analysis and evaluation",
-            "- Quality assessment and improvement suggestions",
-            "- Final synthesis and integration"
-        ])
+        enhanced_parts.extend(
+            [
+                "",
+                "This requires comprehensive multi-agent analysis.",
+                "Each specialist should contribute their expertise:",
+                "- Strategic planning and roadmap development",
+                "- In-depth research and information gathering",
+                "- Critical analysis and evaluation",
+                "- Quality assessment and improvement suggestions",
+                "- Final synthesis and integration",
+            ]
+        )
 
         return "\n".join(enhanced_parts)
