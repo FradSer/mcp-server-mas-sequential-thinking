@@ -6,7 +6,7 @@ TDD测试 - CostOptimizationConstants重构组件
 """
 
 
-from src.mcp_server_mas_sequential_thinking.constants import CostOptimizationConstants
+from mcp_server_mas_sequential_thinking.constants import CostOptimizationConstants
 
 
 class TestCostOptimizationConstants:

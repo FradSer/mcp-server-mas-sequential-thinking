@@ -2,11 +2,11 @@
 
 from unittest.mock import Mock, patch
 
-from src.mcp_server_mas_sequential_thinking.agno_workflow_router import (
+from mcp_server_mas_sequential_thinking.core.models import ThoughtData
+from mcp_server_mas_sequential_thinking.routing.agno_workflow_router import (
     AgnoWorkflowRouter,
 )
-from src.mcp_server_mas_sequential_thinking.models import ThoughtData
-from src.mcp_server_mas_sequential_thinking.routing.complexity_types import (
+from mcp_server_mas_sequential_thinking.routing.complexity_types import (
     AIComplexityAnalyzer,
     ComplexityLevel,
 )

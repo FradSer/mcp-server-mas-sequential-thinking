@@ -10,7 +10,7 @@ import tempfile
 from pathlib import Path
 from unittest.mock import patch
 
-from src.mcp_server_mas_sequential_thinking.logging_config import (
+from mcp_server_mas_sequential_thinking.logging_config import (
     JSONFormatter,
     LogFormat,
     LoggerFactory,

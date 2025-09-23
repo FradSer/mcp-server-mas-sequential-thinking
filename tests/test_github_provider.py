@@ -8,7 +8,8 @@ import os
 from unittest.mock import MagicMock, patch
 
 import pytest
-from src.mcp_server_mas_sequential_thinking.modernized_config import (
+
+from mcp_server_mas_sequential_thinking.modernized_config import (
     BaseProviderStrategy,
     GitHubStrategy,
     ModelConfig,
@@ -228,7 +229,7 @@ class TestGitHubOpenAIInitialization:
     @patch("agno.models.openai.OpenAIChat.__init__", return_value=None)
     def test_github_openai_uses_correct_base_url(self, mock_openai_init):
         """Test that GitHubOpenAI passes correct base_url to parent class."""
-        from src.mcp_server_mas_sequential_thinking.config import GitHubOpenAI
+        from mcp_server_mas_sequential_thinking.config import GitHubOpenAI
 
         # Create GitHubOpenAI instance with valid test token
         valid_token = "ghp_1234567890abcdef1234567890abcdef1234"
@@ -263,7 +264,7 @@ class TestGitHubStrategyIntegration:
 
     def test_strategy_in_strategies_registry(self):
         """Test that GitHubStrategy can be added to STRATEGIES registry."""
-        from src.mcp_server_mas_sequential_thinking.config import STRATEGIES
+        from mcp_server_mas_sequential_thinking.config import STRATEGIES
 
         # Add GitHub strategy to registry
         github_strategy = GitHubStrategy()
@@ -355,7 +356,7 @@ class TestGitHubTokenValidation:
     @patch("agno.models.openai.OpenAIChat.__init__", return_value=None)
     def test_valid_github_token_formats(self, mock_openai_init):
         """Test that valid GitHub token formats are accepted."""
-        from src.mcp_server_mas_sequential_thinking.config import GitHubOpenAI
+        from mcp_server_mas_sequential_thinking.config import GitHubOpenAI
 
         valid_tokens = [
             "ghp_1234567890abcdef1234567890abcdef1234",  # Classic PAT (40 chars)
@@ -372,7 +373,7 @@ class TestGitHubTokenValidation:
 
     def test_invalid_github_token_formats_raise_error(self):
         """Test that invalid GitHub token formats raise validation error."""
-        from src.mcp_server_mas_sequential_thinking.config import GitHubOpenAI
+        from mcp_server_mas_sequential_thinking.config import GitHubOpenAI
 
         invalid_tokens = [
             ("invalid_token", "Invalid GitHub token format"),
@@ -389,7 +390,7 @@ class TestGitHubTokenValidation:
 
     def test_missing_github_token_raises_error(self):
         """Test that missing GitHub token raises appropriate error."""
-        from src.mcp_server_mas_sequential_thinking.config import GitHubOpenAI
+        from mcp_server_mas_sequential_thinking.config import GitHubOpenAI
 
         with patch.dict(os.environ, {}, clear=True):
             with pytest.raises(ValueError, match="GitHub token is required"):

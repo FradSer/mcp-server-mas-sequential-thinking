@@ -2,31 +2,40 @@
 
 import pytest
 from pydantic import ValidationError
-from src.mcp_server_mas_sequential_thinking.models import ThoughtData
+
+from mcp_server_mas_sequential_thinking.core.models import ThoughtData
 
 
 class TestThoughtData:
     """Test ThoughtData model validation."""
 
     def test_total_thoughts_minimum_value(self):
-        """Test that total_thoughts accepts values >= 5."""
-        # This should work - minimum value of 5
+        """Test that total_thoughts accepts values >= 1."""
+        # This should work - minimum value of 1
         thought_data = ThoughtData(
             thought="Test thought",
-            thought_number=1,
-            total_thoughts=5,  # Minimum allowed value
-            next_needed=True,
+            thoughtNumber=1,
+            totalThoughts=1,  # Minimum allowed value
+            nextThoughtNeeded=True,
+            isRevision=False,
+            branchFromThought=None,
+            branchId=None,
+            needsMoreThoughts=False,
         )
-        assert thought_data.total_thoughts == 5
+        assert thought_data.totalThoughts == 1
 
         # This should also work - larger value
         thought_data = ThoughtData(
             thought="Test thought",
-            thought_number=1,
-            total_thoughts=10,  # Higher value
-            next_needed=True,
+            thoughtNumber=1,
+            totalThoughts=10,  # Higher value
+            nextThoughtNeeded=True,
+            isRevision=False,
+            branchFromThought=None,
+            branchId=None,
+            needsMoreThoughts=False,
         )
-        assert thought_data.total_thoughts == 10
+        assert thought_data.totalThoughts == 10
 
     def test_total_thoughts_invalid_values(self):
         """Test that total_thoughts rejects values < 1."""
@@ -34,24 +43,36 @@ class TestThoughtData:
         with pytest.raises(ValidationError):
             ThoughtData(
                 thought="Test thought",
-                thought_number=1,
-                total_thoughts=0,  # Below minimum
-                next_needed=True,
+                thoughtNumber=1,
+                totalThoughts=0,  # Below minimum
+                nextThoughtNeeded=True,
+                isRevision=False,
+                branchFromThought=None,
+                branchId=None,
+                needsMoreThoughts=False,
             )
 
         # This should work now - value of 3 is valid
         ThoughtData(
             thought="Test thought",
-            thought_number=1,
-            total_thoughts=3,  # Now valid
-            next_needed=True,
+            thoughtNumber=1,
+            totalThoughts=3,  # Now valid
+            nextThoughtNeeded=True,
+            isRevision=False,
+            branchFromThought=None,
+            branchId=None,
+            needsMoreThoughts=False,
         )
 
         # This should fail - negative value
         with pytest.raises(ValidationError):
             ThoughtData(
                 thought="Test thought",
-                thought_number=1,
-                total_thoughts=-1,  # Negative value
-                next_needed=True,
+                thoughtNumber=1,
+                totalThoughts=-1,  # Negative value
+                nextThoughtNeeded=True,
+                isRevision=False,
+                branchFromThought=None,
+                branchId=None,
+                needsMoreThoughts=False,
             )

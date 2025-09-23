@@ -2,7 +2,7 @@
 
 from dataclasses import dataclass
 
-from src.mcp_server_mas_sequential_thinking.models import ThoughtData
+from mcp_server_mas_sequential_thinking.core.models import ThoughtData
 
 
 @dataclass

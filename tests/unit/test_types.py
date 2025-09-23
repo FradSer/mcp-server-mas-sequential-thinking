@@ -4,7 +4,8 @@ from typing import get_args, get_origin, get_type_hints
 from unittest.mock import Mock
 
 import pytest
-from src.mcp_server_mas_sequential_thinking.types import (
+
+from mcp_server_mas_sequential_thinking.types import (
     AgentFactory,
     BranchId,
     ComplexityMetrics,

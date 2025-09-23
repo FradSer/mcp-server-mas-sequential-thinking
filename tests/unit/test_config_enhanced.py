@@ -3,7 +3,8 @@
 from unittest.mock import MagicMock
 
 import pytest
-from src.mcp_server_mas_sequential_thinking.modernized_config import (
+
+from mcp_server_mas_sequential_thinking.modernized_config import (
     DeepSeekStrategy,
     GitHubOpenAI,
     GitHubStrategy,
@@ -14,7 +15,6 @@ from src.mcp_server_mas_sequential_thinking.modernized_config import (
     check_required_api_keys,
     get_model_config,
 )
-
 from tests.helpers.mocks import MockEnvironment
 
 

@@ -7,12 +7,13 @@ Tests the AgnoCompliantRouter implementation and its integration with the Though
 from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
-from src.mcp_server_mas_sequential_thinking.agno_workflow_router import (
+
+from mcp_server_mas_sequential_thinking.core.models import ThoughtData
+from mcp_server_mas_sequential_thinking.routing.agno_workflow_router import (
     AgnoWorkflowRouter,
     WorkflowResult,
 )
-from src.mcp_server_mas_sequential_thinking.models import ThoughtData
-from src.mcp_server_mas_sequential_thinking.routing.complexity_types import (
+from mcp_server_mas_sequential_thinking.routing.complexity_types import (
     ComplexityLevel,
 )
 
@@ -47,7 +48,7 @@ def sample_thought_data():
 def agno_router(mock_model_config):
     """Create AgnoWorkflowRouter instance for testing."""
     with patch(
-        "src.mcp_server_mas_sequential_thinking.agno_workflow_router.get_model_config"
+        "src.mcp_server_mas_sequential_thinking.routing.agno_workflow_router.get_model_config"
     ) as mock_get_config:
         mock_get_config.return_value = mock_model_config
         return AgnoWorkflowRouter()
@@ -253,8 +254,8 @@ class TestWorkflowIntegration:
     @pytest.mark.asyncio
     async def test_thought_processor_workflow_integration(self):
         """Test ThoughtProcessor integration with workflow."""
-        from src.mcp_server_mas_sequential_thinking.server_core import ThoughtProcessor
-        from src.mcp_server_mas_sequential_thinking.session import SessionMemory
+        from mcp_server_mas_sequential_thinking.server_core import ThoughtProcessor
+        from mcp_server_mas_sequential_thinking.session import SessionMemory
 
         # Create mock session
         mock_team = Mock()

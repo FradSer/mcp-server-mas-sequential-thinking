@@ -4,10 +4,10 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 from agno.team.team import Team
-from src.mcp_server_mas_sequential_thinking.unified_team import (
+
+from mcp_server_mas_sequential_thinking.unified_team import (
     create_team,
 )
-
 from tests.helpers.mocks import MockModelConfig
 
 

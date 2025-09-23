@@ -8,7 +8,8 @@ TDD测试 - AgentFactory重构组件
 from unittest.mock import Mock, patch
 
 from agno.tools.reasoning import ReasoningTools
-from src.mcp_server_mas_sequential_thinking.agno_workflow_router import AgentFactory
+
+from mcp_server_mas_sequential_thinking.routing.agno_workflow_router import AgentFactory
 
 
 class TestAgentFactory:
@@ -26,7 +27,7 @@ class TestAgentFactory:
         instructions = ["instruction1", "instruction2"]
 
         with patch(
-            "src.mcp_server_mas_sequential_thinking.agno_workflow_router.Agent"
+            "src.mcp_server_mas_sequential_thinking.routing.agno_workflow_router.Agent"
         ) as mock_agent_class:
             mock_agent_instance = Mock()
             mock_agent_class.return_value = mock_agent_instance
@@ -46,7 +47,7 @@ class TestAgentFactory:
     def test_create_agent_with_empty_instructions(self):
         """测试创建包含空指令列表的代理"""
         with patch(
-            "src.mcp_server_mas_sequential_thinking.agno_workflow_router.Agent"
+            "src.mcp_server_mas_sequential_thinking.routing.agno_workflow_router.Agent"
         ) as mock_agent_class:
             mock_agent_instance = Mock()
             mock_agent_class.return_value = mock_agent_instance
@@ -214,7 +215,7 @@ class TestAgentFactoryIntegration:
     def test_agent_factory_creates_different_agents(self):
         """测试工厂能创建不同类型的代理"""
         with patch(
-            "src.mcp_server_mas_sequential_thinking.agno_workflow_router.Agent"
+            "src.mcp_server_mas_sequential_thinking.routing.agno_workflow_router.Agent"
         ) as mock_agent_class:
             # 每次调用返回不同的mock实例
             mock_instances = [Mock(), Mock(), Mock()]
@@ -239,7 +240,7 @@ class TestAgentFactoryIntegration:
         ]
 
         with patch(
-            "src.mcp_server_mas_sequential_thinking.agno_workflow_router.Agent"
+            "src.mcp_server_mas_sequential_thinking.routing.agno_workflow_router.Agent"
         ) as mock_agent_class:
             mock_agent_class.return_value = Mock()
 
@@ -296,7 +297,7 @@ class TestAgentFactoryEdgeCases:
         # 这应该能够处理或至少不崩溃
         try:
             with patch(
-                "src.mcp_server_mas_sequential_thinking.agno_workflow_router.Agent"
+                "src.mcp_server_mas_sequential_thinking.routing.agno_workflow_router.Agent"
             ) as mock_agent_class:
                 mock_agent_class.return_value = Mock()
 
@@ -327,7 +328,7 @@ class TestAgentFactoryPerformance:
         mock_model = Mock()
 
         with patch(
-            "src.mcp_server_mas_sequential_thinking.agno_workflow_router.Agent"
+            "src.mcp_server_mas_sequential_thinking.routing.agno_workflow_router.Agent"
         ) as mock_agent_class:
             mock_agent_class.return_value = Mock()
 

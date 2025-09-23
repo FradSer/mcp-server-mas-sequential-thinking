@@ -8,7 +8,8 @@ TDD测试 - StepExecutorMixin重构组件
 from typing import Any
 
 from agno.workflow.types import StepOutput
-from src.mcp_server_mas_sequential_thinking.agno_workflow_router import (
+
+from mcp_server_mas_sequential_thinking.routing.agno_workflow_router import (
     StepExecutorMixin,
 )
 

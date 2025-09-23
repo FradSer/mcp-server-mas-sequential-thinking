@@ -1,6 +1,6 @@
 """TDD tests for constants module - validating magic number extraction."""
 
-from src.mcp_server_mas_sequential_thinking.constants import (
+from mcp_server_mas_sequential_thinking.constants import (
     ComplexityScoring,
     DefaultSettings,
     ProcessingStrategy,

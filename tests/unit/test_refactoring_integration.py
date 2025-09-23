@@ -3,24 +3,24 @@
 from unittest.mock import Mock, patch
 
 import pytest
-from src.mcp_server_mas_sequential_thinking.constants import (
+
+from mcp_server_mas_sequential_thinking.constants import (
     ComplexityScoring,
     DefaultSettings,
     TokenCosts,
     ValidationLimits,
 )
-from src.mcp_server_mas_sequential_thinking.models import ThoughtData
-from src.mcp_server_mas_sequential_thinking.server_core import (
+from mcp_server_mas_sequential_thinking.core.models import ThoughtData
+from mcp_server_mas_sequential_thinking.server_core import (
     create_validated_thought_data,
 )
-from src.mcp_server_mas_sequential_thinking.session import SessionMemory
-from src.mcp_server_mas_sequential_thinking.types import (
+from mcp_server_mas_sequential_thinking.session import SessionMemory
+from mcp_server_mas_sequential_thinking.types import (
     ConfigurationError,
     ProcessingMetadata,
     ThoughtProcessingError,
     ValidationError,
 )
-
 from tests.helpers.factories import ThoughtDataBuilder
 
 
@@ -150,7 +150,7 @@ class TestModuleUnificationIntegration:
     @patch("src.mcp_server_mas_sequential_thinking.modernized_config.get_model_config")
     def test_unified_config_module_integration(self, mock_get_config):
         """RED: Test unified config module works as expected."""
-        from src.mcp_server_mas_sequential_thinking.modernized_config import (
+        from mcp_server_mas_sequential_thinking.modernized_config import (
             get_model_config,
         )
 
@@ -168,7 +168,7 @@ class TestModuleUnificationIntegration:
 
     def test_unified_agents_module_import(self):
         """RED: Test unified agents module can be imported and used."""
-        from src.mcp_server_mas_sequential_thinking.unified_agents import (
+        from mcp_server_mas_sequential_thinking.unified_agents import (
             UnifiedAgentFactory,
         )
 
@@ -178,7 +178,7 @@ class TestModuleUnificationIntegration:
 
     def test_unified_team_module_import(self):
         """RED: Test unified team module can be imported and used."""
-        from src.mcp_server_mas_sequential_thinking.unified_team import (
+        from mcp_server_mas_sequential_thinking.unified_team import (
             EnhancedTeamBuilder,
             StandardTeamBuilder,
         )
@@ -376,7 +376,7 @@ class TestRefactoredComponentsIntegration:
 
     def test_logging_mixin_with_cost_optimization_constants(self):
         """Test LoggingMixin uses CostOptimizationConstants correctly."""
-        from src.mcp_server_mas_sequential_thinking.server_core import LoggingMixin
+        from mcp_server_mas_sequential_thinking.server_core import LoggingMixin
 
         mixin = LoggingMixin()
 
@@ -397,7 +397,7 @@ class TestRefactoredComponentsIntegration:
         """Test AgentFactory creates agents that can be used in workflows."""
         from unittest.mock import Mock
 
-        from src.mcp_server_mas_sequential_thinking.agno_workflow_router import (
+        from mcp_server_mas_sequential_thinking.routing.agno_workflow_router import (
             AgentFactory,
         )
 
@@ -407,7 +407,7 @@ class TestRefactoredComponentsIntegration:
 
         # Test creating different types of agents
         with patch(
-            "src.mcp_server_mas_sequential_thinking.agno_workflow_router.Agent"
+            "src.mcp_server_mas_sequential_thinking.routing.agno_workflow_router.Agent"
         ) as mock_agent_class:
             mock_agent = Mock()
             mock_agent_class.return_value = mock_agent
@@ -431,11 +431,11 @@ class TestRefactoredComponentsIntegration:
 
     def test_step_executor_mixin_with_cost_optimization_constants(self):
         """Test StepExecutorMixin integrates with CostOptimizationConstants for session state."""
-        from src.mcp_server_mas_sequential_thinking.agno_workflow_router import (
-            StepExecutorMixin,
-        )
-        from src.mcp_server_mas_sequential_thinking.constants import (
+        from mcp_server_mas_sequential_thinking.constants import (
             CostOptimizationConstants,
+        )
+        from mcp_server_mas_sequential_thinking.routing.agno_workflow_router import (
+            StepExecutorMixin,
         )
 
         # Test step output creation with complexity from session state
@@ -463,14 +463,14 @@ class TestRefactoredComponentsIntegration:
         """Test complete workflow using all refactored components together."""
         from unittest.mock import Mock, patch
 
-        from src.mcp_server_mas_sequential_thinking.agno_workflow_router import (
+        from mcp_server_mas_sequential_thinking.constants import (
+            CostOptimizationConstants,
+        )
+        from mcp_server_mas_sequential_thinking.routing.agno_workflow_router import (
             AgentFactory,
             StepExecutorMixin,
         )
-        from src.mcp_server_mas_sequential_thinking.constants import (
-            CostOptimizationConstants,
-        )
-        from src.mcp_server_mas_sequential_thinking.server_core import LoggingMixin
+        from mcp_server_mas_sequential_thinking.server_core import LoggingMixin
 
         # Create a mock class that uses all mixins
         class MockWorkflowProcessor(LoggingMixin, StepExecutorMixin):
@@ -480,7 +480,7 @@ class TestRefactoredComponentsIntegration:
             def process_complex_request(self, content: str, complexity_score: float):
                 # Use AgentFactory to create agents
                 with patch(
-                    "src.mcp_server_mas_sequential_thinking.agno_workflow_router.Agent"
+                    "src.mcp_server_mas_sequential_thinking.routing.agno_workflow_router.Agent"
                 ) as mock_agent_class:
                     mock_agent = Mock()
                     mock_agent_class.return_value = mock_agent
@@ -562,7 +562,7 @@ class TestRefactoredComponentsIntegration:
 
     def test_constants_integration_across_modules(self):
         """Test that CostOptimizationConstants are used consistently across modules."""
-        from src.mcp_server_mas_sequential_thinking.constants import (
+        from mcp_server_mas_sequential_thinking.constants import (
             CostOptimizationConstants,
             QualityThresholds,
             TokenCosts,
@@ -599,7 +599,7 @@ class TestRefactoredComponentsIntegration:
 
     def test_error_handling_integration(self):
         """Test error handling works across all refactored components."""
-        from src.mcp_server_mas_sequential_thinking.agno_workflow_router import (
+        from mcp_server_mas_sequential_thinking.routing.agno_workflow_router import (
             StepExecutorMixin,
         )
 
@@ -619,10 +619,10 @@ class TestRefactoredComponentsIntegration:
 
     def test_performance_metrics_integration(self):
         """Test performance metrics work with logging and cost optimization."""
-        from src.mcp_server_mas_sequential_thinking.constants import (
+        from mcp_server_mas_sequential_thinking.constants import (
             PerformanceMetrics,
         )
-        from src.mcp_server_mas_sequential_thinking.server_core import LoggingMixin
+        from mcp_server_mas_sequential_thinking.server_core import LoggingMixin
 
         mixin = LoggingMixin()
 
