@@ -178,7 +178,7 @@ async def sequentialthinking(
         # Use captured state directly to avoid race conditions
         global _thought_processor
         if _thought_processor is None:
-            logger.info("Initializing ThoughtProcessor with Six Hats workflow")
+            logger.info("Initializing ThoughtProcessor with Multi-Thinking workflow")
             _thought_processor = ThoughtProcessor(current_server_state.session)
 
         result = await _thought_processor.process_thought(thought_data)
