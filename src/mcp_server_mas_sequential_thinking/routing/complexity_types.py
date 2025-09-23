@@ -75,4 +75,3 @@ class ComplexityAnalyzer(ABC):
     @abstractmethod
     async def analyze(self, thought_data: "ThoughtData") -> ComplexityMetrics:
         """Analyze thought complexity and return metrics."""
-        pass

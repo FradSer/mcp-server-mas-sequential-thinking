@@ -6,7 +6,7 @@ with more nuanced understanding of context, semantics, and depth.
 
 import json
 import logging
-from typing import Any, Dict, Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from agno.agent import Agent
 
@@ -69,9 +69,9 @@ Analyze now:
 class AIComplexityAnalyzer(ComplexityAnalyzer):
     """AI-powered complexity analyzer using language models."""
 
-    def __init__(self, model_config: Optional[Any] = None) -> None:
+    def __init__(self, model_config: Any | None = None) -> None:
         self.model_config = model_config or get_model_config()
-        self._agent: Optional[Agent] = None
+        self._agent: Agent | None = None
 
     def _get_agent(self) -> Agent:
         """Lazy initialization of the analysis agent."""
@@ -135,7 +135,7 @@ class AIComplexityAnalyzer(ComplexityAnalyzer):
             return str(result.content)
         return str(result)
 
-    def _parse_json_response(self, response_text: str) -> Dict[str, Any]:
+    def _parse_json_response(self, response_text: str) -> dict[str, Any]:
         """Parse JSON from AI response, handling various formats."""
         # Try to find JSON in the response
         lines = response_text.strip().split("\n")

@@ -1,14 +1,14 @@
-"""Six Thinking Hats Workflow Router - Complete Rewrite.
+"""Multi-Thinking Workflow Router - Complete Rewrite.
 
-纯净的Six Thinking Hats工作流实现，基于Agno v2.0框架。
-完全移除旧的复杂度路由，专注于六帽思维方法论。
+纯净的多向思维工作流实现，基于Agno v2.0框架。
+完全移除旧的复杂度路由，专注于多向思维方法论。
 """
 
 # Lazy import to break circular dependency
 import logging
 import time
 from dataclasses import dataclass
-from typing import Any, Dict, List, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from agno.workflow.router import Router
 from agno.workflow.step import Step
@@ -21,17 +21,17 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 from mcp_server_mas_sequential_thinking.config.modernized_config import get_model_config
 
-# Import Six Hats support
-from mcp_server_mas_sequential_thinking.processors.six_hats_processor import (
-    SixHatsSequentialProcessor,
-    create_six_hats_step_output,
+# Import Multi-Thinking support
+from mcp_server_mas_sequential_thinking.processors.multi_thinking_processor import (
+    MultiThinkingSequentialProcessor,
+    create_multi_thinking_step_output,
 )
 
 # logger already defined above
 
 
 @dataclass
-class SixHatsWorkflowResult:
+class MultiThinkingWorkflowResult:
     """Result from Six Hats workflow execution."""
 
     content: str
@@ -39,11 +39,11 @@ class SixHatsWorkflowResult:
     processing_time: float
     complexity_score: float
     step_name: str
-    hat_sequence: List[str]
+    hat_sequence: list[str]
     cost_reduction: float
 
 
-class SixHatsWorkflowRouter:
+class MultiThinkingWorkflowRouter:
     """Pure Six Thinking Hats workflow router using Agno v2.0."""
 
     def __init__(self) -> None:
@@ -51,7 +51,7 @@ class SixHatsWorkflowRouter:
         self.model_config = get_model_config()
 
         # Initialize Six Hats processor
-        self.six_hats_processor = SixHatsSequentialProcessor()
+        self.six_hats_processor = MultiThinkingSequentialProcessor()
 
         # Create Six Hats processing step
         self.six_hats_step = self._create_six_hats_step()
@@ -71,7 +71,7 @@ class SixHatsWorkflowRouter:
 
         logger.info("Six Hats Workflow Router initialized")
 
-    def _six_hats_selector(self, step_input: StepInput) -> List[Step]:
+    def _six_hats_selector(self, step_input: StepInput) -> list[Step]:
         """Selector that always returns Six Hats processing."""
         try:
             logger.info("🎩 SIX HATS WORKFLOW ROUTING:")
@@ -103,7 +103,7 @@ class SixHatsWorkflowRouter:
         """Create Six Thinking Hats processing step."""
 
         async def six_hats_executor(
-            step_input: StepInput, session_state: Dict[str, Any]
+            step_input: StepInput, session_state: dict[str, Any]
         ) -> StepOutput:
             """Execute Six Hats thinking process."""
             try:
@@ -155,7 +155,7 @@ class SixHatsWorkflowRouter:
                 logger.info(f"  📊 Complexity: {result.complexity_score:.1f}")
                 logger.info(f"  💰 Cost Reduction: {result.cost_reduction:.1f}%")
 
-                return create_six_hats_step_output(result)
+                return create_multi_thinking_step_output(result)
 
             except Exception as e:
                 logger.exception(f"  ❌ Six Hats execution failed: {e}")
@@ -174,7 +174,7 @@ class SixHatsWorkflowRouter:
 
     async def process_thought_workflow(
         self, thought_data: "ThoughtData", context_prompt: str
-    ) -> SixHatsWorkflowResult:
+    ) -> MultiThinkingWorkflowResult:
         """Process thought using Six Hats workflow."""
         start_time = time.time()
 
@@ -204,7 +204,7 @@ class SixHatsWorkflowRouter:
             logger.info(f"  📏 Input Size: {len(str(workflow_input))} chars")
 
             # Initialize session_state for metadata tracking
-            session_state: Dict[str, Any] = {
+            session_state: dict[str, Any] = {
                 "start_time": start_time,
                 "thought_number": thought_data.thoughtNumber,
                 "total_thoughts": thought_data.totalThoughts,
@@ -246,12 +246,12 @@ class SixHatsWorkflowRouter:
 
             logger.info("📊 WORKFLOW RESULT COMPILATION:")
             logger.info(f"  🎯 Strategy used: {strategy_used}")
-            logger.info(f"  🎩 Hat sequence: {' → '.join(hat_sequence)}")
+            logger.info(f"  🧠 Thinking sequence: {' → '.join(hat_sequence)}")
             logger.info(f"  📈 Complexity score: {complexity_score:.1f}")
             logger.info(f"  💰 Cost reduction: {cost_reduction:.1f}%")
             logger.info(f"  ⏱️  Processing time: {processing_time:.3f}s")
 
-            workflow_result = SixHatsWorkflowResult(
+            workflow_result = MultiThinkingWorkflowResult(
                 content=content,
                 strategy_used=strategy_used,
                 processing_time=processing_time,
@@ -276,7 +276,7 @@ class SixHatsWorkflowRouter:
                 f"Six Hats workflow execution failed after {processing_time:.3f}s: {e}"
             )
 
-            return SixHatsWorkflowResult(
+            return MultiThinkingWorkflowResult(
                 content=f"Error processing thought with Six Hats: {e!s}",
                 strategy_used="error_fallback",
                 processing_time=processing_time,
@@ -396,5 +396,5 @@ class SixHatsWorkflowRouter:
 
 
 # For backward compatibility with the old AgnoWorkflowRouter name
-AgnoWorkflowRouter = SixHatsWorkflowRouter
-WorkflowResult = SixHatsWorkflowResult
+AgnoWorkflowRouter = MultiThinkingWorkflowRouter
+WorkflowResult = MultiThinkingWorkflowResult
