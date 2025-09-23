@@ -5,8 +5,8 @@ and multi-thinking processing implementation.
 """
 
 from .multi_thinking_core import (
-    ThinkingDirection,
     MultiThinkingAgentFactory,
+    ThinkingDirection,
     create_thinking_agent,
     get_all_thinking_directions,
     get_thinking_timing,

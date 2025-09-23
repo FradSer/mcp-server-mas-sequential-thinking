@@ -21,8 +21,8 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 from mcp_server_mas_sequential_thinking.processors.multi_thinking_core import (
-    ThinkingDirection,
     ProcessingDepth,
+    ThinkingDirection,
 )
 
 # logger already defined above
