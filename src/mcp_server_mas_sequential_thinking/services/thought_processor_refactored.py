@@ -118,7 +118,7 @@ class ThoughtProcessor:
         input_prompt = self._context_builder.build_context_prompt(thought_data)
         self._context_builder.log_context_building(thought_data, input_prompt)
 
-        # Execute Six Hats workflow using specialized service
+        # Execute Multi-Thinking workflow using specialized service
         (
             content,
             workflow_result,

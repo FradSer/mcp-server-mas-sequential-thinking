@@ -15,9 +15,7 @@ from mcp_server_mas_sequential_thinking.config import (
     DefaultTimeouts,
     DefaultValues,
     PerformanceMetrics,
-    ProcessingDefaults,
     check_required_api_keys,
-    get_model_config,
 )
 from mcp_server_mas_sequential_thinking.core import (
     ConfigurationError,
@@ -175,7 +173,7 @@ class ServerState:
         # Create session - no team needed in new architecture
         self._session = SessionMemory()
 
-        logger.info("Server state initialized successfully with Six Hats workflow")
+        logger.info("Server state initialized successfully with multi-thinking workflow")
 
     async def cleanup(self) -> None:
         """Clean up all server components."""
@@ -315,7 +313,7 @@ async def get_thought_processor() -> ThoughtProcessor:
                 "Server not properly initialized - _server_state is None. Ensure app_lifespan is running."
             )
 
-        logger.info("Initializing ThoughtProcessor with Six Hats workflow")
+        logger.info("Initializing ThoughtProcessor with multi-thinking workflow")
         _thought_processor = ThoughtProcessor(_server_state.session)
 
     return _thought_processor

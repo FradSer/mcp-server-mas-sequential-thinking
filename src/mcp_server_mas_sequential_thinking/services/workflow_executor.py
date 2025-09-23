@@ -1,6 +1,6 @@
-"""Workflow execution service for Six Thinking Hats processing.
+"""Workflow execution service for multi-thinking processing.
 
-This service handles the execution of Six Thinking Hats workflows,
+This service handles the execution of multi-thinking workflows,
 managing workflow routing and coordination of processing strategies.
 """
 
@@ -11,13 +11,13 @@ from mcp_server_mas_sequential_thinking.core import SessionMemory, ThoughtData
 from mcp_server_mas_sequential_thinking.utils import setup_logging
 
 if TYPE_CHECKING:
-    from mcp_server_mas_sequential_thinking.routing import SixHatsWorkflowResult
+    from mcp_server_mas_sequential_thinking.routing import MultiThinkingWorkflowResult
 
 logger = setup_logging()
 
 
 class WorkflowExecutor:
-    """Service responsible for executing Six Thinking Hats workflows."""
+    """Service responsible for executing multi-thinking workflows."""
 
     def __init__(self, session: SessionMemory) -> None:
         """Initialize the workflow executor with session memory.
@@ -27,24 +27,24 @@ class WorkflowExecutor:
         """
         self._session = session
         self._agno_router = None
-        self._initialize_six_hats_workflow()
+        self._initialize_multi_thinking_workflow()
 
-    def _initialize_six_hats_workflow(self) -> None:
-        """Initialize Six Thinking Hats workflow router.
+    def _initialize_multi_thinking_workflow(self) -> None:
+        """Initialize multi-thinking workflow router.
 
         Uses dynamic import to avoid circular dependency issues.
         """
-        logger.info("Initializing Six Hats Workflow Router")
+        logger.info("Initializing Multi-Thinking Workflow Router")
         # Dynamic import to avoid circular dependency
-        from mcp_server_mas_sequential_thinking.routing import SixHatsWorkflowRouter
+        from mcp_server_mas_sequential_thinking.routing import MultiThinkingWorkflowRouter
 
-        self._agno_router = SixHatsWorkflowRouter()
-        logger.info("✅ Six Hats Workflow Router ready")
+        self._agno_router = MultiThinkingWorkflowRouter()
+        logger.info("✅ Multi-Thinking Workflow Router ready")
 
     async def execute_workflow(
         self, thought_data: ThoughtData, input_prompt: str, start_time: float
-    ) -> tuple[str, "SixHatsWorkflowResult", float]:
-        """Execute Six Thinking Hats workflow for the given thought.
+    ) -> tuple[str, "MultiThinkingWorkflowResult", float]:
+        """Execute multi-thinking workflow for the given thought.
 
         Args:
             thought_data: The thought data to process
@@ -54,8 +54,8 @@ class WorkflowExecutor:
         Returns:
             Tuple of (final_response, workflow_result, total_time)
         """
-        # Execute Six Hats workflow
-        workflow_result: SixHatsWorkflowResult = (
+        # Execute multi-thinking workflow
+        workflow_result: MultiThinkingWorkflowResult = (
             await self._agno_router.process_thought_workflow(thought_data, input_prompt)
         )
 
@@ -66,11 +66,11 @@ class WorkflowExecutor:
     def log_workflow_completion(
         self,
         thought_data: ThoughtData,
-        workflow_result: "SixHatsWorkflowResult",
+        workflow_result: "MultiThinkingWorkflowResult",
         total_time: float,
         final_response: str,
     ) -> None:
-        """Log workflow completion with Six Hats specific metrics.
+        """Log workflow completion with multi-thinking specific metrics.
 
         Args:
             thought_data: The processed thought data
@@ -89,7 +89,7 @@ class WorkflowExecutor:
             "Response length": f"{len(final_response)} chars",
         }
 
-        self._log_metrics_block("🎩 SIX HATS WORKFLOW COMPLETION:", completion_metrics)
+        self._log_metrics_block("🧠 MULTI-THINKING WORKFLOW COMPLETION:", completion_metrics)
         self._log_separator()
 
         # Performance metrics

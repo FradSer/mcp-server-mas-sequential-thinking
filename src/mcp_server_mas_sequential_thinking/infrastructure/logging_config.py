@@ -18,7 +18,7 @@ from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
 from re import Pattern
-from typing import Any, Optional
+from typing import Any
 
 
 class LogLevel(Enum):
@@ -353,7 +353,7 @@ class SmartLogger:
     def __init__(self, log_level: SmartLogLevel = SmartLogLevel.PERFORMANCE) -> None:
         self.log_level = log_level
         self.session_snapshots: list[ProcessingSnapshot] = []
-        self.logger: Optional[logging.Logger] = None  # Will be initialized later
+        self.logger: logging.Logger | None = None  # Will be initialized later
 
     def _ensure_logger(self) -> None:
         """Ensure logger is initialized."""
@@ -485,7 +485,7 @@ class PerformanceMonitor:
         self.baseline_time_per_thought = 30.0
         self.recent_snapshots: list[ProcessingSnapshot] = []
         self.max_recent_count = 10
-        self.logger: Optional[logging.Logger] = None  # Will be initialized later
+        self.logger: logging.Logger | None = None  # Will be initialized later
 
     def _ensure_logger(self) -> None:
         """Ensure logger is initialized."""
@@ -564,7 +564,7 @@ class MetricsLogger:
 
     def __init__(self, config: MetricsConfig | None = None) -> None:
         self.config = config or MetricsConfig()
-        self.logger: Optional[logging.Logger] = None  # Will be initialized later
+        self.logger: logging.Logger | None = None  # Will be initialized later
 
     def _ensure_logger(self) -> None:
         """Ensure logger is initialized."""

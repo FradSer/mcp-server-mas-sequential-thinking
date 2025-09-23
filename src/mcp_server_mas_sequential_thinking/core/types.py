@@ -2,7 +2,7 @@
 
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any, Dict, List, Optional, Protocol, TypedDict
+from typing import Any, Protocol, TypedDict
 
 from agno.agent import Agent
 from agno.models.base import Model
@@ -14,9 +14,9 @@ BranchId = str
 ProviderName = str
 TeamType = str
 AgentType = str
-ConfigDict = Dict[str, Any]
-InstructionsList = List[str]
-SuccessCriteriaList = List[str]
+ConfigDict = dict[str, Any]
+InstructionsList = list[str]
+SuccessCriteriaList = list[str]
 
 
 class ExecutionMode(Enum):
@@ -38,8 +38,8 @@ class CoordinationPlan:
 
     # Coordination decisions
     execution_mode: ExecutionMode
-    specialist_roles: List[str]
-    task_breakdown: List[str]
+    specialist_roles: list[str]
+    task_breakdown: list[str]
     coordination_strategy: str
 
     # Execution parameters
@@ -65,7 +65,7 @@ class CoordinationPlan:
         }
 
         # Map complexity to specialist roles
-        complexity_to_specialists: Dict[str, List[str]] = {
+        complexity_to_specialists: dict[str, list[str]] = {
             "simple": ["general"],
             "moderate": ["planner", "analyzer"],
             "complex": ["planner", "researcher", "analyzer", "critic"],
@@ -156,7 +156,7 @@ class ModelProvider(Protocol):
 class AgentFactory(Protocol):
     """Protocol for agent factory implementations."""
 
-    def create_team_agents(self, model: Model, team_type: str) -> Dict[str, Agent]:
+    def create_team_agents(self, model: Model, team_type: str) -> dict[str, Agent]:
         """Create team agents with specified model and team type."""
         ...
 
@@ -206,7 +206,7 @@ class SessionManager(Protocol):
         """Find thought content by number."""
         ...
 
-    def get_branch_summary(self) -> Dict[str, int]:
+    def get_branch_summary(self) -> dict[str, int]:
         """Get summary of all branches."""
         ...
 
@@ -214,11 +214,11 @@ class SessionManager(Protocol):
 class ConfigurationProvider(Protocol):
     """Protocol for configuration management with type safety."""
 
-    def get_model_config(self, provider_name: Optional[str] = None) -> "ModelConfig":
+    def get_model_config(self, provider_name: str | None = None) -> "ModelConfig":
         """Get model configuration."""
         ...
 
-    def check_required_api_keys(self, provider_name: Optional[str] = None) -> List[str]:
+    def check_required_api_keys(self, provider_name: str | None = None) -> list[str]:
         """Check for required API keys."""
         ...
 
@@ -236,7 +236,7 @@ class ThoughtProcessingError(Exception):
     """Exception raised when thought processing fails."""
 
     def __init__(
-        self, message: str, metadata: Optional[ProcessingMetadata] = None
+        self, message: str, metadata: ProcessingMetadata | None = None
     ) -> None:
         super().__init__(message)
         self.metadata: ProcessingMetadata = metadata or {}
