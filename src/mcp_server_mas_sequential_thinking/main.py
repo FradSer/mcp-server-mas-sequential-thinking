@@ -102,10 +102,10 @@ Process Guidelines:
 6. Progress systematically through analysis phases
 
 System Architecture:
-- Six Thinking Hats methodology with intelligent routing
-- White, Red, Black, Yellow, Green, and Blue hat perspectives
-- Adaptive hat sequence based on thought complexity and type
-- Comprehensive integration through Blue Hat synthesis
+- Multi-Thinking methodology with intelligent routing
+- Factual, Emotional, Critical, Optimistic, Creative, and Synthesis perspectives
+- Adaptive thinking sequence based on thought complexity and type
+- Comprehensive integration through Synthesis thinking
 
 Ready to begin systematic analysis."""
 

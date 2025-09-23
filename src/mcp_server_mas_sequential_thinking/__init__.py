@@ -1,24 +1,24 @@
 """MCP Sequential Thinking Server with AI-Powered Routing.
 
 A sophisticated Multi-Agent System (MAS) for sequential thinking with intelligent
-AI-based routing using the Six Hats methodology.
+AI-based routing using advanced multi-thinking methodology.
 
 AI ROUTING FEATURES:
 - AI-powered complexity analysis replacing rule-based scoring
-- Intelligent Six Hats sequence selection (single, double, triple, full)
+- Intelligent thinking sequence selection (single, double, triple, full)
 - Semantic understanding of philosophical and technical depth
-- Automatic Blue Hat integration for complex thought synthesis
+- Automatic synthesis integration for complex thought processing
 
 CORE ARCHITECTURE:
 - AI-first routing with semantic complexity understanding
-- Six Hats thinking methodology with intelligent orchestration
+- Multi-thinking methodology with intelligent orchestration
 - Unified agent factory eliminating code duplication
 - Separated server concerns for better maintainability
 - Optimized performance with async processing
 
 Key Features:
 - **AI Routing**: Semantic complexity analysis and strategy selection
-- **Six Hats Integration**: White, Red, Black, Yellow, Green, Blue hat processing
+- **Multi-Thinking Integration**: Factual, emotional, critical, optimistic, creative, and synthesis processing
 - **Multi-Provider Support**: DeepSeek, Groq, OpenRouter, GitHub, Ollama
 - **Philosophical Understanding**: Deep analysis for existential questions
 
@@ -34,9 +34,9 @@ Usage:
     result = await processor.process_thought(thought_data)
 
 AI Routing Strategies:
-    - Single Hat: Simple factual questions → quick single hat processing
-    - Double/Triple Hat: Moderate complexity → focused hat sequences
-    - Full Six Hats: Complex philosophical questions → comprehensive analysis
+    - Single Direction: Simple factual questions → quick focused processing
+    - Double/Triple Direction: Moderate complexity → focused thinking sequences
+    - Full Multi-Thinking: Complex philosophical questions → comprehensive analysis
 
 Configuration:
     Environment variables:
@@ -47,9 +47,9 @@ Configuration:
 
 Performance Benefits:
     - Intelligent complexity assessment using AI understanding
-    - Automated Blue Hat synthesis for coherent responses
+    - Automated synthesis processing for coherent responses
     - Semantic depth recognition for philosophical questions
-    - Efficient hat sequence selection based on content analysis
+    - Efficient thinking sequence selection based on content analysis
 """
 
 __version__ = "0.6.0-ai-routing"
