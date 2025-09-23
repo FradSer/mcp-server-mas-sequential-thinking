@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-Comprehensive test script to verify AI-powered routing system functionality.
+"""Comprehensive test script to verify AI-powered routing system functionality.
 
 This script tests:
 1. AIComplexityAnalyzer import and initialization
@@ -21,19 +20,22 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent / "src"))
 
 from mcp_server_mas_sequential_thinking.core.models import ThoughtData
-from mcp_server_mas_sequential_thinking.routing.ai_complexity_analyzer import AIComplexityAnalyzer
-from mcp_server_mas_sequential_thinking.routing.six_hats_router import (
-    SixHatsIntelligentRouter,
-    ProblemType,
-    HatColor,
+from mcp_server_mas_sequential_thinking.routing.ai_complexity_analyzer import (
+    AIComplexityAnalyzer,
 )
-from mcp_server_mas_sequential_thinking.routing.complexity_types import ComplexityMetrics
-from mcp_server_mas_sequential_thinking.processors.six_hats_core import HatComplexity
+from mcp_server_mas_sequential_thinking.routing.complexity_types import (
+    ComplexityMetrics,
+)
+from mcp_server_mas_sequential_thinking.routing.six_hats_router import (
+    HatColor,
+    ProblemType,
+    SixHatsIntelligentRouter,
+)
 
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 )
 
 logger = logging.getLogger(__name__)
@@ -85,10 +87,10 @@ class AIRoutingVerificationTests:
             analyzer = AIComplexityAnalyzer()
 
             # Verify the analyzer has the expected attributes
-            assert hasattr(analyzer, '_agent')
-            assert hasattr(analyzer, 'model_config')
-            assert hasattr(analyzer, '_get_agent')
-            assert hasattr(analyzer, 'analyze')
+            assert hasattr(analyzer, "_agent")
+            assert hasattr(analyzer, "model_config")
+            assert hasattr(analyzer, "_get_agent")
+            assert hasattr(analyzer, "analyze")
 
             logger.info("✅ AIComplexityAnalyzer imported and initialized successfully")
             return True
@@ -145,8 +147,8 @@ class AIRoutingVerificationTests:
             simple_thought = self.create_thought_data("What is 2 + 2?")
             simple_decision = await self.router.route_thought(simple_thought)
 
-            assert hasattr(simple_decision, 'strategy')
-            assert hasattr(simple_decision, 'complexity_metrics')
+            assert hasattr(simple_decision, "strategy")
+            assert hasattr(simple_decision, "complexity_metrics")
             assert simple_decision.complexity_metrics.analyzer_type == "ai"
 
             logger.info(f"✅ Simple routing: {simple_decision.strategy.name}")
@@ -245,9 +247,8 @@ class AIRoutingVerificationTests:
             if all_use_ai:
                 logger.info("✅ All complexity analysis uses AI - rule-based system replaced")
                 return True
-            else:
-                logger.error("❌ Some analysis still using non-AI methods")
-                return False
+            logger.error("❌ Some analysis still using non-AI methods")
+            return False
 
         except Exception as e:
             logger.error(f"❌ Test 5 failed: {e}")
@@ -316,9 +317,8 @@ class AIRoutingVerificationTests:
             if all_passed:
                 logger.info("✅ End-to-end workflow test passed")
                 return True
-            else:
-                logger.error("❌ Some end-to-end scenarios failed")
-                return False
+            logger.error("❌ Some end-to-end scenarios failed")
+            return False
 
         except Exception as e:
             logger.error(f"❌ Test 6 failed: {e}")
@@ -380,9 +380,8 @@ class AIRoutingVerificationTests:
             logger.info("  ✅ AI-powered routing produces appropriate hat sequences")
             logger.info("  ✅ End-to-end workflow functioning correctly")
             return True
-        else:
-            logger.error(f"❌ {total - passed} tests failed - Issues detected in AI routing system")
-            return False
+        logger.error(f"❌ {total - passed} tests failed - Issues detected in AI routing system")
+        return False
 
 async def main():
     """Main test execution."""

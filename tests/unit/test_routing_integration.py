@@ -2,14 +2,14 @@
 
 from unittest.mock import Mock, patch
 
-from src.mcp_server_mas_sequential_thinking.routing.complexity_types import (
-    AIComplexityAnalyzer,
-    ComplexityLevel,
-)
 from src.mcp_server_mas_sequential_thinking.agno_workflow_router import (
     AgnoWorkflowRouter,
 )
 from src.mcp_server_mas_sequential_thinking.models import ThoughtData
+from src.mcp_server_mas_sequential_thinking.routing.complexity_types import (
+    AIComplexityAnalyzer,
+    ComplexityLevel,
+)
 
 
 class TestRoutingStrategyIntegration:

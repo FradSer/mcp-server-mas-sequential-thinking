@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-Architecture verification for AI-powered routing system.
+"""Architecture verification for AI-powered routing system.
 
 This script verifies the system architecture and fallback behavior
 without requiring API keys, focusing on:
@@ -21,18 +20,22 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent / "src"))
 
 from mcp_server_mas_sequential_thinking.core.models import ThoughtData
-from mcp_server_mas_sequential_thinking.routing.ai_complexity_analyzer import AIComplexityAnalyzer
-from mcp_server_mas_sequential_thinking.routing.six_hats_router import (
-    SixHatsIntelligentRouter,
-    ProblemType,
-    HatColor,
+from mcp_server_mas_sequential_thinking.routing.ai_complexity_analyzer import (
+    AIComplexityAnalyzer,
 )
-from mcp_server_mas_sequential_thinking.routing.complexity_types import ComplexityMetrics
+from mcp_server_mas_sequential_thinking.routing.complexity_types import (
+    ComplexityMetrics,
+)
+from mcp_server_mas_sequential_thinking.routing.six_hats_router import (
+    HatColor,
+    ProblemType,
+    SixHatsIntelligentRouter,
+)
 
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 )
 
 logger = logging.getLogger(__name__)
@@ -63,22 +66,22 @@ class ArchitectureVerificationTests:
         try:
             # Test AIComplexityAnalyzer
             analyzer = AIComplexityAnalyzer()
-            assert hasattr(analyzer, 'analyze')
-            assert hasattr(analyzer, '_get_agent')
-            assert hasattr(analyzer, '_basic_fallback_analysis')
+            assert hasattr(analyzer, "analyze")
+            assert hasattr(analyzer, "_get_agent")
+            assert hasattr(analyzer, "_basic_fallback_analysis")
             logger.info("✅ AIComplexityAnalyzer structure verified")
 
             # Test SixHatsIntelligentRouter
             router = SixHatsIntelligentRouter()
-            assert hasattr(router, 'complexity_analyzer')
-            assert hasattr(router, 'route_thought')
+            assert hasattr(router, "complexity_analyzer")
+            assert hasattr(router, "route_thought")
             assert isinstance(router.complexity_analyzer, AIComplexityAnalyzer)
             logger.info("✅ SixHatsIntelligentRouter structure verified")
 
             # Test complexity metrics
             metrics = ComplexityMetrics(complexity_score=50.0)
-            assert hasattr(metrics, 'complexity_score')
-            assert hasattr(metrics, 'analyzer_type')
+            assert hasattr(metrics, "complexity_score")
+            assert hasattr(metrics, "analyzer_type")
             logger.info("✅ ComplexityMetrics structure verified")
 
             return True
@@ -131,9 +134,9 @@ class ArchitectureVerificationTests:
             simple_thought = self.create_thought_data("What is 1+1?")
             decision = await router.route_thought(simple_thought)
 
-            assert hasattr(decision, 'strategy')
-            assert hasattr(decision, 'complexity_metrics')
-            assert hasattr(decision, 'problem_characteristics')
+            assert hasattr(decision, "strategy")
+            assert hasattr(decision, "complexity_metrics")
+            assert hasattr(decision, "problem_characteristics")
             logger.info(f"✅ Simple routing: {decision.strategy.name}")
             logger.info(f"   Hat sequence: {[hat.value for hat in decision.strategy.hat_sequence]}")
 
@@ -242,7 +245,7 @@ class ArchitectureVerificationTests:
 
             # Check that fallback exists
             analyzer = AIComplexityAnalyzer()
-            assert hasattr(analyzer, '_basic_fallback_analysis')
+            assert hasattr(analyzer, "_basic_fallback_analysis")
             logger.info("✅ Fallback mechanism present")
 
             # Verify no direct rule-based complexity calculations in main flow
@@ -311,9 +314,8 @@ class ArchitectureVerificationTests:
             logger.info("  ✅ AI-first architecture with rule-based fallback")
             logger.info("\n💡 Note: Full AI functionality requires API keys")
             return True
-        else:
-            logger.error(f"❌ {total - passed} architecture issues detected")
-            return False
+        logger.error(f"❌ {total - passed} architecture issues detected")
+        return False
 
 async def main():
     """Main test execution."""

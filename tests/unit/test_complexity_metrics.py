@@ -1,7 +1,9 @@
 """TDD tests for ComplexityMetrics.complexity_score property calculation."""
 
 import pytest
-from src.mcp_server_mas_sequential_thinking.routing.complexity_types import ComplexityMetrics
+from src.mcp_server_mas_sequential_thinking.routing.complexity_types import (
+    ComplexityMetrics,
+)
 
 
 class TestComplexityMetricsScoreCalculation:
