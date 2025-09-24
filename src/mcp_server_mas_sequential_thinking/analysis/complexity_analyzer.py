@@ -60,7 +60,7 @@ class LanguageDetector:
 
     def analyze_language(self, text: str) -> LanguageMetrics:
         """Analyze language characteristics and word counts."""
-        # Count Chinese characters
+        # Character-based script detection improves tokenization accuracy
         chinese_chars = len(
             [c for c in text if self.CHINESE_RANGE[0] <= c <= self.CHINESE_RANGE[1]]
         )
@@ -150,7 +150,7 @@ class TechnicalTermAnalyzer(TextAnalyzer):
         "trends",
         "insights",
         "visualization",
-        # Chinese technical terms
+        # Multilingual technical terminology expands domain coverage
         "算法",
         "接口",
         "数据库",
@@ -210,7 +210,7 @@ class ResearchAnalyzer(TextAnalyzer):
         "data",
         "statistics",
         "correlation",
-        # Chinese research terms
+        # Cross-cultural research indicators enhance analysis depth
         "研究",
         "调研",
         "探索",
@@ -257,7 +257,7 @@ class BranchingAnalyzer(TextAnalyzer):
         "compare",
         "contrast",
         "versus",
-        # Chinese branching terms
+        # Multilingual branching patterns support complex reasoning
         "分支",
         "选择",
         "决策",
@@ -393,7 +393,7 @@ class ComplexityAnalyzer:
         if lang_type == LanguageType.MIXED:
             insights.append("Mixed language content detected")
         elif lang_type == LanguageType.CHINESE:
-            insights.append("Primarily Chinese content")
+            insights.append("Character-based script content")
 
         # Content complexity insights
         if features.technical_terms > 5:

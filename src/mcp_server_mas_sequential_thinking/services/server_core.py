@@ -124,7 +124,7 @@ class EnvironmentInitializer(ServerInitializer):
         logger.info(f"Initializing environment with {config.provider} provider")
 
         try:
-            # Check required API keys
+            # Graceful degradation prevents startup failures from missing optional keys
             missing_keys = check_required_api_keys()
             if missing_keys:
                 logger.warning(f"Missing API keys: {', '.join(missing_keys)}")
@@ -166,11 +166,11 @@ class ServerState:
         """Initialize all server components."""
         self._config = config
 
-        # Initialize all components in order
+        # Ordered initialization prevents dependency conflicts
         for initializer in self._initializers:
             await initializer.initialize(config)
 
-        # Create session - no team needed in new architecture
+        # Session-based architecture simplifies state management
         self._session = SessionMemory()
 
         logger.info("Server state initialized successfully with multi-thinking workflow")

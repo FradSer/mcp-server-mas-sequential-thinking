@@ -188,7 +188,7 @@ MULTI_THINKING_INDICATORS: Final[tuple[str, ...]] = (
     "issue",
     "difficulty",
     "obstacle",
-    # Chinese equivalents
+    # Multilingual complexity indicators preserve cultural context
     "创新",
     "创意",
     "解决",

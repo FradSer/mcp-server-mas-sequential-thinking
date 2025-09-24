@@ -314,9 +314,9 @@ class CostOptimizationConstants:
 class ComplexityAnalysisConstants:
     """Constants for complexity analysis calculations."""
 
-    # Language detection
-    CHINESE_WORD_RATIO = 2  # Estimate Chinese words as characters / 2
-    CHINESE_DOMINANCE_THRESHOLD = 0.3  # Chinese chars > 30% of text
+    # Multilingual text analysis requires different tokenization strategies
+    CHINESE_WORD_RATIO = 2  # Character-based scripts need different word boundaries
+    CHINESE_DOMINANCE_THRESHOLD = 0.3  # Script detection threshold for processing optimization
 
     # Complexity scoring weights (extracted from adaptive_routing.py)
     WORD_COUNT_WEIGHT = 0.15

@@ -76,12 +76,12 @@ class ThinkingSequenceStrategy:
 
 
 class ProblemAnalyzer:
-    """问题类型和特征分析器."""
+    """Problem type and characteristic analyzer."""
 
-    # 问题类型识别关键词（支持中英文）
+    # Problem type recognition supports multilingual contexts
     TYPE_INDICATORS = {
         ProblemType.FACTUAL: {
-            # 英文关键词
+            # Factual queries require objective information retrieval
             "what",
             "when",
             "where",
@@ -95,7 +95,7 @@ class ProblemAnalyzer:
             "explain",
             "describe",
             "list",
-            # 中文关键词
+            # Non-English equivalents needed for multilingual factual analysis
             "什么",
             "何时",
             "哪里",
@@ -112,7 +112,7 @@ class ProblemAnalyzer:
             "介绍",
         },
         ProblemType.EMOTIONAL: {
-            # 英文关键词
+            # Emotional indicators drive intuitive processing responses
             "feel",
             "emotion",
             "sense",
@@ -125,7 +125,7 @@ class ProblemAnalyzer:
             "concerned",
             "hopeful",
             "afraid",
-            # 中文关键词
+            # Multilingual emotional expressions preserve cultural nuances
             "感觉",
             "情感",
             "感受",
@@ -138,7 +138,7 @@ class ProblemAnalyzer:
             "害怕",
         },
         ProblemType.CREATIVE: {
-            # 英文关键词
+            # Creative thinking requires divergent thought patterns
             "creative",
             "innovative",
             "brainstorm",
@@ -149,7 +149,7 @@ class ProblemAnalyzer:
             "original",
             "imagination",
             "possibility",
-            # 中文关键词
+            # Innovation concepts translate across cultural contexts
             "创造",
             "创新",
             "头脑风暴",
@@ -161,7 +161,7 @@ class ProblemAnalyzer:
             "可能性",
         },
         ProblemType.EVALUATIVE: {
-            # 英文关键词
+            # Primary linguistic markers for analysis
             "evaluate",
             "assess",
             "compare",
@@ -173,7 +173,7 @@ class ProblemAnalyzer:
             "better",
             "worse",
             "best",
-            # 中文关键词
+            # Cross-cultural linguistic patterns
             "评估",
             "评价",
             "比较",
@@ -186,7 +186,7 @@ class ProblemAnalyzer:
             "最好",
         },
         ProblemType.PHILOSOPHICAL: {
-            # 英文关键词
+            # Primary linguistic markers for analysis
             "meaning",
             "purpose",
             "existence",
@@ -198,7 +198,7 @@ class ProblemAnalyzer:
             "truth",
             "reality",
             "consciousness",
-            # 中文关键词
+            # Cross-cultural linguistic patterns
             "意义",
             "目的",
             "存在",
@@ -218,7 +218,7 @@ class ProblemAnalyzer:
             "本质",
         },
         ProblemType.DECISION: {
-            # 英文关键词
+            # Primary linguistic markers for analysis
             "decide",
             "choose",
             "select",
@@ -230,7 +230,7 @@ class ProblemAnalyzer:
             "decision",
             "choice",
             "dilemma",
-            # 中文关键词
+            # Cross-cultural linguistic patterns
             "决定",
             "选择",
             "挑选",

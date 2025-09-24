@@ -31,7 +31,7 @@ Analyze the following thought and provide complexity metrics:
 1. Consider semantic depth, philosophical implications, conceptual complexity
 2. Evaluate required cognitive resources (memory, reasoning, creativity)
 3. Assess multi-dimensional thinking requirements
-4. Consider cultural and linguistic nuances (especially for Chinese content)
+4. Consider cultural and linguistic nuances across different languages
 
 **Response Format:** Return ONLY a valid JSON object with these exact fields:
 ```json
@@ -60,7 +60,7 @@ Analyze the following thought and provide complexity metrics:
 - Philosophical questions like "Why do we live if we die?" should score 40-70+
 - Short but profound questions can have high complexity
 - Consider emotional and existential weight, not just length
-- Chinese philosophical concepts carry cultural depth
+- Multilingual philosophical concepts preserve cultural context
 
 Analyze now:
 """
