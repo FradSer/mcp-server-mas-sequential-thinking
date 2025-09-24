@@ -10,7 +10,7 @@ This is an **MCP server** - not a standalone application. It runs as a backgroun
 
 ## 🧠 Core Architecture: Multi-Dimensional Thinking Agents
 
-The system employs **7 specialized thinking agents**, each focused on a distinct cognitive perspective:
+The system employs **6 specialized thinking agents**, each focused on a distinct cognitive perspective:
 
 ### 1. **Factual Agent** 📊
 - **Focus**: Objective facts and verified data
@@ -85,7 +85,7 @@ The system uses **AI-driven complexity analysis** to determine the optimal think
    - Philosophical and analytical problems
 
 4. **Full Sequence** (Complex problems)
-   - All 6 agents + Blue Hat orchestration
+   - All 6 agents orchestrated together
    - Comprehensive multi-perspective analysis
 
 The AI analyzer evaluates:
@@ -96,7 +96,7 @@ The AI analyzer evaluates:
 
 ## 🔍 Research Capabilities (ExaTools Integration)
 
-**6 out of 7 agents** are equipped with web research capabilities via ExaTools:
+**4 out of 6 agents** are equipped with web research capabilities via ExaTools:
 
 - **Factual Agent**: Search for current facts, statistics, verified data
 - **Critical Agent**: Find counterexamples, failed cases, regulatory issues
@@ -306,9 +306,9 @@ Open http://127.0.0.1:6274/ and test the `sequentialthinking` tool.
 ## 📊 System Characteristics
 
 ### Strengths:
-- **Multi-perspective analysis**: 7 different cognitive approaches
+- **Multi-perspective analysis**: 6 different cognitive approaches
 - **AI-powered routing**: Intelligent complexity analysis
-- **Research capabilities**: 6 agents with web search (optional)
+- **Research capabilities**: 4 agents with web search (optional)
 - **Flexible processing**: Single to full sequence strategies
 - **Model optimization**: Enhanced/Standard model selection
 - **Provider agnostic**: Works with multiple LLM providers
@@ -326,7 +326,7 @@ mcp-server-mas-sequential-thinking/
 ├── src/mcp_server_mas_sequential_thinking/
 │   ├── main.py                          # MCP server entry point
 │   ├── processors/
-│   │   ├── multi_thinking_core.py       # 7 thinking agents definition
+│   │   ├── multi_thinking_core.py       # 6 thinking agents definition
 │   │   └── multi_thinking_processor.py  # Sequential processing logic
 │   ├── routing/
 │   │   ├── ai_complexity_analyzer.py    # AI-powered analysis
