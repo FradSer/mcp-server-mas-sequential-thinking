@@ -31,11 +31,11 @@ class GitHubOpenAI(OpenAIChat):
 
         # Valid GitHub token prefixes with their expected lengths
         token_specs = {
-            "ghp_": 40,      # Classic personal access token
+            "ghp_": 40,  # Classic personal access token
             "github_pat_": lambda t: len(t) >= 93,  # Fine-grained PAT (variable length)
-            "gho_": 40,      # OAuth app token
-            "ghu_": 40,      # User-to-server token
-            "ghs_": 40,      # Server-to-server token
+            "gho_": 40,  # OAuth app token
+            "ghu_": 40,  # User-to-server token
+            "ghs_": 40,  # Server-to-server token
         }
 
         # Check token prefix and length
@@ -60,8 +60,10 @@ class GitHubOpenAI(OpenAIChat):
 
         # Enhanced entropy validation to prevent fake tokens
         token_body = (
-            token[4:] if token.startswith("ghp_")
-            else token.split("_", 1)[1] if "_" in token
+            token[4:]
+            if token.startswith("ghp_")
+            else token.split("_", 1)[1]
+            if "_" in token
             else token
         )
 
@@ -305,9 +307,7 @@ class ConfigurationManager:
         """Register a new configuration strategy."""
         self._strategies[name] = strategy
 
-    def get_strategy(
-        self, provider_name: str | None = None
-    ) -> ConfigurationStrategy:
+    def get_strategy(self, provider_name: str | None = None) -> ConfigurationStrategy:
         """Get strategy for specified provider."""
         if provider_name is None:
             provider_name = os.environ.get("LLM_PROVIDER", self._default_strategy)
@@ -327,9 +327,7 @@ class ConfigurationManager:
         strategy = self.get_strategy(provider_name)
         return strategy.get_config()
 
-    def validate_environment(
-        self, provider_name: str | None = None
-    ) -> dict[str, str]:
+    def validate_environment(self, provider_name: str | None = None) -> dict[str, str]:
         """Validate environment variables and return missing required ones."""
         strategy = self.get_strategy(provider_name)
         required_vars = strategy.get_required_environment_variables()
@@ -345,6 +343,7 @@ class ConfigurationManager:
         if not exa_key:
             # Don't fail startup - just log warning that research will be disabled
             import logging
+
             logging.getLogger(__name__).warning(
                 "EXA_API_KEY not found. Research tools will be disabled."
             )

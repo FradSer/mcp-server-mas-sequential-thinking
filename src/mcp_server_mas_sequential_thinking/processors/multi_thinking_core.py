@@ -6,6 +6,7 @@ Strictly follows "focused thinking direction" principles, supporting intelligent
 
 # Lazy import to break circular dependency
 import logging
+import os
 from abc import abstractmethod
 from dataclasses import dataclass
 from enum import Enum
@@ -14,6 +15,15 @@ from typing import Any
 from agno.agent import Agent
 from agno.models.base import Model
 from agno.tools.reasoning import ReasoningTools
+
+# Try to import ExaTools, gracefully handle if not available
+try:
+    from agno.tools.exa import ExaTools
+
+    EXA_AVAILABLE = bool(os.environ.get("EXA_API_KEY"))
+except ImportError:
+    ExaTools = None
+    EXA_AVAILABLE = False
 
 logger = logging.getLogger(__name__)
 
@@ -46,19 +56,31 @@ class ThinkingTimingConfig:
     default_time_seconds: int
     min_time_seconds: int
     max_time_seconds: int
-    is_quick_reaction: bool = False  # Whether it's a quick reaction mode (like emotional thinking)
+    is_quick_reaction: bool = (
+        False  # Whether it's a quick reaction mode (like emotional thinking)
+    )
 
 
 # Timing configuration constants
 THINKING_TIMING_CONFIGS = {
-    ThinkingDirection.FACTUAL: ThinkingTimingConfig(ThinkingDirection.FACTUAL, 120, 60, 300, False),
-    ThinkingDirection.EMOTIONAL: ThinkingTimingConfig(ThinkingDirection.EMOTIONAL, 30, 15, 60, True),  # Quick intuition
-    ThinkingDirection.CRITICAL: ThinkingTimingConfig(ThinkingDirection.CRITICAL, 120, 60, 240, False),
-    ThinkingDirection.OPTIMISTIC: ThinkingTimingConfig(ThinkingDirection.OPTIMISTIC, 120, 60, 240, False),
+    ThinkingDirection.FACTUAL: ThinkingTimingConfig(
+        ThinkingDirection.FACTUAL, 120, 60, 300, False
+    ),
+    ThinkingDirection.EMOTIONAL: ThinkingTimingConfig(
+        ThinkingDirection.EMOTIONAL, 30, 15, 60, True
+    ),  # Quick intuition
+    ThinkingDirection.CRITICAL: ThinkingTimingConfig(
+        ThinkingDirection.CRITICAL, 120, 60, 240, False
+    ),
+    ThinkingDirection.OPTIMISTIC: ThinkingTimingConfig(
+        ThinkingDirection.OPTIMISTIC, 120, 60, 240, False
+    ),
     ThinkingDirection.CREATIVE: ThinkingTimingConfig(
         ThinkingDirection.CREATIVE, 240, 120, 360, False
     ),  # Creativity requires more time
-    ThinkingDirection.SYNTHESIS: ThinkingTimingConfig(ThinkingDirection.SYNTHESIS, 60, 30, 120, False),
+    ThinkingDirection.SYNTHESIS: ThinkingTimingConfig(
+        ThinkingDirection.SYNTHESIS, 60, 30, 120, False
+    ),
 }
 
 
@@ -86,7 +108,18 @@ class ThinkingCapability:
 
     def __post_init__(self):
         if self.tools is None:
-            object.__setattr__(self, "tools", [ReasoningTools])
+            # Default tools for all thinking directions
+            tools = [ReasoningTools]
+
+            # Add ExaTools for all thinking directions except SYNTHESIS
+            if (
+                EXA_AVAILABLE
+                and ExaTools is not None
+                and self.thinking_direction != ThinkingDirection.SYNTHESIS
+            ):
+                tools.append(ExaTools)
+
+            object.__setattr__(self, "tools", tools)
 
     def get_instructions(
         self, context: str = "", previous_results: dict | None = None
@@ -140,7 +173,7 @@ class ThinkingCapability:
             "critical": "Critical evaluation",
             "optimistic": "Optimistic view",
             "creative": "Creative thinking",
-            "synthesis": "Strategic synthesis"
+            "synthesis": "Strategic synthesis",
         }
         return label_mapping.get(direction_name.lower(), "Analysis")
 
@@ -167,7 +200,7 @@ class FactualThinkingCapability(ThinkingCapability):
         )
 
     def _get_specific_instructions(self) -> list[str]:
-        return [
+        instructions = [
             "",
             "FACTUAL ANALYSIS GUIDELINES:",
             "• Use simple statements to present facts: 'The data shows...', 'Known information is...'",
@@ -176,13 +209,33 @@ class FactualThinkingCapability(ThinkingCapability):
             "• Avoid opinions, interpretations, or emotional reactions",
             "• Identify what information is missing and needed",
             "• Separate facts from assumptions clearly",
-            "",
-            "FORBIDDEN in factual analysis mode:",
-            "- Personal opinions or judgments",
-            "- Emotional responses or gut feelings",
-            "- Speculation or 'what if' scenarios",
-            "- Value judgments (good/bad, right/wrong)",
         ]
+
+        # Add research capabilities if ExaTools is available
+        if EXA_AVAILABLE and ExaTools is not None:
+            instructions.extend(
+                [
+                    "",
+                    "RESEARCH CAPABILITIES:",
+                    "• Use search_exa() to find current facts and data when needed",
+                    "• Search for recent information, statistics, or verified data",
+                    "• Cite sources when presenting factual information",
+                    "• Prioritize authoritative sources and recent data",
+                ]
+            )
+
+        instructions.extend(
+            [
+                "",
+                "FORBIDDEN in factual analysis mode:",
+                "- Personal opinions or judgments",
+                "- Emotional responses or gut feelings",
+                "- Speculation or 'what if' scenarios",
+                "- Value judgments (good/bad, right/wrong)",
+            ]
+        )
+
+        return instructions
 
 
 class EmotionalThinkingCapability(ThinkingCapability):
@@ -241,7 +294,7 @@ class CriticalThinkingCapability(ThinkingCapability):
         )
 
     def _get_specific_instructions(self) -> list[str]:
-        return [
+        instructions = [
             "",
             "CRITICAL ASSESSMENT GUIDELINES:",
             "• Point out specific possible problems, not general pessimism",
@@ -250,16 +303,36 @@ class CriticalThinkingCapability(ThinkingCapability):
             "• Challenge assumptions and look for logical flaws",
             "• Consider worst-case scenarios and failure modes",
             "• Provide logical reasons for all concerns raised",
-            "",
-            "KEY AREAS TO EXAMINE:",
-            "- Logical inconsistencies in arguments",
-            "- Practical obstacles and implementation challenges",
-            "- Resource constraints and limitations",
-            "- Potential negative consequences",
-            "- Missing information or unproven assumptions",
-            "",
-            "Note: Be critical but constructive - identify real problems, not just pessimism.",
         ]
+
+        # Add research capabilities if ExaTools is available
+        if EXA_AVAILABLE and ExaTools is not None:
+            instructions.extend(
+                [
+                    "",
+                    "RESEARCH FOR CRITICAL ANALYSIS:",
+                    "• Search for counterexamples, failed cases, or criticism of similar ideas",
+                    "• Look for expert opinions that identify risks or problems",
+                    "• Find case studies of failures in similar contexts",
+                    "• Research regulatory or compliance issues that might apply",
+                ]
+            )
+
+        instructions.extend(
+            [
+                "",
+                "KEY AREAS TO EXAMINE:",
+                "- Logical inconsistencies in arguments",
+                "- Practical obstacles and implementation challenges",
+                "- Resource constraints and limitations",
+                "- Potential negative consequences",
+                "- Missing information or unproven assumptions",
+                "",
+                "Note: Be critical but constructive - identify real problems, not just pessimism.",
+            ]
+        )
+
+        return instructions
 
 
 class OptimisticThinkingCapability(ThinkingCapability):
@@ -280,7 +353,7 @@ class OptimisticThinkingCapability(ThinkingCapability):
         )
 
     def _get_specific_instructions(self) -> list[str]:
-        return [
+        instructions = [
             "",
             "OPTIMISTIC VALUE EXPLORATION GUIDELINES:",
             "• Point out specific feasible benefits, not empty praise",
@@ -289,17 +362,37 @@ class OptimisticThinkingCapability(ThinkingCapability):
             "• Explore best-case scenarios and opportunities",
             "• Identify feasible positive possibilities",
             "• Provide logical reasons for optimism",
-            "",
-            "KEY AREAS TO EXPLORE:",
-            "- Benefits and positive outcomes",
-            "- Opportunities for growth or improvement",
-            "- Feasible best-case scenarios",
-            "- Value creation possibilities",
-            "- Strengths and positive aspects",
-            "- Why this could work well",
-            "",
-            "Note: Be realistically optimistic - find genuine value, not false hope.",
         ]
+
+        # Add research capabilities if ExaTools is available
+        if EXA_AVAILABLE and ExaTools is not None:
+            instructions.extend(
+                [
+                    "",
+                    "RESEARCH FOR OPTIMISTIC ANALYSIS:",
+                    "• Search for success stories and positive case studies",
+                    "• Look for evidence of benefits in similar situations",
+                    "• Find research supporting potential positive outcomes",
+                    "• Research market opportunities and growth potential",
+                ]
+            )
+
+        instructions.extend(
+            [
+                "",
+                "KEY AREAS TO EXPLORE:",
+                "- Benefits and positive outcomes",
+                "- Opportunities for growth or improvement",
+                "- Feasible best-case scenarios",
+                "- Value creation possibilities",
+                "- Strengths and positive aspects",
+                "- Why this could work well",
+                "",
+                "Note: Be realistically optimistic - find genuine value, not false hope.",
+            ]
+        )
+
+        return instructions
 
 
 class CreativeThinkingCapability(ThinkingCapability):
@@ -320,7 +413,7 @@ class CreativeThinkingCapability(ThinkingCapability):
         )
 
     def _get_specific_instructions(self) -> list[str]:
-        return [
+        instructions = [
             "",
             "CREATIVE INNOVATION GUIDELINES:",
             "• Provide 3-5 specific creative ideas that could work",
@@ -329,17 +422,37 @@ class CreativeThinkingCapability(ThinkingCapability):
             "• Think laterally - explore unconventional approaches",
             "• Break normal thinking patterns and assumptions",
             "• Suggest modifications, improvements, or entirely new approaches",
-            "",
-            "CREATIVE TECHNIQUES TO USE:",
-            "- Lateral thinking and analogies",
-            "- Random word associations",
-            "- 'What if' scenarios and thought experiments",
-            "- Reversal thinking (what's the opposite?)",
-            "- Combination of unrelated elements",
-            "- Alternative perspectives and viewpoints",
-            "",
-            "Note: Quantity over quality - generate many ideas without judgment.",
         ]
+
+        # Add research capabilities if ExaTools is available
+        if EXA_AVAILABLE and ExaTools is not None:
+            instructions.extend(
+                [
+                    "",
+                    "RESEARCH FOR CREATIVE INSPIRATION:",
+                    "• Search for innovative solutions in different industries",
+                    "• Look for creative approaches used in unrelated fields",
+                    "• Find emerging trends and new methodologies",
+                    "• Research breakthrough innovations and creative disruptions",
+                ]
+            )
+
+        instructions.extend(
+            [
+                "",
+                "CREATIVE TECHNIQUES TO USE:",
+                "- Lateral thinking and analogies",
+                "- Random word associations",
+                "- 'What if' scenarios and thought experiments",
+                "- Reversal thinking (what's the opposite?)",
+                "- Combination of unrelated elements",
+                "- Alternative perspectives and viewpoints",
+                "",
+                "Note: Quantity over quality - generate many ideas without judgment.",
+            ]
+        )
+
+        return instructions
 
 
 class SynthesisThinkingCapability(ThinkingCapability):
@@ -419,7 +532,9 @@ class MultiThinkingAgentFactory:
         capability = self.THINKING_CAPABILITIES[thinking_direction]
 
         # Generate cache key
-        cache_key = f"{thinking_direction.value}_{model.__class__.__name__}_{hash(context)}"
+        cache_key = (
+            f"{thinking_direction.value}_{model.__class__.__name__}_{hash(context)}"
+        )
 
         if cache_key in self._agent_cache:
             # Return cached agent but update instructions
@@ -451,7 +566,9 @@ class MultiThinkingAgentFactory:
         )
         return agent
 
-    def get_thinking_timing(self, thinking_direction: ThinkingDirection) -> ThinkingTimingConfig:
+    def get_thinking_timing(
+        self, thinking_direction: ThinkingDirection
+    ) -> ThinkingTimingConfig:
         """Get specific thinking direction timing configuration."""
         return THINKING_TIMING_CONFIGS[thinking_direction]
 
@@ -470,7 +587,9 @@ _thinking_factory = MultiThinkingAgentFactory()
 
 
 # Convenience functions
-def create_thinking_agent(thinking_direction: ThinkingDirection, model: Model, **kwargs) -> Agent:
+def create_thinking_agent(
+    thinking_direction: ThinkingDirection, model: Model, **kwargs
+) -> Agent:
     """Convenience function to create thinking Agent."""
     return _thinking_factory.create_thinking_agent(thinking_direction, model, **kwargs)
 
