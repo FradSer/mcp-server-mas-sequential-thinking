@@ -45,7 +45,9 @@ Analyze the following thought and provide complexity metrics:
     "research_indicators": <int>,
     "analysis_depth": <int>,
     "philosophical_depth_boost": <int 0-15>,
-    "reasoning": "<brief explanation of scoring>"
+    "primary_problem_type": "<FACTUAL|EMOTIONAL|CRITICAL|OPTIMISTIC|CREATIVE|SYNTHESIS|EVALUATIVE|PHILOSOPHICAL|DECISION>",
+    "thinking_modes_needed": ["<list of required thinking modes>"],
+    "reasoning": "<brief explanation of scoring and problem type analysis>"
 }}
 ```
 
@@ -55,6 +57,26 @@ Analyze the following thought and provide complexity metrics:
 - 26-50: Complex topics requiring deep thinking
 - 51-75: Highly complex, multi-faceted problems
 - 76-100: Extremely complex philosophical/existential questions
+
+**Problem Type Analysis:**
+- FACTUAL: Information seeking, definitions, statistics (what, when, where, who)
+- EMOTIONAL: Feelings, intuition, personal experiences (feel, sense, worry)
+- CRITICAL: Risk assessment, problems, disadvantages (issue, risk, wrong)
+- OPTIMISTIC: Benefits, opportunities, positive aspects (good, benefit, advantage)
+- CREATIVE: Innovation, alternatives, new ideas (creative, brainstorm, imagine)
+- SYNTHESIS: Integration, summary, holistic view (combine, overall, strategy)
+- EVALUATIVE: Comparison, assessment, judgment (compare, evaluate, best)
+- PHILOSOPHICAL: Meaning, existence, values (purpose, meaning, ethics)
+- DECISION: Choice making, selection, recommendations (decide, choose, should)
+
+**Thinking Modes Needed:**
+Select appropriate modes based on problem characteristics:
+- FACTUAL thinking for information gathering
+- EMOTIONAL thinking for intuitive insights
+- CRITICAL thinking for risk analysis
+- OPTIMISTIC thinking for opportunity identification
+- CREATIVE thinking for innovation
+- SYNTHESIS thinking for integration
 
 **Special Considerations:**
 - Philosophical questions like "Why do we live if we die?" should score 40-70+

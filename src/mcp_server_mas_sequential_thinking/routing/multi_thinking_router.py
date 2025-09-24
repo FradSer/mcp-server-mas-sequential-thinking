@@ -9,8 +9,7 @@
 
 # Lazy import to break circular dependency
 import logging
-from dataclasses import dataclass, field
-from enum import Enum
+from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 from .ai_complexity_analyzer import AIComplexityAnalyzer
@@ -28,41 +27,6 @@ from mcp_server_mas_sequential_thinking.processors.multi_thinking_core import (
 # logger already defined above
 
 
-class ProblemType(Enum):
-    """问题类型分类."""
-
-    FACTUAL = "factual"  # 事实性问题
-    EMOTIONAL = "emotional"  # 情感性问题
-    CREATIVE = "creative"  # 创造性问题
-    EVALUATIVE = "evaluative"  # 评估性问题
-    PHILOSOPHICAL = "philosophical"  # 哲学性问题
-    DECISION = "decision"  # 决策性问题
-    GENERAL = "general"  # 一般性问题
-
-
-@dataclass
-class ProblemCharacteristics:
-    """问题特征分析结果."""
-
-    primary_type: ProblemType
-    secondary_types: list[ProblemType] = field(default_factory=list)
-
-    # 特征标记
-    is_factual: bool = False
-    is_creative: bool = False
-    is_evaluative: bool = False
-    is_philosophical: bool = False
-    is_decision: bool = False
-    needs_judgment: bool = False
-    needs_improvement: bool = False
-
-    # 文本特征
-    question_count: int = 0
-    complexity_indicators: int = 0
-    creative_indicators: int = 0
-    factual_indicators: int = 0
-
-
 @dataclass
 class ThinkingSequenceStrategy:
     """思维序列策略."""
@@ -72,226 +36,6 @@ class ThinkingSequenceStrategy:
     thinking_sequence: list[ThinkingDirection]
     estimated_time_seconds: int
     description: str
-    recommended_for: list[ProblemType] = field(default_factory=list)
-
-
-class ProblemAnalyzer:
-    """Problem type and characteristic analyzer."""
-
-    # Problem type recognition supports multilingual contexts
-    TYPE_INDICATORS = {
-        ProblemType.FACTUAL: {
-            # Factual queries require objective information retrieval
-            "what",
-            "when",
-            "where",
-            "who",
-            "how many",
-            "statistics",
-            "data",
-            "facts",
-            "information",
-            "definition",
-            "explain",
-            "describe",
-            "list",
-            # Non-English equivalents needed for multilingual factual analysis
-            "什么",
-            "何时",
-            "哪里",
-            "谁",
-            "多少",
-            "统计",
-            "数据",
-            "事实",
-            "信息",
-            "定义",
-            "解释",
-            "描述",
-            "列出",
-            "介绍",
-        },
-        ProblemType.EMOTIONAL: {
-            # Emotional indicators drive intuitive processing responses
-            "feel",
-            "emotion",
-            "sense",
-            "intuition",
-            "gut",
-            "heart",
-            "passion",
-            "worry",
-            "excited",
-            "concerned",
-            "hopeful",
-            "afraid",
-            # Multilingual emotional expressions preserve cultural nuances
-            "感觉",
-            "情感",
-            "感受",
-            "直觉",
-            "内心",
-            "担心",
-            "兴奋",
-            "关心",
-            "希望",
-            "害怕",
-        },
-        ProblemType.CREATIVE: {
-            # Creative thinking requires divergent thought patterns
-            "creative",
-            "innovative",
-            "brainstorm",
-            "alternative",
-            "new idea",
-            "think outside",
-            "novel",
-            "original",
-            "imagination",
-            "possibility",
-            # Innovation concepts translate across cultural contexts
-            "创造",
-            "创新",
-            "头脑风暴",
-            "替代",
-            "新想法",
-            "新颖",
-            "原创",
-            "想象",
-            "可能性",
-        },
-        ProblemType.EVALUATIVE: {
-            # Primary linguistic markers for analysis
-            "evaluate",
-            "assess",
-            "compare",
-            "judge",
-            "rate",
-            "pros and cons",
-            "advantages",
-            "disadvantages",
-            "better",
-            "worse",
-            "best",
-            # Cross-cultural linguistic patterns
-            "评估",
-            "评价",
-            "比较",
-            "判断",
-            "评级",
-            "优缺点",
-            "优势",
-            "劣势",
-            "更好",
-            "最好",
-        },
-        ProblemType.PHILOSOPHICAL: {
-            # Primary linguistic markers for analysis
-            "meaning",
-            "purpose",
-            "existence",
-            "philosophy",
-            "ethics",
-            "moral",
-            "values",
-            "beliefs",
-            "truth",
-            "reality",
-            "consciousness",
-            # Cross-cultural linguistic patterns
-            "意义",
-            "目的",
-            "存在",
-            "哲学",
-            "伦理",
-            "道德",
-            "价值观",
-            "信念",
-            "真理",
-            "现实",
-            "意识",
-            "生命",
-            "死亡",
-            "自由",
-            "选择",
-            "存在主义",
-            "本质",
-        },
-        ProblemType.DECISION: {
-            # Primary linguistic markers for analysis
-            "decide",
-            "choose",
-            "select",
-            "option",
-            "should",
-            "recommend",
-            "which",
-            "pick",
-            "decision",
-            "choice",
-            "dilemma",
-            # Cross-cultural linguistic patterns
-            "决定",
-            "选择",
-            "挑选",
-            "选项",
-            "应该",
-            "推荐",
-            "哪个",
-            "决策",
-            "两难",
-        },
-    }
-
-    def analyze_problem(self, thought_data: "ThoughtData") -> ProblemCharacteristics:
-        """分析问题类型和特征."""
-        text = thought_data.thought.lower()
-
-        # 分析各种类型的指标
-        type_scores = {}
-        for problem_type, keywords in self.TYPE_INDICATORS.items():
-            score = sum(1 for keyword in keywords if keyword.lower() in text)
-            type_scores[problem_type] = score
-
-        # 确定主要类型
-        primary_type = max(type_scores, key=type_scores.get)
-        if type_scores[primary_type] == 0:
-            primary_type = ProblemType.GENERAL
-
-        # 确定次要类型（得分 > 0）
-        secondary_types = [
-            ptype
-            for ptype, score in type_scores.items()
-            if score > 0 and ptype != primary_type
-        ]
-
-        # 计算特征标记
-        characteristics = ProblemCharacteristics(
-            primary_type=primary_type,
-            secondary_types=secondary_types,
-            is_factual=type_scores[ProblemType.FACTUAL] > 0,
-            is_creative=type_scores[ProblemType.CREATIVE] > 0,
-            is_evaluative=type_scores[ProblemType.EVALUATIVE] > 0,
-            is_philosophical=type_scores[ProblemType.PHILOSOPHICAL] > 0,
-            is_decision=type_scores[ProblemType.DECISION] > 0,
-            needs_judgment=any(
-                word in text for word in ["judge", "evaluate", "assess", "判断", "评价"]
-            ),
-            needs_improvement=any(
-                word in text
-                for word in ["improve", "better", "enhance", "改进", "改善"]
-            ),
-            question_count=text.count("?") + text.count("？"),
-            complexity_indicators=type_scores[ProblemType.PHILOSOPHICAL]
-            + type_scores[ProblemType.DECISION],
-            creative_indicators=type_scores[ProblemType.CREATIVE],
-            factual_indicators=type_scores[ProblemType.FACTUAL],
-        )
-
-        logger.info(
-            f"Problem analysis: primary={primary_type.value}, secondary={[t.value for t in secondary_types]}"
-        )
-        return characteristics
 
 
 class ThinkingSequenceLibrary:
@@ -306,7 +50,6 @@ class ThinkingSequenceLibrary:
             thinking_sequence=[ThinkingDirection.FACTUAL],
             estimated_time_seconds=120,
             description="纯事实收集，快速信息处理",
-            recommended_for=[ProblemType.FACTUAL],
         ),
         "single_intuitive": ThinkingSequenceStrategy(
             name="单向直觉模式",
@@ -314,7 +57,6 @@ class ThinkingSequenceLibrary:
             thinking_sequence=[ThinkingDirection.EMOTIONAL],
             estimated_time_seconds=30,
             description="快速直觉反应，30秒情感判断",
-            recommended_for=[ProblemType.EMOTIONAL],
         ),
         "single_creative": ThinkingSequenceStrategy(
             name="单向创意模式",
@@ -322,7 +64,6 @@ class ThinkingSequenceLibrary:
             thinking_sequence=[ThinkingDirection.CREATIVE],
             estimated_time_seconds=240,
             description="创意生成模式，自由创新思考",
-            recommended_for=[ProblemType.CREATIVE],
         ),
         "single_critical": ThinkingSequenceStrategy(
             name="单向批判模式",
@@ -330,7 +71,6 @@ class ThinkingSequenceLibrary:
             thinking_sequence=[ThinkingDirection.CRITICAL],
             estimated_time_seconds=120,
             description="风险识别，快速批判分析",
-            recommended_for=[ProblemType.EVALUATIVE],
         ),
         # 双向序列策略
         "evaluate_idea": ThinkingSequenceStrategy(
@@ -339,7 +79,6 @@ class ThinkingSequenceLibrary:
             thinking_sequence=[ThinkingDirection.OPTIMISTIC, ThinkingDirection.CRITICAL],
             estimated_time_seconds=240,
             description="先看优点，再看风险，平衡评估",
-            recommended_for=[ProblemType.EVALUATIVE],
         ),
         "improve_design": ThinkingSequenceStrategy(
             name="设计改进序列",
@@ -347,7 +86,6 @@ class ThinkingSequenceLibrary:
             thinking_sequence=[ThinkingDirection.CRITICAL, ThinkingDirection.CREATIVE],
             estimated_time_seconds=360,
             description="识别问题，然后创新改进",
-            recommended_for=[ProblemType.CREATIVE, ProblemType.EVALUATIVE],
         ),
         "fact_and_judge": ThinkingSequenceStrategy(
             name="事实判断序列",
@@ -355,7 +93,6 @@ class ThinkingSequenceLibrary:
             thinking_sequence=[ThinkingDirection.FACTUAL, ThinkingDirection.CRITICAL, ThinkingDirection.SYNTHESIS],
             estimated_time_seconds=360,
             description="收集事实，批判验证，综合整合结论",
-            recommended_for=[ProblemType.FACTUAL, ProblemType.EVALUATIVE],
         ),
         # 三向核心序列策略
         "problem_solving": ThinkingSequenceStrategy(
@@ -364,7 +101,6 @@ class ThinkingSequenceLibrary:
             thinking_sequence=[ThinkingDirection.FACTUAL, ThinkingDirection.CREATIVE, ThinkingDirection.CRITICAL],
             estimated_time_seconds=480,
             description="事实→创意→评估，标准问题解决",
-            recommended_for=[ProblemType.GENERAL, ProblemType.CREATIVE],
         ),
         "decision_making": ThinkingSequenceStrategy(
             name="决策制定序列",
@@ -372,7 +108,6 @@ class ThinkingSequenceLibrary:
             thinking_sequence=[ThinkingDirection.EMOTIONAL, ThinkingDirection.OPTIMISTIC, ThinkingDirection.CRITICAL],
             estimated_time_seconds=390,
             description="直觉→价值→风险，快速决策",
-            recommended_for=[ProblemType.DECISION],
         ),
         "philosophical_thinking": ThinkingSequenceStrategy(
             name="哲学思考序列",
@@ -380,7 +115,6 @@ class ThinkingSequenceLibrary:
             thinking_sequence=[ThinkingDirection.FACTUAL, ThinkingDirection.CREATIVE, ThinkingDirection.SYNTHESIS],
             estimated_time_seconds=540,
             description="事实→创造→整合，深度哲学思考（解决综合+评审分离问题）",
-            recommended_for=[ProblemType.PHILOSOPHICAL],
         ),
         # 完整多向序列
         "full_exploration": ThinkingSequenceStrategy(
@@ -397,7 +131,6 @@ class ThinkingSequenceLibrary:
             ],
             estimated_time_seconds=780,
             description="完整多向序列，全面深度分析",
-            recommended_for=[ProblemType.DECISION, ProblemType.PHILOSOPHICAL],
         ),
         "creative_innovation": ThinkingSequenceStrategy(
             name="创新发展序列",
@@ -413,7 +146,6 @@ class ThinkingSequenceLibrary:
             ],
             estimated_time_seconds=840,
             description="创新优先的完整流程",
-            recommended_for=[ProblemType.CREATIVE],
         ),
     }
 
@@ -422,16 +154,6 @@ class ThinkingSequenceLibrary:
         """获取指定策略."""
         return cls.STRATEGIES.get(strategy_name)
 
-    @classmethod
-    def get_strategies_for_problem(
-        cls, problem_type: ProblemType
-    ) -> list[ThinkingSequenceStrategy]:
-        """获取适合特定问题类型的策略."""
-        return [
-            strategy
-            for strategy in cls.STRATEGIES.values()
-            if problem_type in strategy.recommended_for
-        ]
 
     @classmethod
     def get_strategies_by_complexity(
@@ -451,9 +173,10 @@ class RoutingDecision:
 
     strategy: ThinkingSequenceStrategy
     reasoning: str
-    problem_characteristics: ProblemCharacteristics
     complexity_metrics: ComplexityMetrics
     estimated_cost_reduction: float  # 相比原系统的成本降低百分比
+    problem_type: str  # AI-determined problem type
+    thinking_modes_needed: list[str]  # AI-recommended thinking modes
 
 
 class MultiThinkingIntelligentRouter:
@@ -461,7 +184,6 @@ class MultiThinkingIntelligentRouter:
 
     def __init__(self, complexity_analyzer: AIComplexityAnalyzer | None = None) -> None:
         self.complexity_analyzer = complexity_analyzer or AIComplexityAnalyzer()
-        self.problem_analyzer = ProblemAnalyzer()
         self.sequence_library = ThinkingSequenceLibrary()
 
         # 复杂度阈值配置
@@ -473,45 +195,47 @@ class MultiThinkingIntelligentRouter:
         }
 
     async def route_thought(self, thought_data: "ThoughtData") -> RoutingDecision:
-        """智能路由思想到最佳思维序列."""
-        logger.info("🤖 MULTI-THINKING INTELLIGENT ROUTING:")
+        """AI-powered intelligent routing to optimal thinking sequence."""
+        logger.info("🤖 AI-DRIVEN MULTI-THINKING ROUTING:")
         logger.info(f"  📝 Input: {thought_data.thought[:100]}...")
 
-        # 步骤1: 复杂度分析 (AI-powered)
+        # Step 1: AI analysis (complexity + problem type + thinking modes)
         complexity_metrics = await self.complexity_analyzer.analyze(thought_data)
         complexity_score = complexity_metrics.complexity_score
 
+        # Extract AI analysis results
+        ai_result = complexity_metrics.get("ai_analysis", {})
+        problem_type = ai_result.get("primary_problem_type", "GENERAL")
+        thinking_modes_needed = ai_result.get("thinking_modes_needed", ["SYNTHESIS"])
+
         logger.info(f"  📊 Complexity Score: {complexity_score:.1f}")
+        logger.info(f"  🎯 AI Problem Type: {problem_type}")
+        logger.info(f"  🧠 Thinking Modes: {thinking_modes_needed}")
 
-        # 步骤2: 问题特征分析
-        problem_characteristics = self.problem_analyzer.analyze_problem(thought_data)
-
-        logger.info(f"  🎯 Problem Type: {problem_characteristics.primary_type.value}")
-
-        # 步骤3: 确定复杂度级别
+        # Step 2: Determine complexity level
         complexity_level = self._determine_complexity_level(complexity_score)
-
         logger.info(f"  📈 Complexity Level: {complexity_level.value}")
 
-        # 步骤4: 策略选择
+        # Step 3: AI-driven strategy selection
         strategy = self._select_optimal_strategy(
-            complexity_level, problem_characteristics, complexity_score
+            complexity_level, problem_type, thinking_modes_needed, complexity_score
         )
 
-        # 步骤5: 生成决策说明
+        # Step 4: Generate reasoning
         reasoning = self._generate_reasoning(
-            strategy, problem_characteristics, complexity_metrics
+            strategy, problem_type, thinking_modes_needed, complexity_metrics
         )
 
-        # 步骤6: 估算成本节约
+        # Step 5: Estimate cost reduction
         cost_reduction = self._estimate_cost_reduction(strategy, complexity_score)
 
         decision = RoutingDecision(
             strategy=strategy,
             reasoning=reasoning,
-            problem_characteristics=problem_characteristics,
             complexity_metrics=complexity_metrics,
             estimated_cost_reduction=cost_reduction,
+            problem_type=problem_type,
+            thinking_modes_needed=thinking_modes_needed,
         )
 
         logger.info(f"  ✅ Selected Strategy: {strategy.name}")
@@ -532,56 +256,58 @@ class MultiThinkingIntelligentRouter:
     def _select_optimal_strategy(
         self,
         complexity_level: ProcessingDepth,
-        problem_characteristics: ProblemCharacteristics,
+        problem_type: str,
+        thinking_modes_needed: list[str],
         complexity_score: float,
     ) -> ThinkingSequenceStrategy:
-        """选择最优策略."""
-        # 获取该复杂度级别的所有策略
+        """AI-driven strategy selection."""
+        # Get strategies by complexity level
         candidate_strategies = self.sequence_library.get_strategies_by_complexity(
             complexity_level
         )
 
-        # 如果没有找到策略，使用降级处理
         if not candidate_strategies:
             logger.warning(
                 f"No strategies found for complexity {complexity_level}, using fallback"
             )
             return self._get_fallback_strategy(complexity_level)
 
-        # 根据问题类型筛选推荐策略
-        recommended_strategies = [
-            strategy
-            for strategy in candidate_strategies
-            if problem_characteristics.primary_type in strategy.recommended_for
-        ]
-
-        # 如果有推荐策略，选择第一个
-        if recommended_strategies:
-            return recommended_strategies[0]
-
-        # 否则使用特殊逻辑选择
-        return self._select_by_special_logic(
-            candidate_strategies, problem_characteristics, complexity_score
+        # AI-driven selection based on problem type and thinking modes
+        return self._select_by_ai_analysis(
+            candidate_strategies, problem_type, thinking_modes_needed, complexity_score
         )
 
-    def _select_by_special_logic(
+    def _select_by_ai_analysis(
         self,
         strategies: list[ThinkingSequenceStrategy],
-        characteristics: ProblemCharacteristics,
+        problem_type: str,
+        thinking_modes_needed: list[str],
         complexity_score: float,
     ) -> ThinkingSequenceStrategy:
-        """使用特殊逻辑选择策略."""
-        # 单向模式的特殊选择逻辑
+        """AI-driven strategy selection logic."""
+        # Single mode AI-driven selection
         if strategies[0].complexity == ProcessingDepth.SINGLE:
-            if characteristics.factual_indicators > characteristics.creative_indicators:
+            if "FACTUAL" in thinking_modes_needed:
                 return self.sequence_library.get_strategy("single_factual")
-            if characteristics.creative_indicators > 0:
+            if "CREATIVE" in thinking_modes_needed:
                 return self.sequence_library.get_strategy("single_creative")
-            if characteristics.needs_judgment:
+            if "EMOTIONAL" in thinking_modes_needed:
                 return self.sequence_library.get_strategy("single_intuitive")
-            return self.sequence_library.get_strategy("single_factual")  # 默认
+            if "CRITICAL" in thinking_modes_needed:
+                return self.sequence_library.get_strategy("single_critical")
+            return self.sequence_library.get_strategy("single_factual")  # Default
 
-        # 其他复杂度：返回第一个策略
+        # For other complexity levels: intelligent selection based on problem type
+        if problem_type == "PHILOSOPHICAL":
+            return self.sequence_library.get_strategy("philosophical_thinking")
+        if problem_type == "DECISION":
+            return self.sequence_library.get_strategy("decision_making")
+        if problem_type == "CREATIVE":
+            return self.sequence_library.get_strategy("creative_innovation") or strategies[0]
+        if problem_type == "EVALUATIVE":
+            return self.sequence_library.get_strategy("evaluate_idea") or strategies[0]
+
+        # Default: return first strategy
         return strategies[0]
 
     def _get_fallback_strategy(
@@ -600,25 +326,27 @@ class MultiThinkingIntelligentRouter:
     def _generate_reasoning(
         self,
         strategy: ThinkingSequenceStrategy,
-        characteristics: ProblemCharacteristics,
+        problem_type: str,
+        thinking_modes_needed: list[str],
         metrics: ComplexityMetrics,
     ) -> str:
-        """生成路由决策推理."""
+        """Generate AI-driven routing decision reasoning."""
         reasoning_parts = [
             f"Strategy: {strategy.name}",
-            f"Problem type: {characteristics.primary_type.value}",
+            f"AI Problem Type: {problem_type}",
             f"Complexity: {metrics.complexity_score:.1f}/100",
-            f"Thinking sequence: {' → '.join(direction.value for direction in strategy.thinking_sequence)}",
-            f"Estimated time: {strategy.estimated_time_seconds}s",
+            f"Thinking Sequence: {' → '.join(direction.value for direction in strategy.thinking_sequence)}",
+            f"Estimated Time: {strategy.estimated_time_seconds}s",
+            f"AI Recommended Modes: {', '.join(thinking_modes_needed)}",
         ]
 
-        # 添加特征说明
-        if characteristics.is_philosophical:
-            reasoning_parts.append("Philosophical depth detected")
-        if characteristics.is_creative:
-            reasoning_parts.append("Creative thinking required")
-        if characteristics.question_count > 0:
-            reasoning_parts.append(f"{characteristics.question_count} questions found")
+        # Add AI insights
+        if "PHILOSOPHICAL" in problem_type:
+            reasoning_parts.append("Deep philosophical analysis required")
+        if "CREATIVE" in thinking_modes_needed:
+            reasoning_parts.append("Creative thinking essential")
+        if "SYNTHESIS" in thinking_modes_needed:
+            reasoning_parts.append("Integration and synthesis needed")
 
         return " | ".join(reasoning_parts)
 
