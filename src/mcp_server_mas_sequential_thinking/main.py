@@ -1,39 +1,42 @@
 """Refactored MCP Sequential Thinking Server with separated concerns and reduced complexity."""
 
+import asyncio
 import sys
-from html import escape
-from typing import AsyncIterator
+from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
+from html import escape
 
+from dotenv import load_dotenv
 from mcp.server.fastmcp import FastMCP
 from pydantic import ValidationError
-from dotenv import load_dotenv
+
+from .config import ProcessingDefaults, SecurityConstants, ValidationLimits
+from .core import ThoughtProcessingError
 
 # Import refactored modules
-from .models import ThoughtData
-from .server_core import (
-    create_server_lifespan,
-    create_validated_thought_data,
+from .services import (
     ServerConfig,
     ServerState,
     ThoughtProcessor,
+    create_server_lifespan,
+    create_validated_thought_data,
 )
-from .types import ThoughtProcessingError, ValidationError as CustomValidationError
 from .utils import setup_logging
-from .constants import ValidationLimits
 
 # Initialize environment and logging
 load_dotenv()
 logger = setup_logging()
 
-# Global server state
+# Global server state with thread safety
 _server_state: ServerState | None = None
+_thought_processor: ThoughtProcessor | None = None
+_processor_lock = asyncio.Lock()
 
 
 @asynccontextmanager
 async def app_lifespan(app) -> AsyncIterator[None]:
     """Simplified application lifespan using refactored server core."""
-    global _server_state
+    global _server_state, _thought_processor
 
     logger.info("Starting Sequential Thinking Server")
 
@@ -43,6 +46,7 @@ async def app_lifespan(app) -> AsyncIterator[None]:
         yield
 
     _server_state = None
+    _thought_processor = None
     logger.info("Server stopped")
 
 
@@ -51,13 +55,32 @@ mcp = FastMCP(lifespan=app_lifespan)
 
 
 def sanitize_and_validate_input(text: str, max_length: int, field_name: str) -> str:
-    """Sanitize and validate input with efficient error handling and modern idioms."""
+    """Sanitize and validate input with comprehensive security checks."""
     # Early validation with guard clause
     if not text or not text.strip():
         raise ValueError(f"{field_name} cannot be empty")
 
-    # Sanitize once with chained operations
-    sanitized_text = escape(text.strip())
+    # Strip and normalize whitespace first
+    text = text.strip()
+
+    # Check for potential prompt injection patterns using centralized constants
+    text_lower = text.lower()
+    for pattern in SecurityConstants.INJECTION_PATTERNS:
+        if pattern in text_lower:
+            raise ValueError(
+                f"Potential security risk detected in {field_name}. "
+                f"Input contains suspicious pattern: '{pattern}'"
+            )
+
+    # Additional security checks
+    if text.count('"') > 10 or text.count("'") > 10:
+        raise ValueError(
+            f"Excessive quotation marks detected in {field_name}. "
+            "This may indicate an injection attempt."
+        )
+
+    # Sanitize HTML entities and special characters
+    sanitized_text = escape(text)
 
     # Length validation with descriptive error
     if len(sanitized_text) > max_length:
@@ -87,23 +110,23 @@ def sequential_thinking_prompt(problem: str, context: str = "") -> list[dict]:
         raise ValueError(f"Input validation failed: {e}")
 
     user_prompt = f"""Initiate sequential thinking for: {problem}
-{f'Context: {context}' if context else ''}"""
+{f"Context: {context}" if context else ""}"""
 
     assistant_guide = f"""Starting sequential thinking process for: {problem}
 
 Process Guidelines:
-1. Estimate at least 5 total thoughts initially
+1. Estimate appropriate number of total thoughts based on problem complexity
 2. Begin with: "Plan comprehensive analysis for: {problem}"
-3. Use revisions (isRevision=True) to improve previous thoughts  
+3. Use revisions (isRevision=True) to improve previous thoughts
 4. Use branching (branchFromThought, branchId) for alternative approaches
 5. Each thought should be detailed with clear reasoning
 6. Progress systematically through analysis phases
 
 System Architecture:
-- Multi-agent coordination team with specialized roles
-- Planner, Researcher, Analyzer, Critic, and Synthesizer agents
-- Intelligent delegation based on thought complexity
-- Comprehensive synthesis of specialist responses
+- Multi-Thinking methodology with intelligent routing
+- Factual, Emotional, Critical, Optimistic, Creative, and Synthesis perspectives
+- Adaptive thinking sequence based on thought complexity and type
+- Comprehensive integration through Synthesis thinking
 
 Ready to begin systematic analysis."""
 
@@ -124,31 +147,28 @@ Ready to begin systematic analysis."""
 @mcp.tool()
 async def sequentialthinking(
     thought: str,
-    thought_number: int,
-    total_thoughts: int,
-    next_needed: bool,
-    is_revision: bool = False,
-    revises_thought: int | None = None,
-    branch_from: int | None = None,
-    branch_id: str | None = None,
-    needs_more: bool = False,
+    thoughtNumber: int,
+    totalThoughts: int,
+    nextThoughtNeeded: bool,
+    isRevision: bool,
+    branchFromThought: int | None,
+    branchId: str | None,
+    needsMoreThoughts: bool,
 ) -> str:
-    """
-    Advanced sequential thinking tool with multi-agent coordination.
+    """Advanced sequential thinking tool with multi-agent coordination.
 
     Processes thoughts through a specialized team of AI agents that coordinate
     to provide comprehensive analysis, planning, research, critique, and synthesis.
 
     Args:
         thought: Content of the thinking step (required)
-        thought_number: Sequence number starting from 1 (≥1)
-        total_thoughts: Estimated total thoughts required (≥5)
-        next_needed: Whether another thought step follows this one
-        is_revision: Whether this thought revises a previous thought
-        revises_thought: Thought number being revised (requires is_revision=True)
-        branch_from: Thought number to branch from for alternative exploration
-        branch_id: Unique identifier for the branch (required if branch_from set)
-        needs_more: Whether more thoughts are needed beyond the initial estimate
+        thoughtNumber: Sequence number starting from {ThoughtProcessingLimits.MIN_THOUGHT_SEQUENCE} (≥{ThoughtProcessingLimits.MIN_THOUGHT_SEQUENCE})
+        totalThoughts: Estimated total thoughts required (≥1)
+        nextThoughtNeeded: Whether another thought step follows this one
+        isRevision: Whether this thought revises a previous thought
+        branchFromThought: Thought number to branch from for alternative exploration
+        branchId: Unique identifier for the branch (required if branchFromThought set)
+        needsMoreThoughts: Whether more thoughts are needed beyond the initial estimate
 
     Returns:
         Synthesized response from the multi-agent team with guidance for next steps
@@ -158,44 +178,50 @@ async def sequentialthinking(
         ValidationError: When input validation fails
         RuntimeError: When server state is invalid
     """
-    if _server_state is None:
+    # Capture server state locally to avoid async race conditions
+    current_server_state = _server_state
+    if current_server_state is None:
         return "Server Error: Server not initialized"
 
     try:
         # Create and validate thought data using refactored function
         thought_data = create_validated_thought_data(
             thought=thought,
-            thought_number=thought_number,
-            total_thoughts=total_thoughts,
-            next_needed=next_needed,
-            is_revision=is_revision,
-            revises_thought=revises_thought,
-            branch_from=branch_from,
-            branch_id=branch_id,
-            needs_more=needs_more,
+            thoughtNumber=thoughtNumber,
+            totalThoughts=totalThoughts,
+            nextThoughtNeeded=nextThoughtNeeded,
+            isRevision=isRevision,
+            branchFromThought=branchFromThought,
+            branchId=branchId,
+            needsMoreThoughts=needsMoreThoughts,
         )
 
-        # Process through team using refactored processor
-        processor = ThoughtProcessor(_server_state.session)
-        result = await processor.process_thought(thought_data)
+        # Use captured state directly to avoid race conditions
+        global _thought_processor
+        async with _processor_lock:
+            if _thought_processor is None:
+                logger.info("Initializing ThoughtProcessor with Multi-Thinking workflow")
+                _thought_processor = ThoughtProcessor(current_server_state.session)
 
-        logger.info(f"Successfully processed thought #{thought_number}")
+        result = await _thought_processor.process_thought(thought_data)
+
+        logger.info(f"Successfully processed thought #{thoughtNumber}")
         return result
 
     except ValidationError as e:
-        error_msg = f"Input validation failed for thought #{thought_number}: {e}"
-        logger.error(error_msg)
+        error_msg = f"Input validation failed for thought #{thoughtNumber}: {e}"
+        logger.exception(error_msg)
         return f"Validation Error: {e}"
 
     except ThoughtProcessingError as e:
-        error_msg = f"Processing failed for thought #{thought_number}: {e}"
-        logger.error(error_msg)
+        error_msg = f"Processing failed for thought #{thoughtNumber}: {e}"
+        logger.exception(error_msg)
         if hasattr(e, "metadata") and e.metadata:
-            logger.error(f"Error metadata: {e.metadata}")
+            logger.exception(f"Error metadata: {e.metadata}")
         return f"Processing Error: {e}"
 
     except Exception as e:
-        error_msg = f"Unexpected error processing thought #{thought_number}: {e}"
+        error_msg = f"Unexpected error processing thought #{thoughtNumber}: {e}"
         logger.exception(error_msg)
         return f"Unexpected Error: {e}"
 
@@ -218,7 +244,7 @@ def run() -> None:
 
     except Exception as e:
         logger.error(f"Critical server error: {e}", exc_info=True)
-        sys.exit(1)
+        sys.exit(ProcessingDefaults.EXIT_CODE_ERROR)
 
     finally:
         logger.info("Server shutdown sequence complete")
@@ -230,7 +256,7 @@ def main() -> None:
         run()
     except Exception as e:
         logger.critical(f"Fatal error in main: {e}", exc_info=True)
-        sys.exit(1)
+        sys.exit(ProcessingDefaults.EXIT_CODE_ERROR)
 
 
 if __name__ == "__main__":
