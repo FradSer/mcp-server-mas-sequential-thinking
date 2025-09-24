@@ -11,8 +11,8 @@ uv run python -c "import agno; print('Agno imported successfully')"  # Verify se
 
 # Development Workflow
 uv run mcp-server-mas-sequential-thinking               # Run server
-ruff check . --fix && ruff format . && mypy .           # Code quality (ruff replaces black + isort)
-pytest --cov=. --cov-report=html                        # Test with coverage
+uv run ruff check . --fix && uv run ruff format . && uv run mypy .  # Code quality
+uv run pytest --cov=. --cov-report=html                # Test with coverage (no tests currently)
 
 # Monitoring & Debugging
 tail -f ~/.sequential_thinking/logs/sequential_thinking.log  # Live logs
@@ -21,13 +21,12 @@ grep "ERROR\|WARNING" ~/.sequential_thinking/logs/sequential_thinking.log  # Err
 
 ### Additional Commands
 - **Upgrade agno**: `uv pip install --upgrade agno`
-- **Single test**: `pytest tests/unit/test_models.py::test_thought_data_validation -v`
 - **Alternative server runs**: `uvx mcp-server-mas-sequential-thinking` or `uv run python src/mcp_server_mas_sequential_thinking/main.py`
 - **MCP Inspector**: `npx @modelcontextprotocol/inspector uv run python src/mcp_server_mas_sequential_thinking/main.py`
 
 ## Project Overview
 
-**Pure Multi-Thinking Implementation** built with **Agno v2.0** framework and served via MCP. Features **intelligent routing** with clean architecture (src layout, Python 3.10+). The system processes thoughts through multi-directional thinking methodology with AI-powered routing and model optimization.
+**Pure Multi-Thinking Implementation** built with **Agno v2.0** framework and served via MCP. Features **AI-powered intelligent routing** with streamlined architecture (src layout, Python 3.10+). The system processes thoughts through multi-directional thinking methodology with AI-driven complexity analysis and optimized model selection.
 
 ### Core Architecture
 
@@ -46,12 +45,13 @@ External LLM → sequentialthinking tool → ThoughtProcessor → WorkflowExecut
 - **WorkflowExecutor**: Manages Multi-Thinking workflow execution
 - **ContextBuilder**: Builds context-aware prompts
 - **ResponseFormatter**: Formats final responses
-- **SessionMemory**: Tracks thought history and branching (no Team dependency)
+- **SessionMemory**: Tracks thought history and branching
 
-**Multi-Thinking Routing System:**
-- **MultiThinkingIntelligentRouter**: Complexity analysis determines hat sequence
-- **MultiThinkingSequentialProcessor**: Executes chosen hat sequence with model optimization
-- **HatComplexity levels**: SINGLE, DOUBLE, TRIPLE, FULL sequences
+**AI-Powered Routing System:**
+- **MultiThinkingIntelligentRouter**: AI-driven complexity analysis determines thinking sequence
+- **AIComplexityAnalyzer**: Uses LLM to assess thought complexity, problem type, and required thinking modes
+- **MultiThinkingSequentialProcessor**: Executes chosen sequence with model optimization
+- **Thinking Complexity levels**: SINGLE, DOUBLE, TRIPLE, FULL sequences
 - **Model Intelligence**: Enhanced model for Blue Hat synthesis, Standard model for individual hats
 
 ### Configuration & Data Flow
@@ -63,47 +63,52 @@ External LLM → sequentialthinking tool → ThoughtProcessor → WorkflowExecut
 - `{PROVIDER}_STANDARD_MODEL_ID`: Standard model for individual hat processing
 - `EXA_API_KEY`: Research capabilities (if using research agents)
 
-**Model Strategy:**
+**AI-Driven Model Strategy:**
 - **Enhanced Models**: Used for Blue Hat (metacognitive) thinking - complex synthesis, integration
 - **Standard Models**: Used for individual hat processing (White, Red, Black, Yellow, Green)
-- **Intelligent Selection**: System automatically chooses appropriate model based on hat type
+- **Intelligent Selection**: System automatically chooses appropriate model based on hat type and AI-assessed complexity
+- **AI Analysis**: Replaces rule-based pattern matching with semantic understanding
 
-**Processing Strategies:**
+**Processing Strategies (AI-Determined):**
 1. **Single Hat**: Simple focused thinking (White Hat facts, Red Hat emotions, etc.)
-2. **Double Hat**: Two-step sequences (e.g., White→Blue for factual synthesis)
-3. **Triple Hat**: Core philosophical thinking (White→Green→Blue)
+2. **Double Hat**: Two-step sequences (e.g., Optimistic→Critical for idea evaluation)
+3. **Triple Hat**: Core philosophical thinking (Factual→Creative→Synthesis)
 4. **Full Sequence**: Complete Multi-Thinking methodology with Blue Hat orchestration
 
-### Key Modules
+### Streamlined Module Architecture
 
 **Core Framework:**
 - `core/session.py`: SessionMemory for thought history (simplified, no Team dependency)
 - `core/models.py`: ThoughtData validation and core data structures
+- `core/types.py`: Type definitions and protocols
 - `config/modernized_config.py`: Provider strategies with Enhanced/Standard model configuration
+- `config/constants.py`: All system constants and configuration values
 
 **Multi-Thinking Implementation:**
 - `processors/multi_thinking_processor.py`: Main Multi-Thinking sequential processor
 - `processors/multi_thinking_core.py`: Hat definitions, agent factory, core logic
-- `routing/multi_thinking_router.py`: Intelligent routing based on thought complexity
+- `routing/multi_thinking_router.py`: AI-powered intelligent routing based on thought complexity
+- `routing/ai_complexity_analyzer.py`: AI-driven complexity and problem type analysis
 - `routing/agno_workflow_router.py`: Agno Workflow integration layer
+- `routing/complexity_types.py`: Core complexity analysis types and enums
 
 **Service Layer:**
 - `services/thought_processor_refactored.py`: Main thought processor with dependency injection
 - `services/workflow_executor.py`: Multi-Thinking workflow execution
 - `services/context_builder.py`: Context-aware prompt building
 - `services/response_formatter.py`: Response formatting and extraction
+- `services/server_core.py`: Server lifecycle and state management
 
-### Testing & Key Notes
+**Infrastructure:**
+- `infrastructure/logging_config.py`: Structured logging with rotation
+- `infrastructure/persistent_memory.py`: Memory persistence capabilities
+- `utils/utils.py`: Logging utilities and helper functions
 
-**Test Organization:**
-- Unit tests: `tests/unit/` | Integration: `tests/` root
-- Async configuration: `tests/pytest.ini` with `asyncio_mode = auto`
-- Factories: `tests/helpers/` for test data creation
-- Key test files: `test_agno_workflow.py`, `test_github_provider.py`
+### Architecture Characteristics
 
-**Architecture Characteristics:**
 - **Clean Architecture**: Dependency injection, separation of concerns, service-based design
-- **Multi-Thinking Focus**: Pure implementation without legacy multi-agent complexity
+- **AI-Driven Intelligence**: Pure AI-based complexity analysis replacing rule-based systems
+- **Multi-Thinking Focus**: Streamlined implementation without legacy multi-agent complexity
 - **Model Optimization**: Smart model selection (Enhanced for synthesis, Standard for processing)
 - **Modern Python**: Dataclasses, type hints, async/await, pattern matching
 - **Environment-based config**: No config files, all via environment variables
@@ -111,7 +116,7 @@ External LLM → sequentialthinking tool → ThoughtProcessor → WorkflowExecut
 
 ## Enhanced/Standard Model Configuration
 
-**Naming Convention (NEW):**
+**Naming Convention:**
 - `{PROVIDER}_ENHANCED_MODEL_ID`: For complex synthesis tasks (Blue Hat thinking)
 - `{PROVIDER}_STANDARD_MODEL_ID`: For individual hat processing
 
@@ -133,7 +138,7 @@ ANTHROPIC_STANDARD_MODEL_ID="claude-3-5-haiku-20241022"   # Processing
 **Usage Strategy:**
 - **Enhanced Model**: Blue Hat (metacognitive orchestrator) uses enhanced model for final synthesis
 - **Standard Model**: Individual hats (White, Red, Black, Yellow, Green) use standard model
-- **Automatic Selection**: System chooses model based on hat type and complexity
+- **AI-Driven Selection**: System intelligently chooses model based on hat type and AI-assessed complexity
 
 ## Agno v2.0 Integration
 
@@ -149,3 +154,29 @@ ANTHROPIC_STANDARD_MODEL_ID="claude-3-5-haiku-20241022"   # Processing
 - **StepOutput**: Workflow results converted to Agno StepOutput format
 
 **For Agno Documentation**: Use deepwiki MCP reference with repoName: `agno-agi/agno`
+
+## AI-Powered Complexity Analysis
+
+**Key Innovation**: The system uses AI instead of rule-based pattern matching for complexity analysis:
+
+- **AIComplexityAnalyzer**: Uses LLM to assess thought complexity, semantic depth, and problem characteristics
+- **Problem Type Detection**: AI identifies primary problem type (FACTUAL, EMOTIONAL, CREATIVE, PHILOSOPHICAL, etc.)
+- **Thinking Modes Recommendation**: AI suggests required thinking modes for optimal processing
+- **Semantic Understanding**: Replaces keyword matching with contextual analysis across languages
+
+**Benefits over Rule-Based Systems:**
+- Better handling of nuanced, philosophical, or cross-cultural content
+- Adaptive to new problem types without code changes
+- Semantic understanding vs simple pattern matching
+- Reduced maintenance overhead (no keyword lists to maintain)
+
+## Development Notes
+
+**No Test Suite**: The project currently has no test files - all tests were removed during recent cleanup.
+
+**Recent Architecture Changes**:
+- Removed legacy multi-agent systems (agents/, optimization/, analysis/ modules)
+- Consolidated configuration (removed processing_constants.py redundancy)
+- Streamlined to 8 core modules focused on AI-driven Multi-Thinking
+
+**Code Quality**: Uses ruff for linting/formatting, mypy for type checking. Run `uv run ruff check . --fix && uv run ruff format . && uv run mypy .` before committing.
