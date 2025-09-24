@@ -1,249 +1,377 @@
-# 序列化思考多智能体系统 (MAS) ![](https://img.shields.io/badge/A%20FRAD%20PRODUCT-WIP-yellow)
+# MCP 服务器 - 多维度序列思考
 
-[![Twitter Follow](https://img.shields.io/twitter/follow/FradSer?style=social)](https://twitter.com/FradSer) [![Python Version](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/) [![Framework](https://img.shields.io/badge/Framework-Agno-orange.svg)](https://github.com/cognitivecomputations/agno)
+[![smithery badge](https://smithery.ai/badge/@FradSer/mcp-server-mas-sequential-thinking)](https://smithery.ai/server/@FradSer/mcp-server-mas-sequential-thinking)
 
-[English](README.md) | 简体中文
+一个强大的 **模型上下文协议 (MCP) 服务器**,通过 **AI 驱动的多维度分析** 提供高级序列思考能力。基于 Agno 框架 (v2.0+) 构建,该服务器使 LLM 能够通过专门的思维智能体从不同认知角度处理复杂问题。
 
-本项目使用基于 **Agno** 框架构建并通过 **MCP** 提供服务的**多智能体系统 (MAS)**，实现了一个先进的序列化思考过程。它代表了从简单的状态跟踪方法的重大演进，利用协调的专门化智能体进行更深入的分析和问题分解。
+## 🌟 这是什么?
 
-## 概述
+这是一个 **MCP 服务器** - 不是独立应用程序。它作为后台服务运行,为你的 LLM 客户端(如 Claude Desktop)扩展复杂的序列思考能力。该服务器提供 `sequentialthinking` 工具,通过多个专门的 AI 智能体处理思考,每个智能体从不同的认知角度审视问题。
 
-该服务器提供了一个用于复杂问题解决的复杂 `sequentialthinking` 工具。与[其前身](https://github.com/modelcontextprotocol/servers/tree/main/src/sequentialthinking)不同，此版本利用了多智能体系统 (MAS) 架构，其中：
+## 🧠 核心架构:多维度思维智能体
 
-- **一个协调智能体** (`coordinate` 模式下的 `Team` 对象) 管理工作流程。
-- **专门化智能体** (规划器、研究员、分析器、评论家、合成器) 根据其定义的角色和专业知识处理特定的子任务。
-- 传入的思考被智能体团队主动**处理、分析和综合**，而不仅仅是记录。
-- 系统支持复杂的思考模式，包括对先前步骤的**修订**和探索替代路径的**分支**。
-- 与外部工具（如通过研究员智能体使用的 **Exa**）集成，允许动态信息收集。
-- 强大的 **Pydantic** 验证确保了思考步骤的数据完整性。
-- 详细的**日志记录**跟踪整个过程，包括智能体交互（由协调器处理）。
+系统采用 **7 个专门的思维智能体**,每个都专注于不同的认知视角:
 
-目标是通过利用协同工作的专门化角色的力量，实现比单个智能体或简单状态跟踪更高质量的分析和更细致的思考过程。
+### 1. **事实智能体** 📊
+- **焦点**: 客观事实和验证数据
+- **方法**: 分析性、基于证据的推理
+- **能力**:
+  - 网络研究获取当前事实 (通过 ExaTools)
+  - 数据验证和来源引用
+  - 信息缺口识别
+- **时间分配**: 120 秒进行深入分析
 
-## 与原始版本 (TypeScript) 的主要区别
+### 2. **情感智能体** ❤️
+- **焦点**: 直觉和情商
+- **方法**: 直觉反应和感受
+- **能力**:
+  - 快速直觉响应 (30 秒快照)
+  - 无需解释的本能反应
+  - 情感模式识别
+- **时间分配**: 30 秒(快速反应模式)
 
-这个 Python/Agno 实现标志着与原始 TypeScript 版本的根本性转变：
+### 3. **批判智能体** ⚠️
+- **焦点**: 风险评估和问题识别
+- **方法**: 逻辑审查和唱反调
+- **能力**:
+  - 研究反例和失败案例 (通过 ExaTools)
+  - 识别逻辑缺陷和风险
+  - 建设性地质疑假设
+- **时间分配**: 120 秒进行深度分析
 
-| 功能/方面        | Python/Agno 版本 (当前)                               | TypeScript 版本 (原始)                    |
-| :--------------- | :---------------------------------------------------- | :---------------------------------------- |
-| **架构**         | **多智能体系统 (MAS)**；由智能体团队进行主动处理。        | **单一类状态跟踪器**；简单的日志记录/存储。   |
-| **智能**         | **分布式智能体逻辑**；嵌入在专门化智能体和协调器中。      | **仅外部 LLM**；无内部智能。               |
-| **处理**         | **主动分析与综合**；智能体对思考 *采取行动*。            | **被动日志记录**；仅记录思考。              |
-| **框架**         | **Agno (MAS) + FastMCP (服务器)**；使用专门的 MAS 库。 | **仅 MCP SDK**。                          |
-| **协调**         | **显式的团队协调逻辑** (`coordinate` 模式下的 `Team`)。 | **无**；没有协调概念。                     |
-| **验证**         | **Pydantic Schema 验证**；强大的数据验证。             | **基本类型检查**；可靠性较低。             |
-| **外部工具**     | **集成 (通过研究员使用 Exa)**；可以执行研究任务。         | **无**。                                  |
-| **日志记录**     | **结构化 Python 日志记录 (文件 + 控制台)**；可配置。    | **使用 Chalk 的控制台日志记录**；基础。      |
-| **语言与生态**   | **Python**；利用 Python AI/ML 生态系统。                 | **TypeScript/Node.js**。                  |
+### 4. **乐观智能体** ✨
+- **焦点**: 利益、机会和价值
+- **方法**: 积极探索且基于现实
+- **能力**:
+  - 研究成功案例 (通过 ExaTools)
+  - 识别可行机会
+  - 逻辑探索最佳场景
+- **时间分配**: 120 秒进行平衡乐观分析
 
-本质上，该系统从一个被动的思考*记录器*演变成了一个由 AI 智能体协作团队驱动的主动思考*处理器*。
+### 5. **创意智能体** 🎨
+- **焦点**: 创新和替代解决方案
+- **方法**: 横向思维和创意生成
+- **能力**:
+  - 跨行业创新研究 (通过 ExaTools)
+  - 发散性思维技巧
+  - 多方案生成
+- **时间分配**: 240 秒(创造力需要时间)
 
-## 工作原理 (Coordinate 模式)
+### 6. **综合智能体** 🎯
+- **焦点**: 整合和元认知编排
+- **方法**: 整体综合和最终答案生成
+- **能力**:
+  - 将所有视角整合为连贯响应
+  - 直接回答原始问题
+  - 提供可操作的、用户友好的见解
+- **时间分配**: 60 秒进行综合
+- **注意**: 使用增强模型,不包含 ExaTools(专注于整合)
 
-1.  **启动：** 外部 LLM 使用 `sequential-thinking-starter` 提示来定义问题并启动过程。
-2.  **工具调用：** LLM 使用根据 `ThoughtData` Pydantic 模型结构的第一个（或后续）思考调用 `sequentialthinking` 工具。
-3.  **验证与记录：** 工具接收调用，使用 Pydantic 验证输入，记录传入的思考，并通过 `AppContext` 更新历史/分支状态。
-4.  **协调器调用：** 核心思考内容（以及关于修订/分支的上下文）被传递给 `SequentialThinkingTeam` 的 `arun` 方法。
-5.  **协调器分析与委派：** `Team`（作为协调器）分析输入的思考，将其分解为子任务，并将这些子任务委派给*最相关*的专家智能体（例如，分析任务给分析器，信息需求给研究员）。
-6.  **专家执行：** 被委派的智能体使用它们的指令、模型和工具（如 `ThinkingTools` 或 `ExaTools`）执行其特定的子任务。
-7.  **响应收集：** 专家将其结果返回给协调器。
-8.  **综合与指导：** 协调器将专家的响应综合成一个单一、连贯的输出。它可能包含基于专家发现（尤其是评论家和分析器）的修订或分支建议。它还为 LLM 如何构思下一个思考添加指导。
-9.  **返回值：** 工具返回一个包含协调器综合响应、状态和更新上下文（分支、历史长度）的 JSON 字符串。
-10. **迭代：** 调用 LLM 使用协调器的响应和指导来构思下一次 `sequentialthinking` 工具调用，可能会根据建议触发修订或分支。
+## 🔄 AI 驱动的智能路由
 
-## Token 消耗警告
+系统使用 **AI 驱动的复杂度分析** 来确定最优思考序列:
 
-⚠️ **高 Token 使用量：** 由于采用了多智能体系统架构，此工具比单智能体替代方案或之前的 TypeScript 版本消耗**显著更多**的 Token。每次 `sequentialthinking` 调用会触发：
+### 处理策略:
+1. **单智能体** (简单问题)
+   - 直接的事实或情感响应
+   - 针对直接查询的最快处理
 
-- 协调器智能体（即 `Team` 本身）。
-- 多个专家智能体（可能包括规划器、研究员、分析器、评论家、合成器，具体取决于协调器的委派）。
+2. **双智能体** (中等复杂度)
+   - 两步序列(例如,乐观 → 批判)
+   - 用于评估任务的平衡视角
 
-这种并行处理导致 Token 使用量（每个思考步骤可能增加 3-6 倍或更多）远高于单智能体或状态跟踪方法。请相应地进行预算和规划。此工具优先考虑**分析深度和质量**而非 Token 效率。
+3. **三智能体** (核心思考)
+   - 事实 → 创意 → 综合
+   - 哲学和分析问题
 
-## 先决条件
+4. **完整序列** (复杂问题)
+   - 全部 6 个智能体 + 蓝帽编排
+   - 全面的多视角分析
+
+AI 分析器评估:
+- 问题复杂度和语义深度
+- 主要问题类型(事实、情感、创意、哲学等)
+- 最优解决方案所需的思维模式
+- 适当的模型选择(增强型 vs 标准型)
+
+## 🔍 研究能力 (ExaTools 集成)
+
+**7 个智能体中的 6 个** 配备了通过 ExaTools 的网络研究能力:
+
+- **事实智能体**: 搜索当前事实、统计数据、验证数据
+- **批判智能体**: 查找反例、失败案例、监管问题
+- **乐观智能体**: 研究成功故事、积极案例研究
+- **创意智能体**: 发现不同行业的创新
+- **情感和综合智能体**: 无 ExaTools(专注于内部处理)
+
+研究功能是 **可选的** - 需要 `EXA_API_KEY` 环境变量。没有它系统也能完美工作,使用纯推理能力。
+
+## 🛠️ 模型智能
+
+### 双模型策略:
+- **增强模型**: 用于综合智能体(复杂整合任务)
+- **标准模型**: 用于各个思维智能体
+- **AI 选择**: 系统根据任务复杂度自动选择正确的模型
+
+### 支持的提供商:
+- **DeepSeek** (默认) - 高性能、成本效益高
+- **Groq** - 超快速推理
+- **OpenRouter** - 访问多个模型
+- **GitHub Models** - 通过 GitHub API 访问 OpenAI 模型
+- **Anthropic** - 带提示缓存的 Claude 模型
+- **Ollama** - 本地模型执行
+
+## 📋 MCP 工具: `sequentialthinking`
+
+服务器公开一个处理序列思考的 MCP 工具:
+
+### 参数:
+```typescript
+{
+  thought: string,              // 当前思考步骤内容
+  thoughtNumber: number,         // 序列号 (≥1)
+  totalThoughts: number,         // 预估总步骤
+  nextThoughtNeeded: boolean,    // 是否需要另一步?
+  isRevision: boolean,           // 修订之前的思考?
+  branchFromThought?: number,    // 分支点(用于探索)
+  branchId?: string,             // 分支标识符
+  needsMoreThoughts: boolean     // 需要扩展序列?
+}
+```
+
+### 响应:
+返回来自多智能体系统的综合分析,包括:
+- 已处理的思考分析
+- 下一步指导
+- 分支和修订跟踪
+- 状态和元数据
+
+## 🚀 安装
+
+### 前置要求
 
 - Python 3.10+
-- 访问兼容的 LLM API（为 `agno` 配置）。系统目前支持：
-    - **DeepSeek:** 需要 `DEEPSEEK_API_KEY` (默认)。
-    - **Groq:** 需要 `GROQ_API_KEY`。
-    - **OpenRouter:** 需要 `OPENROUTER_API_KEY`。
-    - **GitHub Models:** 需要 `GITHUB_TOKEN`。
-    - **Anthropic:** 需要 `ANTHROPIC_API_KEY`。
-    - **Ollama:** 无需 API 密钥，但需要本地安装 Ollama。
-    - 使用 `LLM_PROVIDER` 环境变量配置所需的提供商。
-- Exa API 密钥（仅当使用研究员智能体的功能时才需要）
-    - 通过 `EXA_API_KEY` 环境变量设置。
-- `uv` 包管理器（推荐）或 `pip`。
+- LLM API 访问(选择一个):
+    - **DeepSeek**: `DEEPSEEK_API_KEY` (默认,推荐)
+    - **Groq**: `GROQ_API_KEY`
+    - **OpenRouter**: `OPENROUTER_API_KEY`
+    - **GitHub Models**: `GITHUB_TOKEN`
+    - **Anthropic**: `ANTHROPIC_API_KEY`
+    - **Ollama**: 本地安装(无需 API 密钥)
+- **可选**: `EXA_API_KEY` 用于网络研究能力
+- `uv` 包管理器(推荐)或 `pip`
 
-## MCP 服务器配置 (客户端)
+### 快速开始
 
-此服务器作为标准可执行脚本运行，通过 stdio 进行通信，符合 MCP 的预期。确切的配置方法取决于您具体的 MCP 客户端实现。请查阅您客户端的文档以获取有关集成外部工具服务器的详细信息。
+#### 1. 通过 Smithery 安装(推荐)
 
-您 MCP 客户端配置中的 `env` 部分应包含您选择的 `LLM_PROVIDER` 对应的 API 密钥。
+```bash
+npx -y @smithery/cli install @FradSer/mcp-server-mas-sequential-thinking --client claude
+```
+
+#### 2. 手动安装
+
+```bash
+# 克隆仓库
+git clone https://github.com/FradSer/mcp-server-mas-sequential-thinking.git
+cd mcp-server-mas-sequential-thinking
+
+# 使用 uv 安装(推荐)
+uv pip install .
+
+# 或使用 pip
+pip install .
+```
+
+### 配置
+
+#### 对于 MCP 客户端 (Claude Desktop 等)
+
+添加到你的 MCP 客户端配置:
 
 ```json
 {
   "mcpServers": {
-      "mas-sequential-thinking": {
-      "command": "uvx", // 或 "python", "path/to/venv/bin/python" 等
-      "args": [
-        "mcp-server-mas-sequential-thinking" // 或指向主脚本的路径, 例如 "main.py"
-      ],
+    "sequential-thinking": {
+      "command": "mcp-server-mas-sequential-thinking",
       "env": {
-        "LLM_PROVIDER": "deepseek", // "groq", "openrouter", "github", "anthropic", "ollama"
-        "DEEPSEEK_API_KEY": "你的_deepseek_api_密钥", // 默认提供商
-        // "GROQ_API_KEY": "你的_groq_api_密钥",
-        // "OPENROUTER_API_KEY": "你的_openrouter_api_密钥",
-        // "GITHUB_TOKEN": "你的_github_token",
-        // "ANTHROPIC_API_KEY": "你的_anthropic_api_密钥",
-        "LLM_BASE_URL": "你的_base_url_如果需要", // 可选：如果为 DeepSeek 使用自定义端点
-        "EXA_API_KEY": "你的_exa_api_密钥" // 仅当使用 Exa 时需要
+        "LLM_PROVIDER": "deepseek",
+        "DEEPSEEK_API_KEY": "你的_api_密钥",
+        "EXA_API_KEY": "你的_exa_密钥_可选"
       }
     }
   }
 }
 ```
 
-## 安装与设置
+#### 环境变量
 
-1.  **克隆仓库：**
-    ```bash
-    git clone git@github.com:FradSer/mcp-server-mas-sequential-thinking.git
-    cd mcp-server-mas-sequential-thinking
-    ```
+创建 `.env` 文件或设置这些变量:
 
-2.  **设置环境变量：**
-    在项目根目录创建一个 `.env` 文件或直接在您的环境中导出变量：
-    ```dotenv
-    # --- LLM 配置 ---
-    # 选择 LLM 提供商: "deepseek" (默认), "groq", "openrouter", "github", "anthropic", 或 "ollama"
-    LLM_PROVIDER="deepseek"
+```bash
+# LLM 提供商(必需)
+LLM_PROVIDER="deepseek"  # deepseek, groq, openrouter, github, anthropic, ollama
+DEEPSEEK_API_KEY="sk-..."
 
-    # 提供所选提供商的 API 密钥:
-    DEEPSEEK_API_KEY="你的_deepseek_api_密钥"
-    # GROQ_API_KEY="你的_groq_api_密钥"
-    # OPENROUTER_API_KEY="你的_openrouter_api_密钥"
-    # GITHUB_TOKEN="ghp_你的_github_personal_access_token"
-    # ANTHROPIC_API_KEY="你的_anthropic_api_密钥"
-    # 注意: Ollama 无需 API 密钥，但需要本地安装 Ollama。
+# 可选:增强/标准模型选择
+# DEEPSEEK_ENHANCED_MODEL_ID="deepseek-chat"  # 用于综合
+# DEEPSEEK_STANDARD_MODEL_ID="deepseek-chat"  # 用于其他智能体
 
-    # 可选: 基础 URL 覆盖 (例如, 用于自定义端点)
-    # LLM_BASE_URL="你的_base_url_如果需要"
+# 可选:网络研究(启用 ExaTools)
+# EXA_API_KEY="你的_exa_api_密钥"
 
-    # 可选: 为增强模型（复杂综合）和标准模型（单独处理）指定不同的模型
-    # 如果未设置这些环境变量，则代码会根据提供商设置默认值。
-    # Groq 示例:
-    # GROQ_ENHANCED_MODEL_ID="deepseek-r1-distill-llama-70b"  # 用于复杂综合
-    # GROQ_STANDARD_MODEL_ID="qwen/qwen3-32b"  # 用于单独处理
-    # DeepSeek 示例:
-    # DEEPSEEK_ENHANCED_MODEL_ID="deepseek-chat"  # 用于复杂综合
-    # DEEPSEEK_STANDARD_MODEL_ID="deepseek-chat"  # 用于单独处理
-    # GitHub Models 示例:
-    # GITHUB_ENHANCED_MODEL_ID="openai/gpt-5"  # 增强模型用于综合
-    # GITHUB_STANDARD_MODEL_ID="openai/gpt-5-min"  # 标准模型用于处理
-    # OpenRouter 示例:
-    # OPENROUTER_ENHANCED_MODEL_ID="deepseek/deepseek-r1"  # 示例，按需调整
-    # OPENROUTER_STANDARD_MODEL_ID="deepseek/deepseek-chat"  # 示例，按需调整
-    # Anthropic 示例:
-    # ANTHROPIC_ENHANCED_MODEL_ID="claude-3-5-sonnet-20241022"
-    # ANTHROPIC_STANDARD_MODEL_ID="claude-3-5-haiku-20241022"
+# 可选:自定义端点
+# LLM_BASE_URL="https://custom-endpoint.com"
+```
 
-    # --- 外部工具 ---
-    # 仅当研究员智能体被使用且需要 Exa 时才必需
-    EXA_API_KEY="你的_exa_api_密钥"
-    ```
+### 模型配置示例
 
-    **关于模型选择的说明:**
-    - `ENHANCED_MODEL_ID` 用于复杂综合任务（如蓝帽思维）。该角色受益于强大的推理、综合和整合能力。考虑在此处使用更强大的模型（例如 `deepseek-chat`、`claude-3-opus`、`gpt-5`），可能需要在能力与成本/速度之间进行权衡。
-    - `STANDARD_MODEL_ID` 用于单独帽子处理（白、红、黑、黄、绿帽）。这些处理专注的思维视角。更快或更具成本效益的模型（例如 `deepseek-chat`、`claude-3-sonnet`、`qwen3-32b`）可能更适合，具体取决于任务复杂性以及预算/性能需求。
-    - 如果未设置这些环境变量，代码中提供了默认值（例如在配置文件中）。鼓励进行实验，以找到适合您用例的最佳平衡点。
+```bash
+# Groq 使用不同模型
+GROQ_ENHANCED_MODEL_ID="deepseek-r1-distill-llama-70b"
+GROQ_STANDARD_MODEL_ID="llama-3.3-70b-versatile"
 
-3.  **安装依赖：**
-    强烈建议使用虚拟环境。
+# Anthropic 使用 Claude 模型
+ANTHROPIC_ENHANCED_MODEL_ID="claude-3-5-sonnet-20241022"
+ANTHROPIC_STANDARD_MODEL_ID="claude-3-5-haiku-20241022"
 
-    - **使用 `uv` (推荐):**
-        ```bash
-        # 如果没有安装 uv，请先安装:
-        # curl -LsSf https://astral.sh/uv/install.sh | sh
-        # source $HOME/.cargo/env # 或者重启你的 shell
+# GitHub Models
+GITHUB_ENHANCED_MODEL_ID="gpt-4o"
+GITHUB_STANDARD_MODEL_ID="gpt-4o-mini"
+```
 
-        # 创建并激活虚拟环境
-        python -m venv .venv
-        source .venv/bin/activate # 在 Windows 上使用 `.venv\Scripts\activate`
+## 🎯 使用方法
 
-        # 从 pyproject.toml 安装依赖
-        uv pip install .
-        ```
-    - **使用 `pip`:**
-        ```bash
-        # 创建并激活虚拟环境
-        python -m venv .venv
-        source .venv/bin/activate # 在 Windows 上使用 `.venv\Scripts\activate`
+### 作为 MCP 服务器
 
-        # 从 pyproject.toml 安装依赖
-        pip install .
-        ```
+安装并在 MCP 客户端中配置后:
 
-## 使用方法
+1. `sequentialthinking` 工具变为可用
+2. 你的 LLM 可以用它处理复杂思考
+3. 系统自动路由到适当的思维智能体
+4. 结果被综合并返回给你的 LLM
 
-确保您的环境变量已设置，并且虚拟环境（如果使用）已激活。
+### 直接执行
 
-运行服务器。选择以下方法之一：
+手动运行服务器进行测试:
 
-1.  **使用已安装的脚本 (推荐):**
-    安装后，您可以直接运行服务器。
-    ```bash
-    mcp-server-mas-sequential-thinking
-    ```
+```bash
+# 使用已安装的脚本
+mcp-server-mas-sequential-thinking
 
-2.  **使用 `uv run`:**
-    这在不激活虚拟环境的情况下运行很有用。
-    ```bash
-    uv run mcp-server-mas-sequential-thinking
-    ```
+# 使用 uv
+uv run mcp-server-mas-sequential-thinking
 
-3.  **直接使用 Python:**
-    ```bash
-    python src/mcp_server_mas_sequential_thinking/main.py
-    ```
+# 使用 Python
+python src/mcp_server_mas_sequential_thinking/main.py
+```
 
-服务器将启动并通过 stdio 监听请求，使 `sequentialthinking` 工具可用于配置为使用它的兼容 MCP 客户端。
+## 🔬 开发
 
-### `sequentialthinking` 工具参数
+### 设置
 
-## 开发
+```bash
+# 克隆仓库
+git clone https://github.com/FradSer/mcp-server-mas-sequential-thinking.git
+cd mcp-server-mas-sequential-thinking
 
-1.  **克隆仓库：** (同安装部分)
-    ```bash
-    git clone git@github.com:FradSer/mcp-server-mas-sequential-thinking.git
-    cd mcp-server-mas-sequential-thinking
-    ```
-2.  **设置虚拟环境：** (推荐)
-    ```bash
-    python -m venv .venv
-    source .venv/bin/activate # 在 Windows 上使用 `.venv\Scripts\activate`
-    ```
-3.  **安装依赖 (包括开发依赖):**
-    以可编辑模式安装项目及开发依赖。
-    ```bash
-    # 使用 uv
-    uv pip install -e .[dev]
+# 创建虚拟环境
+python -m venv .venv
+source .venv/bin/activate  # Windows: .venv\Scripts\activate
 
-    # 使用 pip
-    pip install -e .[dev]
-    ```
-4.  **运行检查：**
-    执行 linter、formatter 和 tests（根据您的项目设置调整命令）。
-    ```bash
-    # 示例命令 (替换为项目中实际使用的命令)
-    ruff check . --fix
-    black .
-    mypy .
-    pytest
-    ```
-5.  **贡献：**
-    （考虑添加贡献指南：分支策略、Pull Request 流程、代码风格）。
+# 使用开发依赖安装
+uv pip install -e ".[dev]"
+```
 
-## 许可证
+### 代码质量
 
-MIT
+```bash
+# 格式化和检查
+uv run ruff check . --fix
+uv run ruff format .
+uv run mypy .
+
+# 运行测试(如果可用)
+uv run pytest
+```
+
+### 使用 MCP Inspector 测试
+
+```bash
+npx @modelcontextprotocol/inspector uv run mcp-server-mas-sequential-thinking
+```
+
+打开 http://127.0.0.1:6274/ 并测试 `sequentialthinking` 工具。
+
+## 📊 系统特性
+
+### 优势:
+- **多视角分析**: 7 种不同的认知方法
+- **AI 驱动路由**: 智能复杂度分析
+- **研究能力**: 6 个智能体带网络搜索(可选)
+- **灵活处理**: 从单一到完整序列策略
+- **模型优化**: 增强/标准模型选择
+- **提供商无关**: 支持多个 LLM 提供商
+
+### 考虑因素:
+- **令牌使用**: 多智能体处理比单智能体使用更多令牌
+- **处理时间**: 复杂序列需要更长时间但提供更深入的见解
+- **API 成本**: 研究能力需要单独的 Exa API 订阅
+- **模型选择**: 增强模型成本更高但提供更好的综合
+
+## 🗂️ 项目结构
+
+```
+mcp-server-mas-sequential-thinking/
+├── src/mcp_server_mas_sequential_thinking/
+│   ├── main.py                          # MCP 服务器入口点
+│   ├── processors/
+│   │   ├── multi_thinking_core.py       # 7 个思维智能体定义
+│   │   └── multi_thinking_processor.py  # 序列处理逻辑
+│   ├── routing/
+│   │   ├── ai_complexity_analyzer.py    # AI 驱动分析
+│   │   └── multi_thinking_router.py     # 智能路由
+│   ├── services/
+│   │   ├── thought_processor_refactored.py
+│   │   ├── workflow_executor.py
+│   │   └── context_builder.py
+│   └── config/
+│       ├── modernized_config.py         # 提供商策略
+│       └── constants.py                 # 系统常量
+├── pyproject.toml                       # 项目配置
+└── README.md                            # 此文件
+```
+
+## 📝 更新日志
+
+查看 [CHANGELOG.md](CHANGELOG.md) 了解版本历史。
+
+## 🤝 贡献
+
+欢迎贡献!请确保:
+
+1. 代码遵循项目风格 (ruff, mypy)
+2. 提交消息使用传统提交格式
+3. 提交 PR 前所有测试通过
+4. 文档根据需要更新
+
+## 📄 许可证
+
+本项目采用 MIT 许可证 - 详见 LICENSE 文件。
+
+## 🙏 致谢
+
+- 使用 [Agno](https://github.com/agno-agi/agno) v2.0+ 框架构建
+- 模型上下文协议由 [Anthropic](https://www.anthropic.com/) 提供
+- 研究能力由 [Exa](https://exa.ai/) 支持(可选)
+- 多维度思维灵感来自 Edward de Bono 的工作
+
+## 📞 支持
+
+- GitHub Issues: [报告错误或请求功能](https://github.com/FradSer/mcp-server-mas-sequential-thinking/issues)
+- 文档: 查看 CLAUDE.md 了解详细实现说明
+- MCP 协议: [官方 MCP 文档](https://modelcontextprotocol.io/)
+
+---
+
+**注意**: 这是一个 MCP 服务器,设计用于与 MCP 兼容的客户端(如 Claude Desktop)配合使用。它不是独立的聊天应用程序。
