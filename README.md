@@ -66,12 +66,13 @@ This parallel processing leads to substantially higher token usage (potentially 
 
 - Python 3.10+
 - Access to a compatible LLM API (configured for `agno`). The system currently supports:
+    - **DeepSeek:** Requires `DEEPSEEK_API_KEY` (default).
     - **Groq:** Requires `GROQ_API_KEY`.
-    - **DeepSeek:** Requires `DEEPSEEK_API_KEY`.
     - **OpenRouter:** Requires `OPENROUTER_API_KEY`.
-    - **GitHub Models:** Requires `GITHUB_TOKEN`. Access to OpenAI GPT models through GitHub's API.
-    - **Kimi K2:** Uses OpenRouter with `OPENROUTER_API_KEY`. Configure using `LLM_PROVIDER=kimi`.
-    - Configure the desired provider using the `LLM_PROVIDER` environment variable (defaults to `deepseek`).
+    - **GitHub Models:** Requires `GITHUB_TOKEN`.
+    - **Anthropic:** Requires `ANTHROPIC_API_KEY`.
+    - **Ollama:** No API key needed, but requires a local Ollama installation.
+    - Configure the desired provider using the `LLM_PROVIDER` environment variable.
 - Exa API Key (required only if using the Researcher agent's capabilities)
     - Set via the `EXA_API_KEY` environment variable.
 - `uv` package manager (recommended) or `pip`.
@@ -91,12 +92,13 @@ The `env` section within your MCP client configuration should include the API ke
             "mcp-server-mas-sequential-thinking" // Or the path to your main script, e.g., "main.py"
          ],
          "env": {
-            "LLM_PROVIDER": "deepseek", // "ollama", "groq", "openrouter", "github", "kimi"
-            // "GROQ_API_KEY": "your_groq_api_key", // Only if LLM_PROVIDER="groq"
+            "LLM_PROVIDER": "deepseek", // "groq", "openrouter", "github", "anthropic", "ollama"
             "DEEPSEEK_API_KEY": "your_deepseek_api_key", // Default provider
-            // "OPENROUTER_API_KEY": "your_openrouter_api_key", // Only if LLM_PROVIDER="openrouter" or "kimi"
-            // "GITHUB_TOKEN": "your_github_token", // Only if LLM_PROVIDER="github"
-            "LLM_BASE_URL": "your_base_url_if_needed", // Optional: If using a custom endpoint for DeepSeek
+            // "GROQ_API_KEY": "your_groq_api_key",
+            // "OPENROUTER_API_KEY": "your_openrouter_api_key",
+            // "GITHUB_TOKEN": "your_github_token",
+            // "ANTHROPIC_API_KEY": "your_anthropic_api_key",
+            "LLM_BASE_URL": "your_base_url_if_needed", // Optional: For custom endpoints
             "EXA_API_KEY": "your_exa_api_key" // Only if using Exa
          }
       }
@@ -149,17 +151,16 @@ npx -y @smithery/cli install @FradSer/mcp-server-mas-sequential-thinking --clien
     Create a `.env` file in the project root directory or export the variables directly into your environment:
     ```dotenv
     # --- LLM Configuration ---
-    # Select the LLM provider: "deepseek" (default), "groq", "openrouter", "github", "ollama", or "kimi"
+    # Select the LLM provider: "deepseek" (default), "groq", "openrouter", "github", "anthropic", or "ollama"
     LLM_PROVIDER="deepseek"
 
     # Provide the API key for the chosen provider:
-    # GROQ_API_KEY="your_groq_api_key"
     DEEPSEEK_API_KEY="your_deepseek_api_key"
-    # OPENROUTER_API_KEY="your_openrouter_api_key" # Required for both "openrouter" and "kimi" providers
-    # GITHUB_TOKEN="ghp_your_github_personal_access_token" # Required for LLM_PROVIDER="github"
-    # Note: Ollama requires no API key but needs local installation
-    # Note: Kimi K2 uses OpenRouter API, so OPENROUTER_API_KEY is required for LLM_PROVIDER="kimi"
-    # Note: GitHub Models requires a GitHub Personal Access Token with appropriate scopes
+    # GROQ_API_KEY="your_groq_api_key"
+    # OPENROUTER_API_KEY="your_openrouter_api_key"
+    # GITHUB_TOKEN="ghp_your_github_personal_access_token"
+    # ANTHROPIC_API_KEY="your_anthropic_api_key"
+    # Note: Ollama requires no API key but needs a local Ollama installation.
 
     # Optional: Base URL override (e.g., for custom endpoints)
     # LLM_BASE_URL="your_base_url_if_needed"
@@ -167,8 +168,8 @@ npx -y @smithery/cli install @FradSer/mcp-server-mas-sequential-thinking --clien
     # Optional: Specify different models for Enhanced (Complex Synthesis) and Standard (Individual Processing)
     # Defaults are set within the code based on the provider if these are not set.
     # Example for Groq:
-    # GROQ_ENHANCED_MODEL_ID="deepseek-r1-distill-llama-70b"  # For complex synthesis (Blue Hat)
-    # GROQ_STANDARD_MODEL_ID="qwen/qwen3-32b"  # For individual hat processing
+    # GROQ_ENHANCED_MODEL_ID="deepseek-r1-distill-llama-70b"  # For complex synthesis
+    # GROQ_STANDARD_MODEL_ID="qwen/qwen3-32b"  # For individual processing
     # Example for DeepSeek:
     # DEEPSEEK_ENHANCED_MODEL_ID="deepseek-chat"  # For complex synthesis
     # DEEPSEEK_STANDARD_MODEL_ID="deepseek-chat"  # For individual processing
@@ -178,9 +179,9 @@ npx -y @smithery/cli install @FradSer/mcp-server-mas-sequential-thinking --clien
     # Example for OpenRouter:
     # OPENROUTER_ENHANCED_MODEL_ID="deepseek/deepseek-r1"  # Example, adjust as needed
     # OPENROUTER_STANDARD_MODEL_ID="deepseek/deepseek-chat"  # Example, adjust as needed
-    # Example for Kimi K2:
-    # KIMI_ENHANCED_MODEL_ID="moonshotai/kimi-k2"  # Uses Moonshot's Kimi K2 via OpenRouter
-    # KIMI_STANDARD_MODEL_ID="moonshotai/kimi-k2"  # Same model for both, optimized for tool use
+    # Example for Anthropic:
+    # ANTHROPIC_ENHANCED_MODEL_ID="claude-3-5-sonnet-20241022"
+    # ANTHROPIC_STANDARD_MODEL_ID="claude-3-5-haiku-20241022"
 
     # --- External Tools ---
     # Required ONLY if the Researcher agent is used and needs Exa
@@ -244,25 +245,21 @@ npx -y @smithery/cli install @FradSer/mcp-server-mas-sequential-thinking --clien
         # curl -LsSf https://astral.sh/uv/install.sh | sh
         # source $HOME/.cargo/env # Or restart your shell
 
-        # Create and activate a virtual environment (optional but recommended)
+        # Create and activate a virtual environment
         python -m venv .venv
-        source .venv/bin/activate # On Windows use `.venv\\Scripts\\activate`
+        source .venv/bin/activate # On Windows use `.venv\Scripts\activate`
 
-        # Install dependencies
-        uv pip install -r requirements.txt
-        # Or if a pyproject.toml exists with dependencies defined:
-        # uv pip install .
+        # Install dependencies from pyproject.toml
+        uv pip install .
         ```
     - **Using `pip`:**
         ```bash
-        # Create and activate a virtual environment (optional but recommended)
+        # Create and activate a virtual environment
         python -m venv .venv
-        source .venv/bin/activate # On Windows use `.venv\\Scripts\\activate`
+        source .venv/bin/activate # On Windows use `.venv\Scripts\activate`
 
-        # Install dependencies
-        pip install -r requirements.txt
-        # Or if a pyproject.toml exists with dependencies defined:
-        # pip install .
+        # Install dependencies from pyproject.toml
+        pip install .
         ```
 
 ## Usage
@@ -271,86 +268,26 @@ Ensure your environment variables are set and the virtual environment (if used) 
 
 Run the server. Choose one of the following methods:
 
-1.  **Using `uv run` (Recommended):**
+1.  **Using the installed script (Recommended):**
+    After installation, you can run the server directly.
     ```bash
-    uv --directory /path/to/mcp-server-mas-sequential-thinking run mcp-server-mas-sequential-thinking
+    mcp-server-mas-sequential-thinking
     ```
-2.  **Directly using Python:**
 
+2.  **Using `uv run`:**
+    This is useful for running without activating the virtual environment.
     ```bash
-    python main.py
+    uv run mcp-server-mas-sequential-thinking
+    ```
+
+3.  **Directly using Python:**
+    ```bash
+    python src/mcp_server_mas_sequential_thinking/main.py
     ```
 
 The server will start and listen for requests via stdio, making the `sequentialthinking` tool available to compatible MCP clients configured to use it.
 
 ### `sequentialthinking` Tool Parameters
-
-The tool expects arguments matching the `ThoughtData` Pydantic model:
-
-```python
-# Simplified representation from src/models.py
-class ThoughtData(BaseModel):
-    thought: str                 # Content of the current thought/step
-    thoughtNumber: int           # Sequence number (>=1)
-    totalThoughts: int           # Estimated total steps (>=1, suggest >=5)
-    nextThoughtNeeded: bool      # Is another step required after this?
-    isRevision: bool = False     # Is this revising a previous thought?
-    revisesThought: Optional[int] = None # If isRevision, which thought number?
-    branchFromThought: Optional[int] = None # If branching, from which thought?
-    branchId: Optional[str] = None # Unique ID for the new branch being created
-    needsMoreThoughts: bool = False # Signal if estimate is too low before last step
-```
-
-### Interacting with the Tool (Conceptual Example)
-
-An LLM would interact with this tool iteratively:
-
-1.  **LLM:** Uses a starter prompt (like `sequential-thinking-starter`) with the problem definition.
-2.  **LLM:** Calls `sequentialthinking` tool with `thoughtNumber: 1`, the initial `thought` (e.g., "Plan the analysis..."), an estimated `totalThoughts`, and `nextThoughtNeeded: True`.
-3.  **Server:** MAS processes the thought. The Coordinator synthesizes responses from specialists and provides guidance (e.g., "Analysis plan complete. Suggest researching X next. No revisions recommended yet.").
-4.  **LLM:** Receives the JSON response containing `coordinatorResponse`.
-5.  **LLM:** Formulates the next thought based on the `coordinatorResponse` (e.g., "Research X using available tools...").
-6.  **LLM:** Calls `sequentialthinking` tool with `thoughtNumber: 2`, the new `thought`, potentially updated `totalThoughts`, `nextThoughtNeeded: True`.
-7.  **Server:** MAS processes. The Coordinator synthesizes (e.g., "Research complete. Findings suggest a flaw in thought #1's assumption. RECOMMENDATION: Revise thought #1...").
-8.  **LLM:** Receives the response, notes the recommendation.
-9.  **LLM:** Formulates a revision thought.
-10. **LLM:** Calls `sequentialthinking` tool with `thoughtNumber: 3`, the revision `thought`, `isRevision: True`, `revisesThought: 1`, `nextThoughtNeeded: True`.
-11. **... and so on, potentially branching or extending the process as needed.**
-
-### Tool Response Format
-
-The tool returns a JSON string containing:
-
-```json
-{
-  "processedThoughtNumber": int,          // The thought number that was just processed
-  "estimatedTotalThoughts": int,          // The current estimate of total thoughts
-  "nextThoughtNeeded": bool,              // Whether the process indicates more steps are needed
-  "coordinatorResponse": "...",           // Synthesized output from the agent team, including analysis, findings, and guidance for the next step.
-  "branches": ["main", "branch-id-1"],  // List of active branch IDs
-  "thoughtHistoryLength": int,          // Total number of thoughts processed so far (across all branches)
-  "branchDetails": {
-    "currentBranchId": "main",            // The ID of the branch the processed thought belongs to
-    "branchOriginThought": null | int,    // The thought number where the current branch diverged (null for 'main')
-    "allBranches": {                      // Count of thoughts in each active branch
-      "main": 5,
-      "branch-id-1": 2
-     }
-  },
-  "isRevision": bool,                     // Was the processed thought a revision?
-  "revisesThought": null | int,           // Which thought number was revised (if isRevision is true)
-  "isBranch": bool,                       // Did this thought start a new branch?
-  "status": "success | validation_error | failed", // Outcome status
-  "error": null | "Error message..."     // Error details if status is not 'success'
-}
-```
-
-## Logging
-
-- Logs are written to `~/.sequential_thinking/logs/sequential_thinking.log` by default. (Configuration might be adjustable in the logging setup code).
-- Uses Python's standard `logging` module.
-- Includes a rotating file handler (e.g., 10MB limit, 5 backups) and a console handler (typically INFO level).
-- Logs include timestamps, levels, logger names, and messages, including structured representations of thoughts being processed.
 
 ## Development
 
@@ -362,18 +299,16 @@ The tool returns a JSON string containing:
 2.  **Set up Virtual Environment:** (Recommended)
     ```bash
     python -m venv .venv
-    source .venv/bin/activate # On Windows use `.venv\\Scripts\\activate`
+    source .venv/bin/activate # On Windows use `.venv\Scripts\activate`
     ```
 3.  **Install Dependencies (including dev):**
-    Ensure your `requirements-dev.txt` or `pyproject.toml` specifies development tools (like `pytest`, `ruff`, `black`, `mypy`).
+    Install the project in editable mode with development dependencies.
     ```bash
     # Using uv
-    uv pip install -r requirements.txt
-    uv pip install -r requirements-dev.txt # Or install extras if defined in pyproject.toml: uv pip install -e ".[dev]"
+    uv pip install -e .[dev]
 
     # Using pip
-    pip install -r requirements.txt
-    pip install -r requirements-dev.txt # Or install extras if defined in pyproject.toml: pip install -e ".[dev]"
+    pip install -e .[dev]
     ```
 4.  **Run Checks:**
     Execute linters, formatters, and tests (adjust commands based on your project setup).
@@ -385,15 +320,7 @@ The tool returns a JSON string containing:
     pytest
     ```
 
-5.  **Testing the Application:**
-6.  Testing: Test your MCP server locally before deploying using MCP Inspector. Please ensure your Dockerfile builds locally first before deploying.
-7.  ```bash
-    npx @modelcontextprotocol/inspector uv run main.py
-    ```
-    Open the url http://127.0.0.1:6274/, then click on the "Run" button to test your MCP server locally. Then click on the "Tools" button to see the tools that are available in the MCP server, and verify that the tool "sequentialthinking" is available.
-    Copy "I need to test mcp-server-mas-sequential-thinking, I just hope mcp inspector will help me" in the "thought" field, "1" in the "thoughtNumber"and in the "totalThoughts" field, and check the "nextThoughtNeeded" checkbox. Then click on the "Run Tool" button to test your MCP server locally.
-    The model should return a response with a new thought, a new thought number, a new total thoughts, and Tool Result: Success. If you see this, your MCP server is working correctly.
-8.  **Contribution:**
+5.  **Contribution:**
     (Consider adding contribution guidelines: branching strategy, pull request process, code style).
 
 ## Changelog

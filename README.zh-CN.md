@@ -64,10 +64,13 @@
 
 - Python 3.10+
 - 访问兼容的 LLM API（为 `agno` 配置）。系统目前支持：
+    - **DeepSeek:** 需要 `DEEPSEEK_API_KEY` (默认)。
     - **Groq:** 需要 `GROQ_API_KEY`。
-    - **DeepSeek:** 需要 `DEEPSEEK_API_KEY`。
     - **OpenRouter:** 需要 `OPENROUTER_API_KEY`。
-    - 使用 `LLM_PROVIDER` 环境变量配置所需的提供商（默认为 `deepseek`）。
+    - **GitHub Models:** 需要 `GITHUB_TOKEN`。
+    - **Anthropic:** 需要 `ANTHROPIC_API_KEY`。
+    - **Ollama:** 无需 API 密钥，但需要本地安装 Ollama。
+    - 使用 `LLM_PROVIDER` 环境变量配置所需的提供商。
 - Exa API 密钥（仅当使用研究员智能体的功能时才需要）
     - 通过 `EXA_API_KEY` 环境变量设置。
 - `uv` 包管理器（推荐）或 `pip`。
@@ -87,10 +90,12 @@
         "mcp-server-mas-sequential-thinking" // 或指向主脚本的路径, 例如 "main.py"
       ],
       "env": {
-        "LLM_PROVIDER": "deepseek", // 或 "ollama", "groq", "openrouter"
-        // "GROQ_API_KEY": "你的_groq_api_密钥", // 仅当 LLM_PROVIDER="groq" 时需要
+        "LLM_PROVIDER": "deepseek", // "groq", "openrouter", "github", "anthropic", "ollama"
         "DEEPSEEK_API_KEY": "你的_deepseek_api_密钥", // 默认提供商
-        // "OPENROUTER_API_KEY": "你的_openrouter_api_密钥", // 仅当 LLM_PROVIDER="openrouter" 时需要
+        // "GROQ_API_KEY": "你的_groq_api_密钥",
+        // "OPENROUTER_API_KEY": "你的_openrouter_api_密钥",
+        // "GITHUB_TOKEN": "你的_github_token",
+        // "ANTHROPIC_API_KEY": "你的_anthropic_api_密钥",
         "LLM_BASE_URL": "你的_base_url_如果需要", // 可选：如果为 DeepSeek 使用自定义端点
         "EXA_API_KEY": "你的_exa_api_密钥" // 仅当使用 Exa 时需要
       }
@@ -111,22 +116,25 @@
     在项目根目录创建一个 `.env` 文件或直接在您的环境中导出变量：
     ```dotenv
     # --- LLM 配置 ---
-    # 选择 LLM 提供商: "deepseek" (默认), "groq", 或 "openrouter"
+    # 选择 LLM 提供商: "deepseek" (默认), "groq", "openrouter", "github", "anthropic", 或 "ollama"
     LLM_PROVIDER="deepseek"
 
     # 提供所选提供商的 API 密钥:
-    # GROQ_API_KEY="你的_groq_api_密钥"
     DEEPSEEK_API_KEY="你的_deepseek_api_密钥"
+    # GROQ_API_KEY="你的_groq_api_密钥"
     # OPENROUTER_API_KEY="你的_openrouter_api_密钥"
+    # GITHUB_TOKEN="ghp_你的_github_personal_access_token"
+    # ANTHROPIC_API_KEY="你的_anthropic_api_密钥"
+    # 注意: Ollama 无需 API 密钥，但需要本地安装 Ollama。
 
-    # 可选: 基础 URL 覆盖 (例如, 用于自定义 DeepSeek 端点)
+    # 可选: 基础 URL 覆盖 (例如, 用于自定义端点)
     # LLM_BASE_URL="你的_base_url_如果需要"
 
     # 可选: 为增强模型（复杂综合）和标准模型（单独处理）指定不同的模型
     # 如果未设置这些环境变量，则代码会根据提供商设置默认值。
     # Groq 示例:
-    # GROQ_ENHANCED_MODEL_ID="deepseek-r1-distill-llama-70b"  # 用于复杂综合（蓝帽）
-    # GROQ_STANDARD_MODEL_ID="qwen/qwen3-32b"  # 用于单独帽子处理
+    # GROQ_ENHANCED_MODEL_ID="deepseek-r1-distill-llama-70b"  # 用于复杂综合
+    # GROQ_STANDARD_MODEL_ID="qwen/qwen3-32b"  # 用于单独处理
     # DeepSeek 示例:
     # DEEPSEEK_ENHANCED_MODEL_ID="deepseek-chat"  # 用于复杂综合
     # DEEPSEEK_STANDARD_MODEL_ID="deepseek-chat"  # 用于单独处理
@@ -136,6 +144,9 @@
     # OpenRouter 示例:
     # OPENROUTER_ENHANCED_MODEL_ID="deepseek/deepseek-r1"  # 示例，按需调整
     # OPENROUTER_STANDARD_MODEL_ID="deepseek/deepseek-chat"  # 示例，按需调整
+    # Anthropic 示例:
+    # ANTHROPIC_ENHANCED_MODEL_ID="claude-3-5-sonnet-20241022"
+    # ANTHROPIC_STANDARD_MODEL_ID="claude-3-5-haiku-20241022"
 
     # --- 外部工具 ---
     # 仅当研究员智能体被使用且需要 Exa 时才必需
@@ -156,25 +167,21 @@
         # curl -LsSf https://astral.sh/uv/install.sh | sh
         # source $HOME/.cargo/env # 或者重启你的 shell
 
-        # 创建并激活虚拟环境 (可选但推荐)
+        # 创建并激活虚拟环境
         python -m venv .venv
-        source .venv/bin/activate # 在 Windows 上使用 `.venv\\Scripts\\activate`
+        source .venv/bin/activate # 在 Windows 上使用 `.venv\Scripts\activate`
 
-        # 安装依赖
-        uv pip install -r requirements.txt
-        # 或者如果存在包含依赖定义的 pyproject.toml 文件:
-        # uv pip install .
+        # 从 pyproject.toml 安装依赖
+        uv pip install .
         ```
     - **使用 `pip`:**
         ```bash
-        # 创建并激活虚拟环境 (可选但推荐)
+        # 创建并激活虚拟环境
         python -m venv .venv
-        source .venv/bin/activate # 在 Windows 上使用 `.venv\\Scripts\\activate`
+        source .venv/bin/activate # 在 Windows 上使用 `.venv\Scripts\activate`
 
-        # 安装依赖
-        pip install -r requirements.txt
-        # 或者如果存在包含依赖定义的 pyproject.toml 文件:
-        # pip install .
+        # 从 pyproject.toml 安装依赖
+        pip install .
         ```
 
 ## 使用方法
@@ -183,86 +190,26 @@
 
 运行服务器。选择以下方法之一：
 
-1.  **使用 `uv run` (推荐使用):**
+1.  **使用已安装的脚本 (推荐):**
+    安装后，您可以直接运行服务器。
     ```bash
-    uv --directory /path/to/mcp-server-mas-sequential-thinking run mcp-server-mas-sequential-thinking
+    mcp-server-mas-sequential-thinking
     ```
-2.  **直接使用 Python:**
 
+2.  **使用 `uv run`:**
+    这在不激活虚拟环境的情况下运行很有用。
     ```bash
-    python main.py
+    uv run mcp-server-mas-sequential-thinking
+    ```
+
+3.  **直接使用 Python:**
+    ```bash
+    python src/mcp_server_mas_sequential_thinking/main.py
     ```
 
 服务器将启动并通过 stdio 监听请求，使 `sequentialthinking` 工具可用于配置为使用它的兼容 MCP 客户端。
 
 ### `sequentialthinking` 工具参数
-
-该工具期望的参数与 `ThoughtData` Pydantic 模型匹配：
-
-```python
-# 简化表示 (来自 src/models.py)
-class ThoughtData(BaseModel):
-    thought: str                 # 当前思考/步骤的内容
-    thoughtNumber: int           # 序列号 (>=1)
-    totalThoughts: int           # 预估总步骤数 (>=1, 建议 >=5)
-    nextThoughtNeeded: bool      # 此步骤后是否需要另一步？
-    isRevision: bool = False     # 这是否在修订之前的思考？
-    revisesThought: Optional[int] = None # 如果是修订，修订哪个思考编号？
-    branchFromThought: Optional[int] = None # 如果是分支，从哪个思考编号开始？
-    branchId: Optional[str] = None # 正在创建的新分支的唯一 ID
-    needsMoreThoughts: bool = False # 在最后一步之前，如果预估过低则发出信号
-```
-
-### 与工具交互 (概念示例)
-
-LLM 会迭代地与此工具交互：
-
-1.  **LLM:** 使用启动器提示（如 `sequential-thinking-starter`）和问题定义。
-2.  **LLM:** 使用 `thoughtNumber: 1`、初始 `thought`（例如，"规划分析..."）、预估的 `totalThoughts` 和 `nextThoughtNeeded: True` 调用 `sequentialthinking` 工具。
-3.  **服务器:** MAS 处理思考。协调器综合来自专家的响应并提供指导（例如，"分析计划完成。建议下一步研究 X。暂不推荐修订。"）。
-4.  **LLM:** 接收包含 `coordinatorResponse` 的 JSON 响应。
-5.  **LLM:** 根据 `coordinatorResponse` 构思下一个思考（例如，"使用可用工具研究 X..."）。
-6.  **LLM:** 使用 `thoughtNumber: 2`、新的 `thought`、可能更新的 `totalThoughts`、`nextThoughtNeeded: True` 调用 `sequentialthinking` 工具。
-7.  **服务器:** MAS 处理。协调器进行综合（例如，"研究完成。发现表明思考 #1 的假设存在缺陷。建议：修订思考 #1..."）。
-8.  **LLM:** 接收响应，注意到建议。
-9.  **LLM:** 构思修订思考。
-10. **LLM:** 使用 `thoughtNumber: 3`、修订 `thought`、`isRevision: True`、`revisesThought: 1`、`nextThoughtNeeded: True` 调用 `sequentialthinking` 工具。
-11. **... 以此类推，根据需要可能进行分支或扩展过程。**
-
-### 工具响应格式
-
-该工具返回一个 JSON 字符串，其中包含：
-
-```json
-{
-  "processedThoughtNumber": int,          // 刚刚处理的思考编号
-  "estimatedTotalThoughts": int,          // 当前预估的总思考数
-  "nextThoughtNeeded": bool,              // 过程是否指示需要更多步骤
-  "coordinatorResponse": "...",           // 来自智能体团队的综合输出，包括分析、发现和下一步指导
-  "branches": ["main", "branch-id-1"],  // 活动分支 ID 列表
-  "thoughtHistoryLength": int,          // 到目前为止处理的总思考数（跨所有分支）
-  "branchDetails": {
-    "currentBranchId": "main",            // 处理的思考所属的分支 ID
-    "branchOriginThought": null | int,    // 当前分支分叉处的思考编号（'main' 为 null）
-    "allBranches": {                      // 每个活动分支中的思考计数
-      "main": 5,
-      "branch-id-1": 2
-     }
-  },
-  "isRevision": bool,                     // 处理的思考是否是修订？
-  "revisesThought": null | int,           // 修订了哪个思考编号（如果 isRevision 为 true）
-  "isBranch": bool,                       // 此思考是否开始了新分支？
-  "status": "success | validation_error | failed", // 结果状态
-  "error": null | "错误信息..."          // 如果状态不是 'success'，则为错误详情
-}
-```
-
-## 日志记录
-
-- 默认情况下，日志写入 `~/.sequential_thinking/logs/sequential_thinking.log`。（配置可能在日志设置代码中可调）。
-- 使用 Python 标准的 `logging` 模块。
-- 包括轮换文件处理器（例如，10MB 限制，5 个备份）和控制台处理器（通常为 INFO 级别）。
-- 日志包括时间戳、级别、记录器名称和消息，包括正在处理的思考的结构化表示。
 
 ## 开发
 
@@ -274,18 +221,16 @@ LLM 会迭代地与此工具交互：
 2.  **设置虚拟环境：** (推荐)
     ```bash
     python -m venv .venv
-    source .venv/bin/activate # 在 Windows 上使用 `.venv\\Scripts\\activate`
+    source .venv/bin/activate # 在 Windows 上使用 `.venv\Scripts\activate`
     ```
 3.  **安装依赖 (包括开发依赖):**
-    确保您的 `requirements-dev.txt` 或 `pyproject.toml` 指定了开发工具（如 `pytest`, `ruff`, `black`, `mypy`）。
+    以可编辑模式安装项目及开发依赖。
     ```bash
     # 使用 uv
-    uv pip install -r requirements.txt
-    uv pip install -r requirements-dev.txt # 或者如果 pyproject.toml 中定义了 extras: uv pip install -e ".[dev]"
+    uv pip install -e .[dev]
 
     # 使用 pip
-    pip install -r requirements.txt
-    pip install -r requirements-dev.txt # 或者如果 pyproject.toml 中定义了 extras: pip install -e ".[dev]"
+    pip install -e .[dev]
     ```
 4.  **运行检查：**
     执行 linter、formatter 和 tests（根据您的项目设置调整命令）。
