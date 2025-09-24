@@ -60,18 +60,19 @@ class MultiThinkingSequentialProcessor:
         """Process thoughts using multi-thinking methodology."""
         start_time = time.time()
 
-        logger.info("🧠 MULTI-THINKING PROCESSING START:")
-        logger.info(f"  📝 Input: {thought_data.thought[:100]}...")
-        logger.info(f"  📋 Context: {len(context_prompt)} chars")
+        logger.info("Multi-thinking processing started")
+        if logger.isEnabledFor(logging.INFO):
+            logger.info("Input preview: %s", thought_data.thought[:100])
+            logger.info("Context length: %d chars", len(context_prompt))
 
         try:
             # Step 1: Intelligent routing decision
             routing_decision = await self.router.route_thought(thought_data)
 
-            logger.info(f"  🎯 Strategy: {routing_decision.strategy.name}")
-            logger.info(
-                f"  🎨 Thinking Sequence: {[direction.value for direction in routing_decision.strategy.thinking_sequence]}"
-            )
+            logger.info("Selected strategy: %s", routing_decision.strategy.name)
+            if logger.isEnabledFor(logging.INFO):
+                sequence = [direction.value for direction in routing_decision.strategy.thinking_sequence]
+                logger.info("Thinking sequence: %s", sequence)
 
             # Step 2: Execute processing based on complexity
             if routing_decision.strategy.complexity == ProcessingDepth.SINGLE:
@@ -107,12 +108,8 @@ class MultiThinkingSequentialProcessor:
                 step_name="multi_thinking_processing",
             )
 
-            logger.info("✅ MULTI-THINKING PROCESSING COMPLETED:")
-            logger.info(f"  ⏱️  Time: {processing_time:.3f}s")
-            logger.info(
-                f"  💰 Cost Reduction: {routing_decision.estimated_cost_reduction:.1f}%"
-            )
-            logger.info(f"  📊 Output Length: {len(final_result.content)} chars")
+            logger.info("Multi-thinking processing completed - Time: %.3fs, Cost reduction: %.1f%%, Output: %d chars",
+                       processing_time, routing_decision.estimated_cost_reduction, len(final_result.content))
 
             return final_result
 

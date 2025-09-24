@@ -196,8 +196,9 @@ class MultiThinkingIntelligentRouter:
 
     async def route_thought(self, thought_data: "ThoughtData") -> RoutingDecision:
         """AI-powered intelligent routing to optimal thinking sequence."""
-        logger.info("🤖 AI-DRIVEN MULTI-THINKING ROUTING:")
-        logger.info(f"  📝 Input: {thought_data.thought[:100]}...")
+        logger.info("AI-driven multi-thinking routing started")
+        if logger.isEnabledFor(logging.INFO):
+            logger.info("Input preview: %s", thought_data.thought[:100])
 
         # Step 1: AI analysis (complexity + problem type + thinking modes)
         complexity_metrics = await self.complexity_analyzer.analyze(thought_data)
@@ -208,13 +209,12 @@ class MultiThinkingIntelligentRouter:
         problem_type = ai_result.get("primary_problem_type", "GENERAL")
         thinking_modes_needed = ai_result.get("thinking_modes_needed", ["SYNTHESIS"])
 
-        logger.info(f"  📊 Complexity Score: {complexity_score:.1f}")
-        logger.info(f"  🎯 AI Problem Type: {problem_type}")
-        logger.info(f"  🧠 Thinking Modes: {thinking_modes_needed}")
+        logger.info("AI analysis - Complexity: %.1f, Type: %s, Modes: %s",
+                   complexity_score, problem_type, thinking_modes_needed)
 
         # Step 2: Determine complexity level
         complexity_level = self._determine_complexity_level(complexity_score)
-        logger.info(f"  📈 Complexity Level: {complexity_level.value}")
+        logger.info("Complexity level determined: %s", complexity_level.value)
 
         # Step 3: AI-driven strategy selection
         strategy = self._select_optimal_strategy(
@@ -238,11 +238,11 @@ class MultiThinkingIntelligentRouter:
             thinking_modes_needed=thinking_modes_needed,
         )
 
-        logger.info(f"  ✅ Selected Strategy: {strategy.name}")
-        logger.info(
-            f"  🎨 Thinking Sequence: {[direction.value for direction in strategy.thinking_sequence]}"
-        )
-        logger.info(f"  💰 Cost Reduction: {cost_reduction:.1f}%")
+        logger.info("Strategy selected: %s", strategy.name)
+        if logger.isEnabledFor(logging.INFO):
+            sequence = [direction.value for direction in strategy.thinking_sequence]
+            logger.info("Thinking sequence: %s", sequence)
+        logger.info("Estimated cost reduction: %.1f%%", cost_reduction)
 
         return decision
 
