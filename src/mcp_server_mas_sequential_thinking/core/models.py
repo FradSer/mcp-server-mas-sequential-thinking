@@ -1,6 +1,7 @@
 """Streamlined models with consolidated validation logic."""
 
 from enum import Enum
+from typing import Any
 
 from pydantic import BaseModel, Field, model_validator
 
@@ -60,29 +61,34 @@ class ThoughtData(BaseModel):
         min_length=FieldLengthLimits.MIN_STRING_LENGTH,
         description="Content of the thought",
     )
-    thoughtNumber: ThoughtNumber = Field(
+    # MCP API compatibility - camelCase field names required
+    thoughtNumber: ThoughtNumber = Field(  # noqa: N815
         ...,
         ge=ValidationLimits.MIN_THOUGHT_NUMBER,
         description="Sequence number starting from 1",
     )
-    totalThoughts: int = Field(
+    totalThoughts: int = Field(  # noqa: N815
         ...,
         ge=1,
         description="Estimated total thoughts",
     )
-    nextThoughtNeeded: bool = Field(
+    nextThoughtNeeded: bool = Field(  # noqa: N815
         ..., description="Whether another thought is needed"
     )
 
     # Required workflow fields
-    isRevision: bool = Field(..., description="Whether this revises a previous thought")
-    branchFromThought: ThoughtNumber | None = Field(
+    isRevision: bool = Field(  # noqa: N815
+        ..., description="Whether this revises a previous thought"
+    )
+    branchFromThought: ThoughtNumber | None = Field(  # noqa: N815
         ...,
         ge=ValidationLimits.MIN_THOUGHT_NUMBER,
         description="Thought number to branch from",
     )
-    branchId: BranchId | None = Field(..., description="Unique branch identifier")
-    needsMoreThoughts: bool = Field(
+    branchId: BranchId | None = Field(  # noqa: N815
+        ..., description="Unique branch identifier"
+    )
+    needsMoreThoughts: bool = Field(  # noqa: N815
         ..., description="Whether more thoughts are needed beyond estimate"
     )
 
@@ -97,7 +103,7 @@ class ThoughtData(BaseModel):
 
     @model_validator(mode="before")
     @classmethod
-    def validate_thought_data(cls, data):
+    def validate_thought_data(cls, data: dict[str, Any]) -> dict[str, Any]:
         """Consolidated validation with simplified logic."""
         if isinstance(data, dict):
             _validate_thought_relationships(data)
@@ -108,9 +114,15 @@ class ThoughtData(BaseModel):
         # Use match statement for modern Python pattern matching
         match self.thought_type:
             case ThoughtType.REVISION:
-                prefix = f"Revision {self.thoughtNumber}/{self.totalThoughts} (revising #{self.branchFromThought})"
+                prefix = (
+                    f"Revision {self.thoughtNumber}/{self.totalThoughts} "
+                    f"(revising #{self.branchFromThought})"
+                )
             case ThoughtType.BRANCH:
-                prefix = f"Branch {self.thoughtNumber}/{self.totalThoughts} (from #{self.branchFromThought}, ID: {self.branchId})"
+                prefix = (
+                    f"Branch {self.thoughtNumber}/{self.totalThoughts} "
+                    f"(from #{self.branchFromThought}, ID: {self.branchId})"
+                )
             case _:  # ThoughtType.STANDARD
                 prefix = f"Thought {self.thoughtNumber}/{self.totalThoughts}"
 

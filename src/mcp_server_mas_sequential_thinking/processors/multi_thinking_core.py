@@ -9,6 +9,7 @@ import logging
 from abc import abstractmethod
 from dataclasses import dataclass
 from enum import Enum
+from typing import Any
 
 from agno.agent import Agent
 from agno.models.base import Model
@@ -79,7 +80,7 @@ class ThinkingCapability:
     timing_config: ThinkingTimingConfig
 
     # Enhanced features
-    tools: list[type] | None = None
+    tools: list[Any] | None = None
     reasoning_level: int = 1
     memory_enabled: bool = False
 

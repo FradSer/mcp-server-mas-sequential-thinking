@@ -110,13 +110,13 @@ class ThoughtProcessor:
         """
         start_time = time.time()
 
-        # Log thought data and add to session
+        # Log thought data and add to session (now async for thread safety)
         self._log_thought_data(thought_data)
-        self._session.add_thought(thought_data)
+        await self._session.add_thought(thought_data)
 
-        # Build context using specialized service
-        input_prompt = self._context_builder.build_context_prompt(thought_data)
-        self._context_builder.log_context_building(thought_data, input_prompt)
+        # Build context using specialized service (now async for thread safety)
+        input_prompt = await self._context_builder.build_context_prompt(thought_data)
+        await self._context_builder.log_context_building(thought_data, input_prompt)
 
         # Execute Multi-Thinking workflow using specialized service
         (

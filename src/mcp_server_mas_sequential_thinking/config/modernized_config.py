@@ -81,7 +81,7 @@ class GitHubOpenAI(OpenAIChat):
                 "use a real GitHub token."
             )
 
-    def __init__(self, **kwargs: dict[str, Any]) -> None:
+    def __init__(self, **kwargs: Any) -> None:
         # Set GitHub Models configuration
         kwargs.setdefault("base_url", "https://models.github.ai/inference")
 
@@ -95,7 +95,8 @@ class GitHubOpenAI(OpenAIChat):
                 "environment variable"
             )
 
-        self._validate_github_token(api_key)
+        if isinstance(api_key, str):
+            self._validate_github_token(api_key)
         super().__init__(**kwargs)
 
 
@@ -114,7 +115,7 @@ class ModelConfig:
         if self.provider_class == Claude:
             return self.provider_class(
                 id=self.enhanced_model_id,
-                cache_system_prompt=True,  # Enable Anthropic prompt caching
+                # Note: cache_system_prompt removed - not available in current Agno version
             )
         return self.provider_class(id=self.enhanced_model_id)
 
@@ -124,7 +125,7 @@ class ModelConfig:
         if self.provider_class == Claude:
             return self.provider_class(
                 id=self.standard_model_id,
-                cache_system_prompt=True,  # Enable Anthropic prompt caching
+                # Note: cache_system_prompt removed - not available in current Agno version
             )
         return self.provider_class(id=self.standard_model_id)
 

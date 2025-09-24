@@ -1,33 +1,30 @@
 """Multi-Thinking Workflow Router - Complete Rewrite.
 
-纯净的多向思维工作流实现，基于Agno v2.0框架。
-完全移除旧的复杂度路由，专注于多向思维方法论。
+纯净的多向思维工作流实现, 基于Agno v2.0框架。
+完全移除旧的复杂度路由, 专注于多向思维方法论。
 """
 
-# Lazy import to break circular dependency
 import logging
+import re
 import time
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 from agno.workflow.router import Router
 from agno.workflow.step import Step
 from agno.workflow.types import StepInput, StepOutput
 from agno.workflow.workflow import Workflow
 
-if TYPE_CHECKING:
-    from mcp_server_mas_sequential_thinking.core.models import ThoughtData
-
-logger = logging.getLogger(__name__)
 from mcp_server_mas_sequential_thinking.config.modernized_config import get_model_config
 
-# Import Multi-Thinking support
+# Import at module level - moved from function to avoid PLC0415
+from mcp_server_mas_sequential_thinking.core.models import ThoughtData
 from mcp_server_mas_sequential_thinking.processors.multi_thinking_processor import (
     MultiThinkingSequentialProcessor,
     create_multi_thinking_step_output,
 )
 
-# logger already defined above
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -87,15 +84,17 @@ class MultiThinkingWorkflowRouter:
                 total_thoughts = 1
 
             logger.info(
-                f"  📝 Input: {thought_content[:100]}{'...' if len(thought_content) > 100 else ''}"
+                "  📝 Input: %s%s",
+                thought_content[:100],
+                "..." if len(thought_content) > 100 else ""
             )
-            logger.info(f"  🔢 Progress: {thought_number}/{total_thoughts}")
+            logger.info("  🔢 Progress: %s/%s", thought_number, total_thoughts)
             logger.info("  ✅ Multi-Thinking selected - exclusive thinking methodology")
 
             return [self.multi_thinking_step]
 
         except Exception as e:
-            logger.exception(f"Error in Multi-Thinking selector: {e}")
+            logger.exception("Error in Multi-Thinking selector: %s", e)
             logger.warning("Continuing with Multi-Thinking processing despite error")
             return [self.multi_thinking_step]
 
@@ -123,15 +122,21 @@ class MultiThinkingWorkflowRouter:
                     total_thoughts = 1
                     context = ""
 
-                # Create ThoughtData - dynamic import to avoid circular dependency
-                from mcp_server_mas_sequential_thinking.core.models import ThoughtData
+                # ThoughtData is now imported at module level
 
                 # Extract context preservation fields from input if available
-                is_revision = step_input.input.get("isRevision", False) if isinstance(step_input.input, dict) else False
-                branch_from_thought = step_input.input.get("branchFromThought") if isinstance(step_input.input, dict) else None
-                branch_id = step_input.input.get("branchId") if isinstance(step_input.input, dict) else None
-                needs_more_thoughts = step_input.input.get("needsMoreThoughts", False) if isinstance(step_input.input, dict) else False
-                next_thought_needed = step_input.input.get("nextThoughtNeeded", True) if isinstance(step_input.input, dict) else True
+                if isinstance(step_input.input, dict):
+                    is_revision = step_input.input.get("isRevision", False)
+                    branch_from_thought = step_input.input.get("branchFromThought")
+                    branch_id = step_input.input.get("branchId")
+                    needs_more_thoughts = step_input.input.get("needsMoreThoughts", False)
+                    next_thought_needed = step_input.input.get("nextThoughtNeeded", True)
+                else:
+                    is_revision = False
+                    branch_from_thought = None
+                    branch_id = None
+                    needs_more_thoughts = False
+                    next_thought_needed = True
 
                 thought_data = ThoughtData(
                     thought=thought_content,
@@ -144,8 +149,8 @@ class MultiThinkingWorkflowRouter:
                     needsMoreThoughts=needs_more_thoughts,
                 )
 
-                logger.info(f"  📝 Input: {thought_content[:100]}...")
-                logger.info(f"  🔢 Thought: {thought_number}/{total_thoughts}")
+                logger.info("  📝 Input: %s...", thought_content[:100])
+                logger.info("  🔢 Thought: %s/%s", thought_number, total_thoughts)
 
                 # Process with Multi-Thinking
                 result = await self.multi_thinking_processor.process_with_multi_thinking(
@@ -158,14 +163,14 @@ class MultiThinkingWorkflowRouter:
                 session_state["thinking_sequence"] = result.thinking_sequence
                 session_state["cost_reduction"] = result.cost_reduction
 
-                logger.info(f"  ✅ Multi-Thinking completed: {result.strategy_used}")
-                logger.info(f"  📊 Complexity: {result.complexity_score:.1f}")
-                logger.info(f"  💰 Cost Reduction: {result.cost_reduction:.1f}%")
+                logger.info("  ✅ Multi-Thinking completed: %s", result.strategy_used)
+                logger.info("  📊 Complexity: %.1f", result.complexity_score)
+                logger.info("  💰 Cost Reduction: %.1f%%", result.cost_reduction)
 
                 return create_multi_thinking_step_output(result)
 
             except Exception as e:
-                logger.exception(f"  ❌ Multi-Thinking execution failed: {e}")
+                logger.exception("  ❌ Multi-Thinking execution failed")
                 return StepOutput(
                     content=f"Multi-Thinking processing failed: {e!s}",
                     success=False,
@@ -188,14 +193,19 @@ class MultiThinkingWorkflowRouter:
         try:
             logger.info("🚀 MULTI-THINKING WORKFLOW INITIALIZATION:")
             logger.info(
-                f"  📝 Thought: {thought_data.thought[:100]}{'...' if len(thought_data.thought) > 100 else ''}"
+                "  📝 Thought: %s%s",
+                thought_data.thought[:100],
+                "..." if len(thought_data.thought) > 100 else ""
             )
             logger.info(
-                f"  🔢 Thought Number: {thought_data.thoughtNumber}/{thought_data.totalThoughts}"
+                "  🔢 Thought Number: %s/%s",
+                thought_data.thoughtNumber,
+                thought_data.totalThoughts
             )
-            logger.info(f"  📋 Context Length: {len(context_prompt)} chars")
+            logger.info("  📋 Context Length: %d chars", len(context_prompt))
             logger.info(
-                f"  ⏰ Start Time: {time.strftime('%H:%M:%S', time.localtime(start_time))}"
+                "  ⏰ Start Time: %s",
+                time.strftime("%H:%M:%S", time.localtime(start_time))
             )
 
             # Prepare workflow input for Multi-Thinking
@@ -207,8 +217,8 @@ class MultiThinkingWorkflowRouter:
             }
 
             logger.info("📦 WORKFLOW INPUT PREPARATION:")
-            logger.info(f"  📊 Input Keys: {list(workflow_input.keys())}")
-            logger.info(f"  📏 Input Size: {len(str(workflow_input))} chars")
+            logger.info("  📊 Input Keys: %s", list(workflow_input.keys()))
+            logger.info("  📏 Input Size: %d chars", len(str(workflow_input)))
 
             # Initialize session_state for metadata tracking
             session_state: dict[str, Any] = {
@@ -218,11 +228,12 @@ class MultiThinkingWorkflowRouter:
             }
 
             logger.info("🎯 SESSION STATE SETUP:")
-            logger.info(f"  🔑 State Keys: {list(session_state.keys())}")
-            logger.info(f"  📈 Metadata: {session_state}")
+            logger.info("  🔑 State Keys: %s", list(session_state.keys()))
+            logger.info("  📈 Metadata: %s", session_state)
 
             logger.info(
-                f"▶️  EXECUTING Multi-Thinking workflow for thought #{thought_data.thoughtNumber}"
+                "▶️  EXECUTING Multi-Thinking workflow for thought #%s",
+                thought_data.thoughtNumber
             )
 
             # Execute Multi-Thinking workflow
@@ -239,10 +250,13 @@ class MultiThinkingWorkflowRouter:
 
             logger.info("📋 CONTENT VALIDATION:")
             logger.info(
-                f"  ✅ Content extracted successfully: {len(content)} characters"
+                "  ✅ Content extracted successfully: %d characters",
+                len(content)
             )
             logger.info(
-                f"  📝 Content preview: {content[:150]}{'...' if len(content) > 150 else ''}"
+                "  📝 Content preview: %s%s",
+                content[:150],
+                "..." if len(content) > 150 else ""
             )
 
             # Get metadata from session_state
@@ -252,11 +266,11 @@ class MultiThinkingWorkflowRouter:
             cost_reduction = session_state.get("cost_reduction", 0.0)
 
             logger.info("📊 WORKFLOW RESULT COMPILATION:")
-            logger.info(f"  🎯 Strategy used: {strategy_used}")
-            logger.info(f"  🧠 Thinking sequence: {' → '.join(thinking_sequence)}")
-            logger.info(f"  📈 Complexity score: {complexity_score:.1f}")
-            logger.info(f"  💰 Cost reduction: {cost_reduction:.1f}%")
-            logger.info(f"  ⏱️  Processing time: {processing_time:.3f}s")
+            logger.info("  🎯 Strategy used: %s", strategy_used)
+            logger.info("  🧠 Thinking sequence: %s", " → ".join(thinking_sequence))
+            logger.info("  📈 Complexity score: %.1f", complexity_score)
+            logger.info("  💰 Cost reduction: %.1f%%", cost_reduction)
+            logger.info("  ⏱️  Processing time: %.3fs", processing_time)
 
             workflow_result = MultiThinkingWorkflowResult(
                 content=content,
@@ -270,9 +284,11 @@ class MultiThinkingWorkflowRouter:
 
             logger.info("🎉 MULTI-THINKING WORKFLOW COMPLETION:")
             logger.info(
-                f"  ✅ Completed: strategy={strategy_used}, "
-                f"time={processing_time:.3f}s, score={complexity_score:.1f}, "
-                f"reduction={cost_reduction:.1f}%"
+                "  ✅ Completed: strategy=%s, time=%.3fs, score=%.1f, reduction=%.1f%%",
+                strategy_used,
+                processing_time,
+                complexity_score,
+                cost_reduction
             )
 
             return workflow_result
@@ -280,7 +296,8 @@ class MultiThinkingWorkflowRouter:
         except Exception as e:
             processing_time = time.time() - start_time
             logger.exception(
-                f"Multi-Thinking workflow execution failed after {processing_time:.3f}s: {e}"
+                "Multi-Thinking workflow execution failed after %.3fs",
+                processing_time
             )
 
             return MultiThinkingWorkflowResult(
@@ -356,8 +373,7 @@ class MultiThinkingWorkflowRouter:
                         '{"content":',
                     ]
                 ):
-                    # Try to extract content using regex
-                    import re
+                    # Try to extract content using regex (re imported at module level)
 
                     patterns = [
                         (r"content='([^']*)'", 1),

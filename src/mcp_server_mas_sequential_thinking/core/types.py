@@ -60,7 +60,7 @@ class CoordinationPlan:
 
     @classmethod
     def from_routing_decision(
-        cls, routing_decision: Any, thought_data: Any
+        cls, routing_decision: dict[str, Any], thought_data: ThoughtData
     ) -> CoordinationPlan:
         """Create coordination plan from adaptive routing decision."""
         # Map ProcessingStrategy to ExecutionMode
