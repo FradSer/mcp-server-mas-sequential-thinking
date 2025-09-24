@@ -86,7 +86,7 @@ class MultiThinkingWorkflowRouter:
             logger.info(
                 "  📝 Input: %s%s",
                 thought_content[:100],
-                "..." if len(thought_content) > 100 else ""
+                "..." if len(thought_content) > 100 else "",
             )
             logger.info("  🔢 Progress: %s/%s", thought_number, total_thoughts)
             logger.info("  ✅ Multi-Thinking selected - exclusive thinking methodology")
@@ -129,8 +129,12 @@ class MultiThinkingWorkflowRouter:
                     is_revision = step_input.input.get("isRevision", False)
                     branch_from_thought = step_input.input.get("branchFromThought")
                     branch_id = step_input.input.get("branchId")
-                    needs_more_thoughts = step_input.input.get("needsMoreThoughts", False)
-                    next_thought_needed = step_input.input.get("nextThoughtNeeded", True)
+                    needs_more_thoughts = step_input.input.get(
+                        "needsMoreThoughts", False
+                    )
+                    next_thought_needed = step_input.input.get(
+                        "nextThoughtNeeded", True
+                    )
                 else:
                     is_revision = False
                     branch_from_thought = None
@@ -153,8 +157,10 @@ class MultiThinkingWorkflowRouter:
                 logger.info("  🔢 Thought: %s/%s", thought_number, total_thoughts)
 
                 # Process with Multi-Thinking
-                result = await self.multi_thinking_processor.process_with_multi_thinking(
-                    thought_data, context
+                result = (
+                    await self.multi_thinking_processor.process_with_multi_thinking(
+                        thought_data, context
+                    )
                 )
 
                 # Store metadata in session_state
@@ -195,17 +201,17 @@ class MultiThinkingWorkflowRouter:
             logger.info(
                 "  📝 Thought: %s%s",
                 thought_data.thought[:100],
-                "..." if len(thought_data.thought) > 100 else ""
+                "..." if len(thought_data.thought) > 100 else "",
             )
             logger.info(
                 "  🔢 Thought Number: %s/%s",
                 thought_data.thoughtNumber,
-                thought_data.totalThoughts
+                thought_data.totalThoughts,
             )
             logger.info("  📋 Context Length: %d chars", len(context_prompt))
             logger.info(
                 "  ⏰ Start Time: %s",
-                time.strftime("%H:%M:%S", time.localtime(start_time))
+                time.strftime("%H:%M:%S", time.localtime(start_time)),
             )
 
             # Prepare workflow input for Multi-Thinking
@@ -233,7 +239,7 @@ class MultiThinkingWorkflowRouter:
 
             logger.info(
                 "▶️  EXECUTING Multi-Thinking workflow for thought #%s",
-                thought_data.thoughtNumber
+                thought_data.thoughtNumber,
             )
 
             # Execute Multi-Thinking workflow
@@ -250,13 +256,12 @@ class MultiThinkingWorkflowRouter:
 
             logger.info("📋 CONTENT VALIDATION:")
             logger.info(
-                "  ✅ Content extracted successfully: %d characters",
-                len(content)
+                "  ✅ Content extracted successfully: %d characters", len(content)
             )
             logger.info(
                 "  📝 Content preview: %s%s",
                 content[:150],
-                "..." if len(content) > 150 else ""
+                "..." if len(content) > 150 else "",
             )
 
             # Get metadata from session_state
@@ -288,7 +293,7 @@ class MultiThinkingWorkflowRouter:
                 strategy_used,
                 processing_time,
                 complexity_score,
-                cost_reduction
+                cost_reduction,
             )
 
             return workflow_result
@@ -296,8 +301,7 @@ class MultiThinkingWorkflowRouter:
         except Exception as e:
             processing_time = time.time() - start_time
             logger.exception(
-                "Multi-Thinking workflow execution failed after %.3fs",
-                processing_time
+                "Multi-Thinking workflow execution failed after %.3fs", processing_time
             )
 
             return MultiThinkingWorkflowResult(

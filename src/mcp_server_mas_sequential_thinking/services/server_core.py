@@ -173,7 +173,9 @@ class ServerState:
         # Session-based architecture simplifies state management
         self._session = SessionMemory()
 
-        logger.info("Server state initialized successfully with multi-thinking workflow")
+        logger.info(
+            "Server state initialized successfully with multi-thinking workflow"
+        )
 
     async def cleanup(self) -> None:
         """Clean up all server components."""

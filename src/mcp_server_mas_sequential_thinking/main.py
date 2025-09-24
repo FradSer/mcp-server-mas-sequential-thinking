@@ -200,7 +200,9 @@ async def sequentialthinking(
         global _thought_processor
         async with _processor_lock:
             if _thought_processor is None:
-                logger.info("Initializing ThoughtProcessor with Multi-Thinking workflow")
+                logger.info(
+                    "Initializing ThoughtProcessor with Multi-Thinking workflow"
+                )
                 _thought_processor = ThoughtProcessor(current_server_state.session)
 
         result = await _thought_processor.process_thought(thought_data)

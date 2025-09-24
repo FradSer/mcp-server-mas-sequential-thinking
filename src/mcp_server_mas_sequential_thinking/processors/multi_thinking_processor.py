@@ -71,7 +71,10 @@ class MultiThinkingSequentialProcessor:
 
             logger.info("Selected strategy: %s", routing_decision.strategy.name)
             if logger.isEnabledFor(logging.INFO):
-                sequence = [direction.value for direction in routing_decision.strategy.thinking_sequence]
+                sequence = [
+                    direction.value
+                    for direction in routing_decision.strategy.thinking_sequence
+                ]
                 logger.info("Thinking sequence: %s", sequence)
 
             # Step 2: Execute processing based on complexity
@@ -99,7 +102,8 @@ class MultiThinkingSequentialProcessor:
                 content=result["final_content"],
                 strategy_used=routing_decision.strategy.name,
                 thinking_sequence=[
-                    direction.value for direction in routing_decision.strategy.thinking_sequence
+                    direction.value
+                    for direction in routing_decision.strategy.thinking_sequence
                 ],
                 processing_time=processing_time,
                 complexity_score=routing_decision.complexity_metrics.complexity_score,
@@ -108,8 +112,12 @@ class MultiThinkingSequentialProcessor:
                 step_name="multi_thinking_processing",
             )
 
-            logger.info("Multi-thinking processing completed - Time: %.3fs, Cost reduction: %.1f%%, Output: %d chars",
-                       processing_time, routing_decision.estimated_cost_reduction, len(final_result.content))
+            logger.info(
+                "Multi-thinking processing completed - Time: %.3fs, Cost reduction: %.1f%%, Output: %d chars",
+                processing_time,
+                routing_decision.estimated_cost_reduction,
+                len(final_result.content),
+            )
 
             return final_result
 
@@ -145,7 +153,9 @@ class MultiThinkingSequentialProcessor:
             model = self.model_config.create_standard_model()
             logger.info("    📎 Using standard model for focused thinking")
 
-        agent = self.thinking_factory.create_thinking_agent(thinking_direction, model, context, {})
+        agent = self.thinking_factory.create_thinking_agent(
+            thinking_direction, model, context, {}
+        )
 
         # Execute processing
         result = await agent.arun(input=thought_data.thought)
@@ -163,7 +173,9 @@ class MultiThinkingSequentialProcessor:
     ) -> dict[str, Any]:
         """Process dual thinking direction sequence."""
         direction1, direction2 = decision.strategy.thinking_sequence
-        logger.info(f"  🧠 DUAL THINKING SEQUENCE: {direction1.value} → {direction2.value}")
+        logger.info(
+            f"  🧠 DUAL THINKING SEQUENCE: {direction1.value} → {direction2.value}"
+        )
 
         individual_results = {}
 
@@ -175,7 +187,9 @@ class MultiThinkingSequentialProcessor:
             model1 = self.model_config.create_standard_model()
             logger.info(f"    📎 Using standard model for {direction1.value} thinking")
 
-        agent1 = self.thinking_factory.create_thinking_agent(direction1, model1, context, {})
+        agent1 = self.thinking_factory.create_thinking_agent(
+            direction1, model1, context, {}
+        )
         result1 = await agent1.arun(input=thought_data.thought)
         content1 = self._extract_content(result1)
         individual_results[direction1.value] = content1
@@ -238,15 +252,21 @@ Now apply {direction2.value} thinking approach to this.
 
         # Execute three thinking directions sequentially
         for i, thinking_direction in enumerate(thinking_sequence):
-            logger.info(f"    🧠 Processing {thinking_direction.value} thinking ({i + 1}/3)")
+            logger.info(
+                f"    🧠 Processing {thinking_direction.value} thinking ({i + 1}/3)"
+            )
 
             # Use enhanced model for synthesis thinking, standard model for other directions
             if thinking_direction == ThinkingDirection.SYNTHESIS:
                 model = self.model_config.create_enhanced_model()
-                logger.info(f"      🚀 Using enhanced model for {thinking_direction.value} synthesis")
+                logger.info(
+                    f"      🚀 Using enhanced model for {thinking_direction.value} synthesis"
+                )
             else:
                 model = self.model_config.create_standard_model()
-                logger.info(f"      📎 Using standard model for {thinking_direction.value} thinking")
+                logger.info(
+                    f"      📎 Using standard model for {thinking_direction.value} thinking"
+                )
 
             agent = self.thinking_factory.create_thinking_agent(
                 thinking_direction, model, context, previous_results
@@ -304,10 +324,14 @@ Now apply {direction2.value} thinking approach to this.
             # Use enhanced model for synthesis thinking, standard model for other directions
             if thinking_direction == ThinkingDirection.SYNTHESIS:
                 model = self.model_config.create_enhanced_model()
-                logger.info(f"      🚀 Using enhanced model for {thinking_direction.value} synthesis")
+                logger.info(
+                    f"      🚀 Using enhanced model for {thinking_direction.value} synthesis"
+                )
             else:
                 model = self.model_config.create_standard_model()
-                logger.info(f"      📎 Using standard model for {thinking_direction.value} thinking")
+                logger.info(
+                    f"      📎 Using standard model for {thinking_direction.value} thinking"
+                )
 
             agent = self.thinking_factory.create_thinking_agent(
                 thinking_direction, model, context, previous_results
@@ -343,8 +367,11 @@ Now apply {direction2.value} thinking approach to this.
                 final_synthesis_result = individual_results[thinking_direction.value]
                 break
 
-        final_content = final_synthesis_result or self._synthesize_full_thinking_results(
-            individual_results, thinking_sequence, thought_data.thought
+        final_content = (
+            final_synthesis_result
+            or self._synthesize_full_thinking_results(
+                individual_results, thinking_sequence, thought_data.thought
+            )
         )
 
         return {
@@ -399,7 +426,9 @@ Now apply {direction2.value} thinking approach to this.
         ]
 
         for direction_name, content in all_results.items():
-            if direction_name != "synthesis":  # Avoid including previous synthesis results
+            if (
+                direction_name != "synthesis"
+            ):  # Avoid including previous synthesis results
                 # Completely hide direction concepts, use generic analysis types
                 perspective_name = self._get_generic_perspective_name(direction_name)
                 input_parts.append(f"• {perspective_name}: {content}")
@@ -436,9 +465,15 @@ Now apply {direction2.value} thinking approach to this.
             return content2
 
         # Otherwise create synthesized answer without mentioning analysis methods
-        if direction1 == ThinkingDirection.FACTUAL and direction2 == ThinkingDirection.EMOTIONAL:
+        if (
+            direction1 == ThinkingDirection.FACTUAL
+            and direction2 == ThinkingDirection.EMOTIONAL
+        ):
             return f"Regarding '{original_thought}': A comprehensive analysis reveals both objective realities and human emotional responses. {content1.lower()} while also recognizing that {content2.lower()} These complementary insights suggest a balanced approach that considers both factual evidence and human experience."
-        if direction1 == ThinkingDirection.CRITICAL and direction2 == ThinkingDirection.OPTIMISTIC:
+        if (
+            direction1 == ThinkingDirection.CRITICAL
+            and direction2 == ThinkingDirection.OPTIMISTIC
+        ):
             return f"Considering '{original_thought}': A thorough evaluation identifies both important concerns and significant opportunities. {content1.lower().strip('.')} while also recognizing promising aspects: {content2.lower()} A measured approach would address the concerns while pursuing the benefits."
         # Generic synthesis, completely hiding analysis structure
         return f"Analyzing '{original_thought}': A comprehensive evaluation reveals multiple important insights. {content1.lower().strip('.')} Additionally, {content2.lower()} Integrating these findings provides a well-rounded understanding that addresses the question from multiple angles."
@@ -464,7 +499,7 @@ Now apply {direction2.value} thinking approach to this.
             # Synthesis of three or more perspectives, completely unified
             return f"""Considering the question '{original_thought}', a comprehensive analysis reveals several crucial insights.
 
-{content_pieces[0].lower()}, which establishes the foundation for understanding. This leads to recognizing that {content_pieces[1].lower()}, adding essential depth to our comprehension. Furthermore, {content_pieces[2].lower() if len(content_pieces) > 2 else ''}
+{content_pieces[0].lower()}, which establishes the foundation for understanding. This leads to recognizing that {content_pieces[1].lower()}, adding essential depth to our comprehension. Furthermore, {content_pieces[2].lower() if len(content_pieces) > 2 else ""}
 
 Drawing these insights together, the answer emerges as a unified understanding that acknowledges the full complexity while providing clear guidance."""
         if len(content_pieces) == 2:
@@ -486,7 +521,9 @@ Drawing these insights together, the answer emerges as a unified understanding t
             return synthesis_result
 
         # Otherwise create synthesis
-        return self._synthesize_triple_thinking_results(results, thinking_sequence, original_thought)
+        return self._synthesize_triple_thinking_results(
+            results, thinking_sequence, original_thought
+        )
 
     def _get_thinking_contribution(self, thinking_direction: ThinkingDirection) -> str:
         """Get thinking direction contribution description."""
@@ -508,11 +545,13 @@ Drawing these insights together, the answer emerges as a unified understanding t
             "critical": "Risk assessment",
             "optimistic": "Opportunity analysis",
             "creative": "Creative exploration",
-            "synthesis": "Strategic synthesis"
+            "synthesis": "Strategic synthesis",
         }
         return name_mapping.get(direction_name.lower(), "Analysis")
 
-    def _get_thinking_style_instruction(self, thinking_direction: ThinkingDirection) -> str:
+    def _get_thinking_style_instruction(
+        self, thinking_direction: ThinkingDirection
+    ) -> str:
         """Get thinking style instruction, avoiding mention of direction concepts."""
         style_mapping = {
             ThinkingDirection.FACTUAL: "factual and objective",
@@ -520,7 +559,7 @@ Drawing these insights together, the answer emerges as a unified understanding t
             ThinkingDirection.CRITICAL: "critical and cautious",
             ThinkingDirection.OPTIMISTIC: "positive and optimistic",
             ThinkingDirection.CREATIVE: "creative and innovative",
-            ThinkingDirection.SYNTHESIS: "strategic and integrative"
+            ThinkingDirection.SYNTHESIS: "strategic and integrative",
         }
         return style_mapping.get(thinking_direction, "analytical")
 
@@ -539,7 +578,9 @@ async def process_with_multi_thinking(
     )
 
 
-def create_multi_thinking_step_output(result: MultiThinkingProcessingResult) -> StepOutput:
+def create_multi_thinking_step_output(
+    result: MultiThinkingProcessingResult,
+) -> StepOutput:
     """Convert multi-thinking processing result to Agno StepOutput."""
     return StepOutput(
         content=result.content,

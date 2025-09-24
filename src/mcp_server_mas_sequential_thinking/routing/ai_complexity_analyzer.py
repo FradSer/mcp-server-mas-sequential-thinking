@@ -136,8 +136,12 @@ class AIComplexityAnalyzer(ComplexityAnalyzer):
                     "philosophical_depth_boost", 0
                 ),
                 # AI Analysis Results (critical for routing)
-                primary_problem_type=complexity_data.get("primary_problem_type", "GENERAL"),
-                thinking_modes_needed=complexity_data.get("thinking_modes_needed", ["SYNTHESIS"]),
+                primary_problem_type=complexity_data.get(
+                    "primary_problem_type", "GENERAL"
+                ),
+                thinking_modes_needed=complexity_data.get(
+                    "thinking_modes_needed", ["SYNTHESIS"]
+                ),
                 analyzer_type="ai",
                 reasoning=complexity_data.get("reasoning", "AI analysis"),
             )
@@ -193,7 +197,9 @@ class AIComplexityAnalyzer(ComplexityAnalyzer):
             )
             raise ValueError("Could not parse AI complexity analysis response")
 
-    def _basic_fallback_analysis(self, thought_data: "ThoughtData") -> ComplexityMetrics:
+    def _basic_fallback_analysis(
+        self, thought_data: "ThoughtData"
+    ) -> ComplexityMetrics:
         """Fallback to basic analysis if AI fails."""
         logger.warning("🔄 Falling back to basic complexity analysis")
 
@@ -232,8 +238,12 @@ class AIComplexityAnalyzer(ComplexityAnalyzer):
             analysis_depth=philosophical_count,
             philosophical_depth_boost=min(philosophical_count * 5, 15),
             # Basic AI analysis results for fallback
-            primary_problem_type="PHILOSOPHICAL" if philosophical_count > 0 else "GENERAL",
-            thinking_modes_needed=["SYNTHESIS", "CREATIVE"] if philosophical_count > 2 else ["FACTUAL"],
+            primary_problem_type="PHILOSOPHICAL"
+            if philosophical_count > 0
+            else "GENERAL",
+            thinking_modes_needed=["SYNTHESIS", "CREATIVE"]
+            if philosophical_count > 2
+            else ["FACTUAL"],
             analyzer_type="basic_fallback",
             reasoning="Fallback analysis due to AI failure",
         )

@@ -76,7 +76,10 @@ class ThinkingSequenceLibrary:
         "evaluate_idea": ThinkingSequenceStrategy(
             name="想法评估序列",
             complexity=ProcessingDepth.DOUBLE,
-            thinking_sequence=[ThinkingDirection.OPTIMISTIC, ThinkingDirection.CRITICAL],
+            thinking_sequence=[
+                ThinkingDirection.OPTIMISTIC,
+                ThinkingDirection.CRITICAL,
+            ],
             estimated_time_seconds=240,
             description="先看优点，再看风险，平衡评估",
         ),
@@ -90,7 +93,11 @@ class ThinkingSequenceLibrary:
         "fact_and_judge": ThinkingSequenceStrategy(
             name="事实判断序列",
             complexity=ProcessingDepth.TRIPLE,
-            thinking_sequence=[ThinkingDirection.FACTUAL, ThinkingDirection.CRITICAL, ThinkingDirection.SYNTHESIS],
+            thinking_sequence=[
+                ThinkingDirection.FACTUAL,
+                ThinkingDirection.CRITICAL,
+                ThinkingDirection.SYNTHESIS,
+            ],
             estimated_time_seconds=360,
             description="收集事实，批判验证，综合整合结论",
         ),
@@ -98,21 +105,33 @@ class ThinkingSequenceLibrary:
         "problem_solving": ThinkingSequenceStrategy(
             name="问题解决序列",
             complexity=ProcessingDepth.TRIPLE,
-            thinking_sequence=[ThinkingDirection.FACTUAL, ThinkingDirection.CREATIVE, ThinkingDirection.CRITICAL],
+            thinking_sequence=[
+                ThinkingDirection.FACTUAL,
+                ThinkingDirection.CREATIVE,
+                ThinkingDirection.CRITICAL,
+            ],
             estimated_time_seconds=480,
             description="事实→创意→评估，标准问题解决",
         ),
         "decision_making": ThinkingSequenceStrategy(
             name="决策制定序列",
             complexity=ProcessingDepth.TRIPLE,
-            thinking_sequence=[ThinkingDirection.EMOTIONAL, ThinkingDirection.OPTIMISTIC, ThinkingDirection.CRITICAL],
+            thinking_sequence=[
+                ThinkingDirection.EMOTIONAL,
+                ThinkingDirection.OPTIMISTIC,
+                ThinkingDirection.CRITICAL,
+            ],
             estimated_time_seconds=390,
             description="直觉→价值→风险，快速决策",
         ),
         "philosophical_thinking": ThinkingSequenceStrategy(
             name="哲学思考序列",
             complexity=ProcessingDepth.TRIPLE,
-            thinking_sequence=[ThinkingDirection.FACTUAL, ThinkingDirection.CREATIVE, ThinkingDirection.SYNTHESIS],
+            thinking_sequence=[
+                ThinkingDirection.FACTUAL,
+                ThinkingDirection.CREATIVE,
+                ThinkingDirection.SYNTHESIS,
+            ],
             estimated_time_seconds=540,
             description="事实→创造→整合，深度哲学思考（解决综合+评审分离问题）",
         ),
@@ -153,7 +172,6 @@ class ThinkingSequenceLibrary:
     def get_strategy(cls, strategy_name: str) -> ThinkingSequenceStrategy | None:
         """获取指定策略."""
         return cls.STRATEGIES.get(strategy_name)
-
 
     @classmethod
     def get_strategies_by_complexity(
@@ -206,10 +224,16 @@ class MultiThinkingIntelligentRouter:
 
         # Extract AI analysis results directly from ComplexityMetrics
         problem_type = complexity_metrics.primary_problem_type
-        thinking_modes_needed = complexity_metrics.thinking_modes_needed or ["SYNTHESIS"]
+        thinking_modes_needed = complexity_metrics.thinking_modes_needed or [
+            "SYNTHESIS"
+        ]
 
-        logger.info("AI analysis - Complexity: %.1f, Type: %s, Modes: %s",
-                   complexity_score, problem_type, thinking_modes_needed)
+        logger.info(
+            "AI analysis - Complexity: %.1f, Type: %s, Modes: %s",
+            complexity_score,
+            problem_type,
+            thinking_modes_needed,
+        )
 
         # Step 2: Determine complexity level
         complexity_level = self._determine_complexity_level(complexity_score)
@@ -302,7 +326,10 @@ class MultiThinkingIntelligentRouter:
         if problem_type == "DECISION":
             return self.sequence_library.get_strategy("decision_making")
         if problem_type == "CREATIVE":
-            return self.sequence_library.get_strategy("creative_innovation") or strategies[0]
+            return (
+                self.sequence_library.get_strategy("creative_innovation")
+                or strategies[0]
+            )
         if problem_type == "EVALUATIVE":
             return self.sequence_library.get_strategy("evaluate_idea") or strategies[0]
 
@@ -375,7 +402,9 @@ class MultiThinkingIntelligentRouter:
 
 
 # 便利函数
-def create_multi_thinking_router(complexity_analyzer=None) -> MultiThinkingIntelligentRouter:
+def create_multi_thinking_router(
+    complexity_analyzer=None,
+) -> MultiThinkingIntelligentRouter:
     """创建多向思维智能路由器."""
     return MultiThinkingIntelligentRouter(complexity_analyzer)
 

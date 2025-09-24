@@ -85,18 +85,21 @@ class ContextBuilder:
 
         if thought_data.isRevision and thought_data.branchFromThought:
             logger.info(
-                "  Type: Revision of thought #%s",
+                "  Type: Revision of thought #%s", thought_data.branchFromThought
+            )
+            original = await self._find_thought_content_safe(
                 thought_data.branchFromThought
             )
-            original = await self._find_thought_content_safe(thought_data.branchFromThought)
             logger.info("  Original thought: %s", original)
         elif thought_data.branchFromThought and thought_data.branchId:
             logger.info(
                 "  Type: Branch '%s' from thought #%s",
                 thought_data.branchId,
+                thought_data.branchFromThought,
+            )
+            origin = await self._find_thought_content_safe(
                 thought_data.branchFromThought
             )
-            origin = await self._find_thought_content_safe(thought_data.branchFromThought)
             logger.info("  Branch origin: %s", origin)
         else:
             logger.info("  Type: Sequential thought #%s", thought_data.thoughtNumber)

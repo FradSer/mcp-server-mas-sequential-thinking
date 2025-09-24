@@ -125,7 +125,9 @@ class ResponseProcessor:
         logger.info(f"📝 {context.upper()} RESPONSE:")
         if processed.metadata:
             logger.info(f"  Type: {processed.metadata.get('response_type', 'unknown')}")
-            logger.info(f"  Length: {processed.metadata.get('content_length', 0)} chars")
+            logger.info(
+                f"  Length: {processed.metadata.get('content_length', 0)} chars"
+            )
         else:
             logger.info("  Type: unknown")
             logger.info(f"  Length: {len(processed.content)} chars")

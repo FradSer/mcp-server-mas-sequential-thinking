@@ -347,15 +347,29 @@ class SecurityConstants:
     # Patterns that indicate potential prompt injection attempts
     INJECTION_PATTERNS: ClassVar[list[str]] = [
         # System/role instruction injections
-        "system:", "user:", "assistant:", "role:",
+        "system:",
+        "user:",
+        "assistant:",
+        "role:",
         # Prompt escape attempts
-        "ignore previous", "ignore all", "disregard",
+        "ignore previous",
+        "ignore all",
+        "disregard",
         # Code execution attempts
-        "```python", "```bash", "exec(", "eval(", "__import__",
+        "```python",
+        "```bash",
+        "exec(",
+        "eval(",
+        "__import__",
         # Instruction manipulation
-        "new instructions", "override", "instead of",
+        "new instructions",
+        "override",
+        "instead of",
         # Data extraction attempts
-        "print(", "console.log", "alert(", "document.cookie",
+        "print(",
+        "console.log",
+        "alert(",
+        "document.cookie",
     ]
 
 
