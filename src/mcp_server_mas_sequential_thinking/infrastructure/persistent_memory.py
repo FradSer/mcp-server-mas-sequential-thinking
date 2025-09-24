@@ -105,16 +105,13 @@ class ThoughtRecord(Base):
         """Convert database record to ThoughtData model."""
         return ThoughtData(
             thought=str(self.thought),
-            thought_number=int(self.thoughtNumber),
-            total_thoughts=int(self.totalThoughts),
-            next_needed=bool(self.nextThoughtNeeded),
-            branch_from=int(self.branchFromThought)
-            if self.branchFromThought is not None
-            else None,
-            branch_id=str(self.branchId) if self.branchId is not None else None,
-            is_revision=False,
-            branchFromThought=None,
-            needs_more=True,
+            thoughtNumber=int(self.thought_number),
+            totalThoughts=int(self.total_thoughts),
+            nextThoughtNeeded=bool(self.next_needed),
+            isRevision=False,  # Assuming default value is intentional
+            branchFromThought=self.branch_from,
+            branchId=self.branch_id,
+            needsMoreThoughts=True,  # Assuming default value is intentional
         )
 
 

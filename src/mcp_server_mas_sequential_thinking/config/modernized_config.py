@@ -344,7 +344,10 @@ class ConfigurationManager:
         exa_key = os.environ.get("EXA_API_KEY")
         if not exa_key:
             # Don't fail startup - just log warning that research will be disabled
-            pass
+            import logging
+            logging.getLogger(__name__).warning(
+                "EXA_API_KEY not found. Research tools will be disabled."
+            )
 
         return missing
 
