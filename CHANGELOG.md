@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.0] - 2025-09-24
+
+### Added
+- Parallel execution for thinking agents to improve processing performance
+- Comprehensive Mermaid diagrams in documentation showing parallel processing flows
+- Detailed agent descriptions in README files with multi-dimensional thinking methodology
+- Comparison table with original TypeScript version highlighting architectural differences
+
+### Changed
+- **PERFORMANCE**: Converted non-synthesis agents to run in parallel using asyncio.gather for significant speed improvements
+- **GROQ PROVIDER**: Updated Groq provider to use OpenAI GPT-OSS models (openai/gpt-oss-120b for enhanced, openai/gpt-oss-20b for standard)
+- Complete restructure of README files with cleaner formatting and better organization
+- Improved documentation clarity by removing all emoji characters from codebase and documentation
+
+### Fixed
+- Resolved MetricsLogger import error that was preventing server startup
+- Fixed missing MetricsLogger class implementation in logging configuration
+- Corrected Mermaid diagram syntax errors in README files
+- Removed references to non-existent PerformanceTracker class
+
 ## [0.5.0] - 2025-09-17
 
 ### Added
@@ -121,7 +141,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - MCP server implementation with FastMCP
 - Distributed intelligence across specialized agents
 
-[Unreleased]: https://github.com/FradSer/mcp-server-mas-sequential-thinking/compare/v0.5.0...HEAD
+[Unreleased]: https://github.com/FradSer/mcp-server-mas-sequential-thinking/compare/v0.7.0...HEAD
+[0.7.0]: https://github.com/FradSer/mcp-server-mas-sequential-thinking/compare/v0.5.0...v0.7.0
 [0.5.0]: https://github.com/FradSer/mcp-server-mas-sequential-thinking/compare/v0.4.1...v0.5.0
 [0.4.1]: https://github.com/FradSer/mcp-server-mas-sequential-thinking/compare/v0.4.0...v0.4.1
 [0.4.0]: https://github.com/FradSer/mcp-server-mas-sequential-thinking/compare/v0.3.0...v0.4.0

@@ -8,19 +8,206 @@ This project implements an advanced sequential thinking process using a **Multi-
 
 [![MseeP.ai Security Assessment Badge](https://mseep.net/pr/fradser-mcp-server-mas-sequential-thinking-badge.png)](https://mseep.ai/app/fradser-mcp-server-mas-sequential-thinking)
 
-## Overview
+## What is This?
 
-This server provides a sophisticated `sequentialthinking` tool designed for complex problem-solving. Unlike [its predecessor](https://github.com/modelcontextprotocol/servers/tree/main/src/sequentialthinking), this version utilizes a true Multi-Agent System (MAS) architecture where:
+This is an **MCP server** - not a standalone application. It runs as a background service that extends your LLM client (like Claude Desktop) with sophisticated sequential thinking capabilities. The server provides a `sequentialthinking` tool that processes thoughts through multiple specialized AI agents, each examining the problem from a different cognitive angle.
 
-- **A Coordinating Agent** (the `Team` object in `coordinate` mode) manages the workflow.
-- **Specialized Agents** (Planner, Researcher, Analyzer, Critic, Synthesizer) handle specific sub-tasks based on their defined roles and expertise.
-- Incoming thoughts are actively **processed, analyzed, and synthesized** by the agent team, not just logged.
-- The system supports complex thought patterns, including **revisions** of previous steps and **branching** to explore alternative paths.
-- Integration with external tools like **Exa** (via the Researcher agent) allows for dynamic information gathering.
-- Robust **Pydantic** validation ensures data integrity for thought steps.
-- Detailed **logging** tracks the process, including agent interactions (handled by the coordinator).
+## Core Architecture: Multi-Dimensional Thinking Agents
 
-The goal is to achieve a higher quality of analysis and a more nuanced thinking process than possible with a single agent or simple state tracking by harnessing the power of specialized roles working collaboratively.
+The system employs **6 specialized thinking agents**, each focused on a distinct cognitive perspective:
+
+### 1. **Factual Agent**
+- **Focus**: Objective facts and verified data
+- **Approach**: Analytical, evidence-based reasoning
+- **Capabilities**:
+  - Web research for current facts (via ExaTools)
+  - Data verification and source citation
+  - Information gap identification
+- **Time allocation**: 120 seconds for thorough analysis
+
+### 2. **Emotional Agent**
+- **Focus**: Intuition and emotional intelligence
+- **Approach**: Gut reactions and feelings
+- **Capabilities**:
+  - Quick intuitive responses (30-second snapshots)
+  - Visceral reactions without justification
+  - Emotional pattern recognition
+- **Time allocation**: 30 seconds (quick reaction mode)
+
+### 3. **Critical Agent**
+- **Focus**: Risk assessment and problem identification
+- **Approach**: Logical scrutiny and devil's advocate
+- **Capabilities**:
+  - Research counterexamples and failures (via ExaTools)
+  - Identify logical flaws and risks
+  - Challenge assumptions constructively
+- **Time allocation**: 120 seconds for deep analysis
+
+### 4. **Optimistic Agent**
+- **Focus**: Benefits, opportunities, and value
+- **Approach**: Positive exploration with realistic grounding
+- **Capabilities**:
+  - Research success stories (via ExaTools)
+  - Identify feasible opportunities
+  - Explore best-case scenarios logically
+- **Time allocation**: 120 seconds for balanced optimism
+
+### 5. **Creative Agent**
+- **Focus**: Innovation and alternative solutions
+- **Approach**: Lateral thinking and idea generation
+- **Capabilities**:
+  - Cross-industry innovation research (via ExaTools)
+  - Divergent thinking techniques
+  - Multiple solution generation
+- **Time allocation**: 240 seconds (creativity needs time)
+
+### 6. **Synthesis Agent**
+- **Focus**: Integration and metacognitive orchestration
+- **Approach**: Holistic synthesis and final answer generation
+- **Capabilities**:
+  - Integrate all perspectives into coherent response
+  - Answer the original question directly
+  - Provide actionable, user-friendly insights
+- **Time allocation**: 60 seconds for synthesis
+- **Note**: Uses enhanced model, does NOT include ExaTools (focuses on integration)
+
+## AI-Powered Intelligent Routing
+
+The system uses **AI-driven complexity analysis** to determine the optimal thinking sequence:
+
+### Processing Strategies:
+1. **Single Agent** (Simple questions)
+   - Direct factual or emotional response
+   - Fastest processing for straightforward queries
+
+2. **Double Agent** (Moderate complexity)
+   - Two-step sequences (e.g., Optimistic → Critical)
+   - Balanced perspectives for evaluation tasks
+
+3. **Triple Agent** (Core thinking)
+   - Factual → Creative → Synthesis
+   - Philosophical and analytical problems
+
+4. **Full Sequence** (Complex problems)
+   - All 6 agents orchestrated together
+   - Comprehensive multi-perspective analysis
+
+The AI analyzer evaluates:
+- Problem complexity and semantic depth
+- Primary problem type (factual, emotional, creative, philosophical, etc.)
+- Required thinking modes for optimal solution
+- Appropriate model selection (Enhanced vs Standard)
+
+### AI Routing Flow Diagram
+
+```mermaid
+flowchart TD
+    A[Input Thought] --> B[AI Complexity Analyzer]
+
+    B --> C{Problem Analysis}
+    C --> C1[Complexity Score<br/>0-100]
+    C --> C2[Problem Type<br/>FACTUAL/EMOTIONAL/<br/>CREATIVE/PHILOSOPHICAL]
+    C --> C3[Required Thinking Modes]
+
+    C1 --> D{Routing Decision}
+    C2 --> D
+    C3 --> D
+
+    D -->|Score: 0-25<br/>Simple| E1[Single Agent Strategy]
+    D -->|Score: 26-50<br/>Moderate| E2[Double Agent Strategy]
+    D -->|Score: 51-75<br/>Complex| E3[Triple Agent Strategy]
+    D -->|Score: 76-100<br/>Highly Complex| E4[Full Sequence Strategy]
+
+    %% Single Agent Flow
+    E1 --> F1[Factual Agent<br/>120s + ExaTools]
+    F1 --> G1[Direct Response]
+
+    %% Double Agent Flow (Full Parallel)
+    E2 --> DA1[Both Agents Run in Parallel]
+    DA1 --> DA2["Agent 1 e.g. Optimistic<br/>120s + ExaTools"]
+    DA1 --> DA3["Agent 2 e.g. Critical<br/>120s + ExaTools"]
+    DA2 --> G2[Programmatic Synthesis<br/>Combines both parallel results]
+    DA3 --> G2
+
+    %% Triple Agent Flow (Full Parallel)
+    E3 --> TA1[All 3 Agents Run in Parallel]
+    TA1 --> TA2[Factual Agent<br/>120s + ExaTools]
+    TA1 --> TA3[Creative Agent<br/>240s + ExaTools]
+    TA1 --> TA4[Critical Agent<br/>120s + ExaTools]
+    TA2 --> G3[Programmatic Synthesis<br/>Integrates all 3 results]
+    TA3 --> G3
+    TA4 --> G3
+
+    %% Full Sequence Flow (3-Step Process)
+    E4 --> FS1[Step 1: Initial Synthesis<br/>60s Enhanced Model<br/>Initial orchestration]
+    FS1 --> FS2[Step 2: Parallel Execution<br/>5 Agents Run Simultaneously]
+
+    FS2 --> FS2A[Factual Agent<br/>120s + ExaTools]
+    FS2 --> FS2B[Emotional Agent<br/>30s Quick Response]
+    FS2 --> FS2C[Optimistic Agent<br/>120s + ExaTools]
+    FS2 --> FS2D[Critical Agent<br/>120s + ExaTools]
+    FS2 --> FS2E[Creative Agent<br/>240s + ExaTools]
+
+    FS2A --> FS3[Step 3: Final Synthesis<br/>60s Enhanced Model<br/>Integrates all parallel results]
+    FS2B --> FS3
+    FS2C --> FS3
+    FS2D --> FS3
+    FS2E --> FS3
+
+    FS3 --> G4[Final Synthesis Output<br/>Comprehensive integrated result]
+
+    G1 --> H[Next Iteration or<br/>Final Answer]
+    G2 --> H
+    G3 --> H
+    G4 --> H
+
+    style A fill:#e1f5fe
+    style B fill:#f3e5f5
+    style C fill:#fff3e0
+    style D fill:#e8f5e8
+    style TA1 fill:#ffecb3
+    style FS2 fill:#ffecb3
+    style G1 fill:#fce4ec
+    style G2 fill:#fce4ec
+    style G3 fill:#fce4ec
+    style G4 fill:#fce4ec
+    style H fill:#f1f8e9
+```
+
+**Key Insights:**
+- **Parallel Execution**: Non-synthesis agents run simultaneously for maximum efficiency
+- **Synthesis Integration**: Synthesis agents process parallel results sequentially
+- **Two Processing Types**:
+  - **Synthesis Agent**: Real AI agent using Enhanced Model for integration
+  - **Programmatic Synthesis**: Code-based combination when no Synthesis Agent
+- **Performance**: Parallel processing optimizes both speed and quality
+
+## Research Capabilities (ExaTools Integration)
+
+**4 out of 6 agents** are equipped with web research capabilities via ExaTools:
+
+- **Factual Agent**: Search for current facts, statistics, verified data
+- **Critical Agent**: Find counterexamples, failed cases, regulatory issues
+- **Optimistic Agent**: Research success stories, positive case studies
+- **Creative Agent**: Discover innovations across different industries
+- **Emotional & Synthesis Agents**: No ExaTools (focused on internal processing)
+
+Research is **optional** - requires `EXA_API_KEY` environment variable. The system works perfectly without it, using pure reasoning capabilities.
+
+## Model Intelligence
+
+### Dual Model Strategy:
+- **Enhanced Model**: Used for Synthesis agent (complex integration tasks)
+- **Standard Model**: Used for individual thinking agents
+- **AI Selection**: System automatically chooses the right model based on task complexity
+
+### Supported Providers:
+- **DeepSeek** (default) - High performance, cost-effective
+- **Groq** - Ultra-fast inference
+- **OpenRouter** - Access to multiple models
+- **GitHub Models** - OpenAI models via GitHub API
+- **Anthropic** - Claude models with prompt caching
+- **Ollama** - Local model execution
 
 ## Key Differences from Original Version (TypeScript)
 
@@ -40,366 +227,280 @@ This Python/Agno implementation marks a fundamental shift from the original Type
 
 In essence, the system evolved from a passive thought *recorder* to an active thought *processor* powered by a collaborative team of AI agents.
 
-## How it Works (Coordinate Mode)
+## How it Works (Multi-Dimensional Processing)
 
-1.  **Initiation:** An external LLM uses the `sequential-thinking-starter` prompt to define the problem and initiate the process.
-2.  **Tool Call:** The LLM calls the `sequentialthinking` tool with the first (or subsequent) thought, structured according to the `ThoughtData` Pydantic model.
-3.  **Validation & Logging:** The tool receives the call, validates the input using Pydantic, logs the incoming thought, and updates the history/branch state via `AppContext`.
-4.  **Coordinator Invocation:** The core thought content (along with context about revisions/branches) is passed to the `SequentialThinkingTeam`'s `arun` method.
-5.  **Coordinator Analysis & Delegation:** The `Team` (acting as Coordinator) analyzes the input thought, breaks it down into sub-tasks, and delegates these sub-tasks to the *most relevant* specialist agents (e.g., Analyzer for analysis tasks, Researcher for information needs).
-6.  **Specialist Execution:** Delegated agents execute their specific sub-tasks using their instructions, models, and tools (like `ThinkingTools` or `ExaTools`).
-7.  **Response Collection:** Specialists return their results to the Coordinator.
-8.  **Synthesis & Guidance:** The Coordinator synthesizes the specialists' responses into a single, cohesive output. This output may include recommendations for revision or branching based on the specialists' findings (especially from the Critic and Analyzer). It also provides guidance for the LLM on formulating the next thought.
-9.  **Return Value:** The tool returns a JSON string containing the Coordinator's synthesized response, status, and updated context (branches, history length).
-10. **Iteration:** The calling LLM uses the Coordinator's response and guidance to formulate the next `sequentialthinking` tool call, potentially triggering revisions or branches as suggested.
+1.  **Initiation:** An external LLM uses the `sequentialthinking` tool to define the problem and initiate the process.
+2.  **Tool Call:** The LLM calls the `sequentialthinking` tool with the current thought, structured according to the `ThoughtData` model.
+3.  **AI Complexity Analysis:** The system uses AI-powered analysis to determine the optimal thinking sequence based on problem complexity and type.
+4.  **Agent Routing:** Based on the analysis, the system routes the thought to the appropriate thinking agents (single, double, triple, or full sequence).
+5.  **Parallel Processing:** Multiple thinking agents process the thought simultaneously from their specialized perspectives:
+   - Factual agents gather objective data (with optional web research)
+   - Critical agents identify risks and problems
+   - Optimistic agents explore opportunities and benefits
+   - Creative agents generate innovative solutions
+   - Emotional agents provide intuitive insights
+6.  **Research Integration:** Agents equipped with ExaTools conduct targeted web research to enhance their analysis.
+7.  **Synthesis & Integration:** The Synthesis agent integrates all perspectives into a coherent, actionable response using enhanced models.
+8.  **Response Generation:** The system returns a comprehensive analysis with guidance for next steps.
+9.  **Iteration:** The calling LLM uses the synthesized response to formulate the next thinking step or conclude the process.
 
 ## Token Consumption Warning
 
-⚠️ **High Token Usage:** Due to the Multi-Agent System architecture, this tool consumes significantly **more tokens** than single-agent alternatives or the previous TypeScript version. Each `sequentialthinking` call invokes:
+**High Token Usage:** Due to the Multi-Agent System architecture, this tool consumes significantly **more tokens** than single-agent alternatives or the previous TypeScript version. Each `sequentialthinking` call invokes multiple specialized agents simultaneously, leading to substantially higher token usage (potentially 5-10x more than simple approaches).
 
-- The Coordinator agent (the `Team` itself).
-- Multiple specialist agents (potentially Planner, Researcher, Analyzer, Critic, Synthesizer, depending on the Coordinator's delegation).
+This parallel processing leads to substantially higher token usage (potentially 5-10x more) compared to simpler sequential approaches, but provides correspondingly deeper and more comprehensive analysis.
 
-This parallel processing leads to substantially higher token usage (potentially 3-6x or more per thought step) compared to single-agent or state-tracking approaches. Budget and plan accordingly. This tool prioritizes **analysis depth and quality** over token efficiency.
+## MCP Tool: `sequentialthinking`
 
-## Prerequisites
+The server exposes a single MCP tool that processes sequential thoughts:
+
+### Parameters:
+```typescript
+{
+  thought: string,              // Current thinking step content
+  thoughtNumber: number,         // Sequence number (≥1)
+  totalThoughts: number,         // Estimated total steps
+  nextThoughtNeeded: boolean,    // Is another step required?
+  isRevision: boolean,           // Revising previous thought?
+  branchFromThought?: number,    // Branch point (for exploration)
+  branchId?: string,             // Branch identifier
+  needsMoreThoughts: boolean     // Need to extend sequence?
+}
+```
+
+### Response:
+Returns synthesized analysis from the multi-agent system with:
+- Processed thought analysis
+- Guidance for next steps
+- Branch and revision tracking
+- Status and metadata
+
+## Installation
+
+### Prerequisites
 
 - Python 3.10+
-- Access to a compatible LLM API (configured for `agno`). The system currently supports:
-    - **Groq:** Requires `GROQ_API_KEY`.
-    - **DeepSeek:** Requires `DEEPSEEK_API_KEY`.
-    - **OpenRouter:** Requires `OPENROUTER_API_KEY`.
-    - **GitHub Models:** Requires `GITHUB_TOKEN`. Access to OpenAI GPT models through GitHub's API.
-    - **Kimi K2:** Uses OpenRouter with `OPENROUTER_API_KEY`. Configure using `LLM_PROVIDER=kimi`.
-    - Configure the desired provider using the `LLM_PROVIDER` environment variable (defaults to `deepseek`).
-- Exa API Key (required only if using the Researcher agent's capabilities)
-    - Set via the `EXA_API_KEY` environment variable.
-- `uv` package manager (recommended) or `pip`.
+- LLM API access (choose one):
+    - **DeepSeek**: `DEEPSEEK_API_KEY` (default, recommended)
+    - **Groq**: `GROQ_API_KEY`
+    - **OpenRouter**: `OPENROUTER_API_KEY`
+    - **GitHub Models**: `GITHUB_TOKEN`
+    - **Anthropic**: `ANTHROPIC_API_KEY`
+    - **Ollama**: Local installation (no API key)
+- **Optional**: `EXA_API_KEY` for web research capabilities
+- `uv` package manager (recommended) or `pip`
 
-## MCP Server Configuration (Client-Side)
+### Quick Start
 
-This server runs as a standard executable script that communicates via stdio, as expected by MCP. The exact configuration method depends on your specific MCP client implementation. Consult your client's documentation for details on integrating external tool servers.
-
-The `env` section within your MCP client configuration should include the API key for your chosen `LLM_PROVIDER`.
-
-```json
-{
-  "mcpServers": {
-      "mas-sequential-thinking": {
-         "command": "uvx", // Or "python", "path/to/venv/bin/python" etc.
-         "args": [
-            "mcp-server-mas-sequential-thinking" // Or the path to your main script, e.g., "main.py"
-         ],
-         "env": {
-            "LLM_PROVIDER": "deepseek", // "ollama", "groq", "openrouter", "github", "kimi"
-            // "GROQ_API_KEY": "your_groq_api_key", // Only if LLM_PROVIDER="groq"
-            "DEEPSEEK_API_KEY": "your_deepseek_api_key", // Default provider
-            // "OPENROUTER_API_KEY": "your_openrouter_api_key", // Only if LLM_PROVIDER="openrouter" or "kimi"
-            // "GITHUB_TOKEN": "your_github_token", // Only if LLM_PROVIDER="github"
-            "LLM_BASE_URL": "your_base_url_if_needed", // Optional: If using a custom endpoint for DeepSeek
-            "EXA_API_KEY": "your_exa_api_key" // Only if using Exa
-         }
-      }
-   }
-}
-```
-
-### GitHub Models Configuration Example
-
-For using GitHub Models specifically:
-
-```json
-{
-  "mcpServers": {
-      "mas-sequential-thinking": {
-         "command": "uvx",
-         "args": [
-            "mcp-server-mas-sequential-thinking"
-         ],
-         "env": {
-            "LLM_PROVIDER": "github",
-            "GITHUB_TOKEN": "ghp_your_github_personal_access_token",
-            "GITHUB_TEAM_MODEL_ID": "openai/gpt-5", // Optional: Team coordinator model (default: openai/gpt-5)
-            "GITHUB_AGENT_MODEL_ID": "openai/gpt-5-min", // Optional: Specialist agents model (default: openai/gpt-5-min)
-            "EXA_API_KEY": "your_exa_api_key" // Only if using Exa for research tasks
-         }
-      }
-   }
-}
-```
-
-## Installation & Setup
-
-### Installing via Smithery
-
-To install Sequential Thinking Multi-Agent System for Claude Desktop automatically via [Smithery](https://smithery.ai/server/@FradSer/mcp-server-mas-sequential-thinking):
+#### 1. Install via Smithery (Recommended)
 
 ```bash
 npx -y @smithery/cli install @FradSer/mcp-server-mas-sequential-thinking --client claude
 ```
 
-### Manual Installation
-1.  **Clone the repository:**
-    ```bash
-    git clone git@github.com:FradSer/mcp-server-mas-sequential-thinking.git
-    cd mcp-server-mas-sequential-thinking
-    ```
+#### 2. Manual Installation
 
-2.  **Set Environment Variables:**
-    Create a `.env` file in the project root directory or export the variables directly into your environment:
-    ```dotenv
-    # --- LLM Configuration ---
-    # Select the LLM provider: "deepseek" (default), "groq", "openrouter", "github", "ollama", or "kimi"
-    LLM_PROVIDER="deepseek"
+```bash
+# Clone the repository
+git clone https://github.com/FradSer/mcp-server-mas-sequential-thinking.git
+cd mcp-server-mas-sequential-thinking
 
-    # Provide the API key for the chosen provider:
-    # GROQ_API_KEY="your_groq_api_key"
-    DEEPSEEK_API_KEY="your_deepseek_api_key"
-    # OPENROUTER_API_KEY="your_openrouter_api_key" # Required for both "openrouter" and "kimi" providers
-    # GITHUB_TOKEN="ghp_your_github_personal_access_token" # Required for LLM_PROVIDER="github"
-    # Note: Ollama requires no API key but needs local installation
-    # Note: Kimi K2 uses OpenRouter API, so OPENROUTER_API_KEY is required for LLM_PROVIDER="kimi"
-    # Note: GitHub Models requires a GitHub Personal Access Token with appropriate scopes
+# Install with uv (recommended)
+uv pip install .
 
-    # Optional: Base URL override (e.g., for custom endpoints)
-    # LLM_BASE_URL="your_base_url_if_needed"
-
-    # Optional: Specify different models for Team Coordinator and Specialist Agents
-    # Defaults are set within the code based on the provider if these are not set.
-    # Example for Groq:
-    # GROQ_TEAM_MODEL_ID="llama3-70b-8192"
-    # GROQ_AGENT_MODEL_ID="llama3-8b-8192"
-    # Example for DeepSeek:
-    # DEEPSEEK_TEAM_MODEL_ID="deepseek-chat" # Note: `deepseek-reasoner` is not recommended as it doesn't support function calling
-    # DEEPSEEK_AGENT_MODEL_ID="deepseek-chat" # Recommended for specialists
-    # Example for GitHub Models:
-    # GITHUB_TEAM_MODEL_ID="openai/gpt-5" # Team coordinator (default: openai/gpt-5)
-    # GITHUB_AGENT_MODEL_ID="openai/gpt-5-min" # Specialist agents (default: openai/gpt-5-min)
-    # Example for OpenRouter:
-    # OPENROUTER_TEAM_MODEL_ID="deepseek/deepseek-r1" # Example, adjust as needed
-    # OPENROUTER_AGENT_MODEL_ID="deepseek/deepseek-chat" # Example, adjust as needed
-    # Example for Kimi K2:
-    # KIMI_TEAM_MODEL_ID="moonshotai/kimi-k2" # Uses Moonshot's Kimi K2 via OpenRouter
-    # KIMI_AGENT_MODEL_ID="moonshotai/kimi-k2" # Same model for both team and agents, optimized for tool use
-
-    # --- External Tools ---
-    # Required ONLY if the Researcher agent is used and needs Exa
-    EXA_API_KEY="your_exa_api_key"
-    ```
-
-    **Note on Model Selection:**
-    - The `TEAM_MODEL_ID` is used by the Coordinator (`Team` object). This role benefits from strong reasoning, synthesis, and delegation capabilities. Consider using a more powerful model (e.g., `deepseek-chat`, `claude-3-opus`, `gpt-4-turbo`) here, potentially balancing capability with cost/speed.
-    - The `AGENT_MODEL_ID` is used by the specialist agents (Planner, Researcher, etc.). These handle focused sub-tasks. A faster or more cost-effective model (e.g., `deepseek-chat`, `claude-3-sonnet`, `llama3-8b`) might be suitable, depending on task complexity and budget/performance needs.
-    - Defaults are provided in the code (e.g., in `main.py`) if these environment variables are not set. Experimentation is encouraged to find the optimal balance for your use case.
-
-    **GitHub Models Setup and Available Models:**
-    
-    GitHub Models provides access to OpenAI's GPT models through GitHub's API infrastructure. To use GitHub Models:
-    
-    1. **Get a GitHub Personal Access Token:**
-       - Go to GitHub Settings > Developer settings > Personal access tokens > Tokens (classic)
-       - Generate a new token with appropriate scopes (typically `repo` and `read:user`)
-       - The token format will be `ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx`
-    
-    2. **Available Models and Use Cases:**
-       - **`openai/gpt-5`** (Default for Team Coordinator):
-         - Latest GPT-5 model
-         - Best for complex reasoning, coordination, and synthesis tasks
-         - Higher token cost but superior performance for the Team Coordinator role
-         - Excellent function calling capabilities
-       
-       - **`openai/gpt-5-min`** (Default for Specialist Agents):
-         - Lightweight version of GPT-5
-         - Optimized for speed and cost-efficiency
-         - Ideal for focused sub-tasks handled by specialist agents
-         - Good balance of performance and cost for high-volume operations
-       
-       - **`openai/gpt-4o`**:
-         - Previous generation GPT-4 Omni model
-         - Strong reasoning capabilities but slower than gpt-5
-         - Can be used for either role depending on requirements
-       
-       - **`openai/gpt-3.5-turbo`**:
-         - Most cost-effective option
-         - Suitable for simpler tasks or budget-conscious deployments
-         - May have limitations with complex reasoning tasks
-    
-    3. **Recommended Configurations:**
-       - **High Performance:** `GITHUB_TEAM_MODEL_ID="openai/gpt-5"`, `GITHUB_AGENT_MODEL_ID="openai/gpt-5-min"`
-       - **Balanced:** `GITHUB_TEAM_MODEL_ID="openai/gpt-5"`, `GITHUB_AGENT_MODEL_ID="openai/gpt-3.5-turbo"`
-       - **Budget-Conscious:** `GITHUB_TEAM_MODEL_ID="openai/gpt-5-min"`, `GITHUB_AGENT_MODEL_ID="openai/gpt-3.5-turbo"`
-    
-    4. **Token Usage Considerations with GitHub Models:**
-       - GitHub Models usage counts toward GitHub's rate limits and pricing
-       - Monitor your usage through GitHub's billing dashboard
-       - Consider the Multi-Agent System's high token consumption when budgeting
-       - The default configuration (openai/gpt-5 + openai/gpt-5-min) provides the best balance of performance and cost
-
-3.  **Install Dependencies:**
-    It's highly recommended to use a virtual environment.
-
-    - **Using `uv` (Recommended):**
-        ```bash
-        # Install uv if you don't have it:
-        # curl -LsSf https://astral.sh/uv/install.sh | sh
-        # source $HOME/.cargo/env # Or restart your shell
-
-        # Create and activate a virtual environment (optional but recommended)
-        python -m venv .venv
-        source .venv/bin/activate # On Windows use `.venv\\Scripts\\activate`
-
-        # Install dependencies
-        uv pip install -r requirements.txt
-        # Or if a pyproject.toml exists with dependencies defined:
-        # uv pip install .
-        ```
-    - **Using `pip`:**
-        ```bash
-        # Create and activate a virtual environment (optional but recommended)
-        python -m venv .venv
-        source .venv/bin/activate # On Windows use `.venv\\Scripts\\activate`
-
-        # Install dependencies
-        pip install -r requirements.txt
-        # Or if a pyproject.toml exists with dependencies defined:
-        # pip install .
-        ```
-
-## Usage
-
-Ensure your environment variables are set and the virtual environment (if used) is active.
-
-Run the server. Choose one of the following methods:
-
-1.  **Using `uv run` (Recommended):**
-    ```bash
-    uv --directory /path/to/mcp-server-mas-sequential-thinking run mcp-server-mas-sequential-thinking
-    ```
-2.  **Directly using Python:**
-
-    ```bash
-    python main.py
-    ```
-
-The server will start and listen for requests via stdio, making the `sequentialthinking` tool available to compatible MCP clients configured to use it.
-
-### `sequentialthinking` Tool Parameters
-
-The tool expects arguments matching the `ThoughtData` Pydantic model:
-
-```python
-# Simplified representation from src/models.py
-class ThoughtData(BaseModel):
-    thought: str                 # Content of the current thought/step
-    thoughtNumber: int           # Sequence number (>=1)
-    totalThoughts: int           # Estimated total steps (>=1, suggest >=5)
-    nextThoughtNeeded: bool      # Is another step required after this?
-    isRevision: bool = False     # Is this revising a previous thought?
-    revisesThought: Optional[int] = None # If isRevision, which thought number?
-    branchFromThought: Optional[int] = None # If branching, from which thought?
-    branchId: Optional[str] = None # Unique ID for the new branch being created
-    needsMoreThoughts: bool = False # Signal if estimate is too low before last step
+# Or with pip
+pip install .
 ```
 
-### Interacting with the Tool (Conceptual Example)
+### Configuration
 
-An LLM would interact with this tool iteratively:
+#### For MCP Clients (Claude Desktop, etc.)
 
-1.  **LLM:** Uses a starter prompt (like `sequential-thinking-starter`) with the problem definition.
-2.  **LLM:** Calls `sequentialthinking` tool with `thoughtNumber: 1`, the initial `thought` (e.g., "Plan the analysis..."), an estimated `totalThoughts`, and `nextThoughtNeeded: True`.
-3.  **Server:** MAS processes the thought. The Coordinator synthesizes responses from specialists and provides guidance (e.g., "Analysis plan complete. Suggest researching X next. No revisions recommended yet.").
-4.  **LLM:** Receives the JSON response containing `coordinatorResponse`.
-5.  **LLM:** Formulates the next thought based on the `coordinatorResponse` (e.g., "Research X using available tools...").
-6.  **LLM:** Calls `sequentialthinking` tool with `thoughtNumber: 2`, the new `thought`, potentially updated `totalThoughts`, `nextThoughtNeeded: True`.
-7.  **Server:** MAS processes. The Coordinator synthesizes (e.g., "Research complete. Findings suggest a flaw in thought #1's assumption. RECOMMENDATION: Revise thought #1...").
-8.  **LLM:** Receives the response, notes the recommendation.
-9.  **LLM:** Formulates a revision thought.
-10. **LLM:** Calls `sequentialthinking` tool with `thoughtNumber: 3`, the revision `thought`, `isRevision: True`, `revisesThought: 1`, `nextThoughtNeeded: True`.
-11. **... and so on, potentially branching or extending the process as needed.**
-
-### Tool Response Format
-
-The tool returns a JSON string containing:
+Add to your MCP client configuration:
 
 ```json
 {
-  "processedThoughtNumber": int,          // The thought number that was just processed
-  "estimatedTotalThoughts": int,          // The current estimate of total thoughts
-  "nextThoughtNeeded": bool,              // Whether the process indicates more steps are needed
-  "coordinatorResponse": "...",           // Synthesized output from the agent team, including analysis, findings, and guidance for the next step.
-  "branches": ["main", "branch-id-1"],  // List of active branch IDs
-  "thoughtHistoryLength": int,          // Total number of thoughts processed so far (across all branches)
-  "branchDetails": {
-    "currentBranchId": "main",            // The ID of the branch the processed thought belongs to
-    "branchOriginThought": null | int,    // The thought number where the current branch diverged (null for 'main')
-    "allBranches": {                      // Count of thoughts in each active branch
-      "main": 5,
-      "branch-id-1": 2
-     }
-  },
-  "isRevision": bool,                     // Was the processed thought a revision?
-  "revisesThought": null | int,           // Which thought number was revised (if isRevision is true)
-  "isBranch": bool,                       // Did this thought start a new branch?
-  "status": "success | validation_error | failed", // Outcome status
-  "error": null | "Error message..."     // Error details if status is not 'success'
+  "mcpServers": {
+    "sequential-thinking": {
+      "command": "mcp-server-mas-sequential-thinking",
+      "env": {
+        "LLM_PROVIDER": "deepseek",
+        "DEEPSEEK_API_KEY": "your_api_key",
+        "EXA_API_KEY": "your_exa_key_optional"
+      }
+    }
+  }
 }
 ```
 
-## Logging
+#### Environment Variables
 
-- Logs are written to `~/.sequential_thinking/logs/sequential_thinking.log` by default. (Configuration might be adjustable in the logging setup code).
-- Uses Python's standard `logging` module.
-- Includes a rotating file handler (e.g., 10MB limit, 5 backups) and a console handler (typically INFO level).
-- Logs include timestamps, levels, logger names, and messages, including structured representations of thoughts being processed.
+Create a `.env` file or set these variables:
+
+```bash
+# LLM Provider (required)
+LLM_PROVIDER="deepseek"  # deepseek, groq, openrouter, github, anthropic, ollama
+DEEPSEEK_API_KEY="sk-..."
+
+# Optional: Enhanced/Standard Model Selection
+# DEEPSEEK_ENHANCED_MODEL_ID="deepseek-chat"  # For synthesis
+# DEEPSEEK_STANDARD_MODEL_ID="deepseek-chat"  # For other agents
+
+# Optional: Web Research (enables ExaTools)
+# EXA_API_KEY="your_exa_api_key"
+
+# Optional: Custom endpoint
+# LLM_BASE_URL="https://custom-endpoint.com"
+```
+
+### Model Configuration Examples
+
+```bash
+# Groq with different models
+GROQ_ENHANCED_MODEL_ID="openai/gpt-oss-120b"
+GROQ_STANDARD_MODEL_ID="openai/gpt-oss-20b"
+
+# Anthropic with Claude models
+ANTHROPIC_ENHANCED_MODEL_ID="claude-3-5-sonnet-20241022"
+ANTHROPIC_STANDARD_MODEL_ID="claude-3-5-haiku-20241022"
+
+# GitHub Models
+GITHUB_ENHANCED_MODEL_ID="gpt-4o"
+GITHUB_STANDARD_MODEL_ID="gpt-4o-mini"
+```
+
+## Usage
+
+### As MCP Server
+
+Once installed and configured in your MCP client:
+
+1. The `sequentialthinking` tool becomes available
+2. Your LLM can use it to process complex thoughts
+3. The system automatically routes to appropriate thinking agents
+4. Results are synthesized and returned to your LLM
+
+### Direct Execution
+
+Run the server manually for testing:
+
+```bash
+# Using installed script
+mcp-server-mas-sequential-thinking
+
+# Using uv
+uv run mcp-server-mas-sequential-thinking
+
+# Using Python
+python src/mcp_server_mas_sequential_thinking/main.py
+```
 
 ## Development
 
-1.  **Clone the repository:** (As in Installation)
-    ```bash
-    git clone git@github.com:FradSer/mcp-server-mas-sequential-thinking.git
-    cd mcp-server-mas-sequential-thinking
-    ```
-2.  **Set up Virtual Environment:** (Recommended)
-    ```bash
-    python -m venv .venv
-    source .venv/bin/activate # On Windows use `.venv\\Scripts\\activate`
-    ```
-3.  **Install Dependencies (including dev):**
-    Ensure your `requirements-dev.txt` or `pyproject.toml` specifies development tools (like `pytest`, `ruff`, `black`, `mypy`).
-    ```bash
-    # Using uv
-    uv pip install -r requirements.txt
-    uv pip install -r requirements-dev.txt # Or install extras if defined in pyproject.toml: uv pip install -e ".[dev]"
+### Setup
 
-    # Using pip
-    pip install -r requirements.txt
-    pip install -r requirements-dev.txt # Or install extras if defined in pyproject.toml: pip install -e ".[dev]"
-    ```
-4.  **Run Checks:**
-    Execute linters, formatters, and tests (adjust commands based on your project setup).
-    ```bash
-    # Example commands (replace with actual commands used in the project)
-    ruff check . --fix
-    black .
-    mypy .
-    pytest
-    ```
+```bash
+# Clone repository
+git clone https://github.com/FradSer/mcp-server-mas-sequential-thinking.git
+cd mcp-server-mas-sequential-thinking
 
-5.  **Testing the Application:**
-6.  Testing: Test your MCP server locally before deploying using MCP Inspector. Please ensure your Dockerfile builds locally first before deploying.
-7.  ```bash
-    npx @modelcontextprotocol/inspector uv run main.py
-    ```
-    Open the url http://127.0.0.1:6274/, then click on the "Run" button to test your MCP server locally. Then click on the "Tools" button to see the tools that are available in the MCP server, and verify that the tool "sequentialthinking" is available.
-    Copy "I need to test mcp-server-mas-sequential-thinking, I just hope mcp inspector will help me" in the "thought" field, "1" in the "thoughtNumber"and in the "totalThoughts" field, and check the "nextThoughtNeeded" checkbox. Then click on the "Run Tool" button to test your MCP server locally.
-    The model should return a response with a new thought, a new thought number, a new total thoughts, and Tool Result: Success. If you see this, your MCP server is working correctly.
-8.  **Contribution:**
-    (Consider adding contribution guidelines: branching strategy, pull request process, code style).
+# Create virtual environment
+python -m venv .venv
+source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+
+# Install with dev dependencies
+uv pip install -e ".[dev]"
+```
+
+### Code Quality
+
+```bash
+# Format and lint
+uv run ruff check . --fix
+uv run ruff format .
+uv run mypy .
+
+# Run tests (when available)
+uv run pytest
+```
+
+### Testing with MCP Inspector
+
+```bash
+npx @modelcontextprotocol/inspector uv run mcp-server-mas-sequential-thinking
+```
+
+Open http://127.0.0.1:6274/ and test the `sequentialthinking` tool.
+
+## System Characteristics
+
+### Strengths:
+- **Multi-perspective analysis**: 6 different cognitive approaches
+- **AI-powered routing**: Intelligent complexity analysis
+- **Research capabilities**: 4 agents with web search (optional)
+- **Flexible processing**: Single to full sequence strategies
+- **Model optimization**: Enhanced/Standard model selection
+- **Provider agnostic**: Works with multiple LLM providers
+
+### Considerations:
+- **Token usage**: Multi-agent processing uses more tokens than single-agent
+- **Processing time**: Complex sequences take longer but provide deeper insights
+- **API costs**: Research capabilities require separate Exa API subscription
+- **Model selection**: Enhanced models cost more but provide better synthesis
+
+## Project Structure
+
+```
+mcp-server-mas-sequential-thinking/
+├── src/mcp_server_mas_sequential_thinking/
+│   ├── main.py                          # MCP server entry point
+│   ├── processors/
+│   │   ├── multi_thinking_core.py       # 6 thinking agents definition
+│   │   └── multi_thinking_processor.py  # Sequential processing logic
+│   ├── routing/
+│   │   ├── ai_complexity_analyzer.py    # AI-powered analysis
+│   │   └── multi_thinking_router.py     # Intelligent routing
+│   ├── services/
+│   │   ├── thought_processor_refactored.py
+│   │   ├── workflow_executor.py
+│   │   └── context_builder.py
+│   └── config/
+│       ├── modernized_config.py         # Provider strategies
+│       └── constants.py                 # System constants
+├── pyproject.toml                       # Project configuration
+└── README.md                            # This file
+```
 
 ## Changelog
 
-See [CHANGELOG.md](CHANGELOG.md) for a detailed history of changes.
+See [CHANGELOG.md](CHANGELOG.md) for version history.
+
+## Contributing
+
+Contributions are welcome! Please ensure:
+
+1. Code follows project style (ruff, mypy)
+2. Commit messages use conventional commits format
+3. All tests pass before submitting PR
+4. Documentation is updated as needed
 
 ## License
 
-MIT
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+## Acknowledgments
+
+- Built with [Agno](https://github.com/agno-agi/agno) v2.0+ framework
+- Model Context Protocol by [Anthropic](https://www.anthropic.com/)
+- Research capabilities powered by [Exa](https://exa.ai/) (optional)
+- Multi-dimensional thinking inspired by Edward de Bono's work
+
+## Support
+
+- GitHub Issues: [Report bugs or request features](https://github.com/FradSer/mcp-server-mas-sequential-thinking/issues)
+- Documentation: Check CLAUDE.md for detailed implementation notes
+- MCP Protocol: [Official MCP Documentation](https://modelcontextprotocol.io/)
+
+---
+
+**Note**: This is an MCP server, designed to work with MCP-compatible clients like Claude Desktop. It is not a standalone chat application.

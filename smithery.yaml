@@ -27,7 +27,7 @@ startCommand:
       exaApiKey:
         type: string
         default: ""
-        description: API key for Exa if using the Researcher agent.
+        description: API key for Exa to enable web research capabilities for thinking agents.
   commandFunction:
     # A JS function that produces the CLI command based on the given config to start the MCP on stdio.
     |-
