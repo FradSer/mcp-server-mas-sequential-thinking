@@ -10,7 +10,7 @@ from dotenv import load_dotenv
 from mcp.server.fastmcp import FastMCP
 from pydantic import ValidationError
 
-from .config import ProcessingDefaults, ValidationLimits
+from .config import ProcessingDefaults, SecurityConstants, ValidationLimits
 from .core import ThoughtProcessingError
 
 # Import refactored modules
@@ -63,22 +63,9 @@ def sanitize_and_validate_input(text: str, max_length: int, field_name: str) -> 
     # Strip and normalize whitespace first
     text = text.strip()
 
-    # Check for potential prompt injection patterns
-    injection_patterns = [
-        # System/role instruction injections
-        "system:", "user:", "assistant:", "role:",
-        # Prompt escape attempts
-        "ignore previous", "ignore all", "disregard",
-        # Code execution attempts
-        "```python", "```bash", "exec(", "eval(", "__import__",
-        # Instruction manipulation
-        "new instructions", "override", "instead of",
-        # Data extraction attempts
-        "print(", "console.log", "alert(", "document.cookie",
-    ]
-
+    # Check for potential prompt injection patterns using centralized constants
     text_lower = text.lower()
-    for pattern in injection_patterns:
+    for pattern in SecurityConstants.INJECTION_PATTERNS:
         if pattern in text_lower:
             raise ValueError(
                 f"Potential security risk detected in {field_name}. "

@@ -52,7 +52,7 @@ Performance Benefits:
     - Efficient thinking sequence selection based on content analysis
 """
 
-__version__ = "0.6.0-ai-routing"
+__version__ = "0.6.0"
 
 
 def get_version() -> str:

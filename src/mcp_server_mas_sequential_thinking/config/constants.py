@@ -340,6 +340,24 @@ class ComplexityAnalysisConstants:
     MIN_SENTENCE_LENGTH = 3
 
 
+class SecurityConstants:
+    """Security-related constants for input validation."""
+
+    # Patterns that indicate potential prompt injection attempts
+    INJECTION_PATTERNS = [
+        # System/role instruction injections
+        "system:", "user:", "assistant:", "role:",
+        # Prompt escape attempts
+        "ignore previous", "ignore all", "disregard",
+        # Code execution attempts
+        "```python", "```bash", "exec(", "eval(", "__import__",
+        # Instruction manipulation
+        "new instructions", "override", "instead of",
+        # Data extraction attempts
+        "print(", "console.log", "alert(", "document.cookie",
+    ]
+
+
 class ProcessingStrategy(Enum):
     """Processing strategy enumeration."""
 

@@ -13,6 +13,7 @@ from .constants import (
     PerformanceMetrics,
     ProcessingDefaults,
     QualityThresholds,
+    SecurityConstants,
     ValidationLimits,
 )
 from .modernized_config import check_required_api_keys, get_model_config
@@ -27,6 +28,7 @@ __all__ = [
     "PerformanceMetrics",
     "ProcessingDefaults",
     "QualityThresholds",
+    "SecurityConstants",
     "ValidationLimits",
     # From modernized_config
     "check_required_api_keys",
