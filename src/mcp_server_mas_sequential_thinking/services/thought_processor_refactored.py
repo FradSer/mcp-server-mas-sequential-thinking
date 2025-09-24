@@ -15,7 +15,6 @@ from mcp_server_mas_sequential_thinking.core import (
 )
 from mcp_server_mas_sequential_thinking.infrastructure import (
     MetricsLogger,
-    PerformanceTracker,
 )
 from mcp_server_mas_sequential_thinking.utils import setup_logging
 
@@ -68,7 +67,6 @@ class ThoughtProcessor:
 
         # Initialize monitoring services
         self._metrics_logger = MetricsLogger()
-        self._performance_tracker = PerformanceTracker()
 
         logger.info("ThoughtProcessor initialized with specialized services")
 

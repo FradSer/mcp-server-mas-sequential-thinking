@@ -52,11 +52,9 @@ class ProcessingOrchestrator:
         # Initialize performance tracking
         from mcp_server_mas_sequential_thinking.infrastructure import (
             MetricsLogger,
-            PerformanceTracker,
         )
 
         self._metrics_logger = MetricsLogger()
-        self._performance_tracker = PerformanceTracker()
 
     async def execute_single_agent_processing(
         self, input_prompt: str, simplified: bool = False

@@ -1,7 +1,7 @@
 """Multi-Thinking Sequential Processor.
 
-Implements a sequential processor based on multi-directional thinking methodology,
-integrated with the Agno Workflow system. Supports intelligent sequence processing
+Implements a parallel processor based on multi-directional thinking methodology,
+integrated with the Agno Workflow system. Supports intelligent parallel processing
 from single direction to full multi-direction analysis.
 """
 
@@ -47,7 +47,7 @@ class MultiThinkingProcessingResult:
 
 
 class MultiThinkingSequentialProcessor:
-    """Multi-thinking sequential processor."""
+    """Multi-thinking parallel processor."""
 
     def __init__(self) -> None:
         self.model_config = get_model_config()
@@ -57,7 +57,7 @@ class MultiThinkingSequentialProcessor:
     async def process_with_multi_thinking(
         self, thought_data: "ThoughtData", context_prompt: str = ""
     ) -> MultiThinkingProcessingResult:
-        """Process thoughts using multi-thinking methodology."""
+        """Process thoughts using multi-thinking methodology with parallel execution."""
         start_time = time.time()
 
         logger.info("Multi-thinking processing started")
@@ -124,7 +124,7 @@ class MultiThinkingSequentialProcessor:
         except Exception as e:
             processing_time = time.time() - start_time
             logger.exception(
-                f"❌ Multi-thinking processing failed after {processing_time:.3f}s: {e}"
+                f"Multi-thinking processing failed after {processing_time:.3f}s: {e}"
             )
 
             return MultiThinkingProcessingResult(
@@ -143,15 +143,15 @@ class MultiThinkingSequentialProcessor:
     ) -> dict[str, Any]:
         """Process single thinking direction mode."""
         thinking_direction = decision.strategy.thinking_sequence[0]
-        logger.info(f"  🧠 SINGLE THINKING MODE: {thinking_direction.value}")
+        logger.info(f"  SINGLE THINKING MODE: {thinking_direction.value}")
 
         # Use enhanced model for synthesis thinking, standard model for other directions
         if thinking_direction == ThinkingDirection.SYNTHESIS:
             model = self.model_config.create_enhanced_model()
-            logger.info("    🚀 Using enhanced model for synthesis thinking")
+            logger.info("    Using enhanced model for synthesis thinking")
         else:
             model = self.model_config.create_standard_model()
-            logger.info("    📎 Using standard model for focused thinking")
+            logger.info("    Using standard model for focused thinking")
 
         agent = self.thinking_factory.create_thinking_agent(
             thinking_direction, model, context, {}
@@ -171,66 +171,95 @@ class MultiThinkingSequentialProcessor:
     async def _process_double_direction_sequence(
         self, thought_data: "ThoughtData", context: str, decision: RoutingDecision
     ) -> dict[str, Any]:
-        """Process dual thinking direction sequence."""
+        """Process dual thinking direction sequence with parallel execution."""
         direction1, direction2 = decision.strategy.thinking_sequence
         logger.info(
-            f"  🧠 DUAL THINKING SEQUENCE: {direction1.value} → {direction2.value}"
+            f"  DUAL THINKING SEQUENCE: {direction1.value} + {direction2.value} (parallel)"
         )
 
         individual_results = {}
 
-        # First thinking direction
-        if direction1 == ThinkingDirection.SYNTHESIS:
-            model1 = self.model_config.create_enhanced_model()
-            logger.info(f"    🚀 Using enhanced model for {direction1.value} thinking")
+        # Check if synthesis agent is involved
+        has_synthesis = any(d == ThinkingDirection.SYNTHESIS for d in [direction1, direction2])
+
+        if has_synthesis:
+            # If synthesis is involved, run non-synthesis agents in parallel, then synthesis
+            non_synthesis_directions = [d for d in [direction1, direction2] if d != ThinkingDirection.SYNTHESIS]
+            synthesis_direction = ThinkingDirection.SYNTHESIS
+
+            # Run non-synthesis agents in parallel
+            import asyncio
+            tasks = []
+            for direction in non_synthesis_directions:
+                model = self.model_config.create_standard_model()
+                logger.info(f"    Using standard model for {direction.value} thinking (parallel)")
+
+                agent = self.thinking_factory.create_thinking_agent(
+                    direction, model, context, {}
+                )
+                task = agent.arun(input=thought_data.thought)
+                tasks.append((direction, task))
+
+            # Execute parallel tasks
+            logger.info(f"    Executing {len(tasks)} thinking agents in parallel")
+            parallel_results = await asyncio.gather(*[task for _, task in tasks])
+
+            # Process parallel results
+            for (direction, _), result in zip(tasks, parallel_results):
+                content = self._extract_content(result)
+                individual_results[direction.value] = content
+                logger.info(f"    {direction.value} thinking completed (parallel)")
+
+            # Run synthesis agent with all parallel results
+            model = self.model_config.create_enhanced_model()
+            logger.info(f"    Using enhanced model for {synthesis_direction.value} synthesis")
+
+            synthesis_agent = self.thinking_factory.create_thinking_agent(
+                synthesis_direction, model, context, individual_results
+            )
+
+            # Build synthesis input
+            synthesis_input = self._build_synthesis_integration_input(
+                thought_data.thought, individual_results
+            )
+
+            synthesis_result = await synthesis_agent.arun(input=synthesis_input)
+            synthesis_content = self._extract_content(synthesis_result)
+            individual_results[synthesis_direction.value] = synthesis_content
+
+            logger.info(f"    {synthesis_direction.value} thinking completed")
+
+            final_content = synthesis_content
         else:
-            model1 = self.model_config.create_standard_model()
-            logger.info(f"    📎 Using standard model for {direction1.value} thinking")
+            # No synthesis agent - run both agents in parallel
+            import asyncio
+            tasks = []
 
-        agent1 = self.thinking_factory.create_thinking_agent(
-            direction1, model1, context, {}
-        )
-        result1 = await agent1.arun(input=thought_data.thought)
-        content1 = self._extract_content(result1)
-        individual_results[direction1.value] = content1
+            for direction in [direction1, direction2]:
+                model = self.model_config.create_standard_model()
+                logger.info(f"    Using standard model for {direction.value} thinking (parallel)")
 
-        logger.info(f"    ✅ {direction1.value} thinking completed")
+                agent = self.thinking_factory.create_thinking_agent(
+                    direction, model, context, {}
+                )
+                task = agent.arun(input=thought_data.thought)
+                tasks.append((direction, task))
 
-        # Second thinking direction (based on first result)
-        if direction2 == ThinkingDirection.SYNTHESIS:
-            model2 = self.model_config.create_enhanced_model()
-            logger.info(f"    🚀 Using enhanced model for {direction2.value} synthesis")
-        else:
-            model2 = self.model_config.create_standard_model()
-            logger.info(f"    📎 Using standard model for {direction2.value} thinking")
+            # Execute parallel tasks
+            logger.info(f"    Executing 2 thinking agents in parallel")
+            parallel_results = await asyncio.gather(*[task for _, task in tasks])
 
-        previous_results = {direction1.value: content1}
-        agent2 = self.thinking_factory.create_thinking_agent(
-            direction2, model2, context, previous_results
-        )
+            # Process parallel results
+            for (direction, _), result in zip(tasks, parallel_results):
+                content = self._extract_content(result)
+                individual_results[direction.value] = content
+                logger.info(f"    {direction.value} thinking completed (parallel)")
 
-        # Build input for second thinking direction
-        direction2_input = f"""
-Original thought: {thought_data.thought}
-
-{direction1.value.title()} thinking perspective: {content1}
-
-Now apply {direction2.value} thinking approach to this.
-"""
-
-        result2 = await agent2.arun(input=direction2_input)
-        content2 = self._extract_content(result2)
-        individual_results[direction2.value] = content2
-
-        logger.info(f"    ✅ {direction2.value} thinking completed")
-
-        # If the last one is synthesis thinking, use its result as final answer
-        if direction2 == ThinkingDirection.SYNTHESIS:
-            final_content = content2
-        else:
-            # Otherwise, combine results
+            # Combine results programmatically
             final_content = self._combine_dual_thinking_results(
-                direction1, content1, direction2, content2, thought_data.thought
+                direction1, individual_results[direction1.value],
+                direction2, individual_results[direction2.value],
+                thought_data.thought
             )
 
         return {
@@ -241,62 +270,47 @@ Now apply {direction2.value} thinking approach to this.
     async def _process_triple_direction_sequence(
         self, thought_data: "ThoughtData", context: str, decision: RoutingDecision
     ) -> dict[str, Any]:
-        """Process triple thinking direction sequence (core mode)."""
+        """Process triple thinking direction sequence with parallel execution."""
         thinking_sequence = decision.strategy.thinking_sequence
         logger.info(
-            f"  🧠 TRIPLE THINKING SEQUENCE: {' → '.join(direction.value for direction in thinking_sequence)}"
+            f"  TRIPLE THINKING SEQUENCE: {' + '.join(direction.value for direction in thinking_sequence)} (parallel)"
         )
 
         individual_results = {}
-        previous_results = {}
 
-        # Execute three thinking directions sequentially
-        for i, thinking_direction in enumerate(thinking_sequence):
-            logger.info(
-                f"    🧠 Processing {thinking_direction.value} thinking ({i + 1}/3)"
-            )
+        # Triple strategy currently uses FACTUAL + CREATIVE + CRITICAL - all run in parallel
+        import asyncio
+        tasks = []
 
-            # Use enhanced model for synthesis thinking, standard model for other directions
-            if thinking_direction == ThinkingDirection.SYNTHESIS:
-                model = self.model_config.create_enhanced_model()
-                logger.info(
-                    f"      🚀 Using enhanced model for {thinking_direction.value} synthesis"
-                )
-            else:
-                model = self.model_config.create_standard_model()
-                logger.info(
-                    f"      📎 Using standard model for {thinking_direction.value} thinking"
-                )
+        for thinking_direction in thinking_sequence:
+            logger.info(f"    Preparing {thinking_direction.value} thinking for parallel execution")
+
+            # All agents use standard model (no synthesis in triple strategy)
+            model = self.model_config.create_standard_model()
+            logger.info(f"      Using standard model for {thinking_direction.value} thinking")
 
             agent = self.thinking_factory.create_thinking_agent(
-                thinking_direction, model, context, previous_results
+                thinking_direction, model, context, {}
             )
 
-            # Build input
-            if i == 0:
-                # First thinking direction: original input
-                thinking_input = thought_data.thought
-            else:
-                # Subsequent thinking directions: include previous results
-                thinking_input = self._build_sequential_input(
-                    thought_data.thought, previous_results, thinking_direction
-                )
+            # All agents receive original input directly (parallel processing)
+            task = agent.arun(input=thought_data.thought)
+            tasks.append((thinking_direction, task))
 
-            result = await agent.arun(input=thinking_input)
+        # Execute all thinking directions in parallel
+        logger.info(f"    Executing {len(tasks)} thinking agents in parallel")
+        parallel_results = await asyncio.gather(*[task for _, task in tasks])
+
+        # Process parallel results
+        for (thinking_direction, _), result in zip(tasks, parallel_results):
             content = self._extract_content(result)
             individual_results[thinking_direction.value] = content
-            previous_results[thinking_direction.value] = content
+            logger.info(f"      {thinking_direction.value} thinking completed (parallel)")
 
-            logger.info(f"      ✅ {thinking_direction.value} thinking completed")
-
-        # If the last one is synthesis thinking, its result is the final result
-        if thinking_sequence[-1] == ThinkingDirection.SYNTHESIS:
-            final_content = individual_results[ThinkingDirection.SYNTHESIS.value]
-        else:
-            # Otherwise, create simple synthesis
-            final_content = self._synthesize_triple_thinking_results(
-                individual_results, thinking_sequence, thought_data.thought
-            )
+        # Create programmatic synthesis (no synthesis agent in triple strategy)
+        final_content = self._synthesize_triple_thinking_results(
+            individual_results, thinking_sequence, thought_data.thought
+        )
 
         return {
             "final_content": final_content,
@@ -306,76 +320,110 @@ Now apply {direction2.value} thinking approach to this.
     async def _process_full_direction_sequence(
         self, thought_data: "ThoughtData", context: str, decision: RoutingDecision
     ) -> dict[str, Any]:
-        """Process full multi-thinking direction sequence."""
+        """Process full multi-thinking direction sequence with parallel execution."""
         thinking_sequence = decision.strategy.thinking_sequence
         logger.info(
-            f"  🧠 FULL THINKING SEQUENCE: {' → '.join(direction.value for direction in thinking_sequence)}"
+            f"  FULL THINKING SEQUENCE: Initial orchestration -> Parallel processing -> Final synthesis"
         )
 
         individual_results = {}
-        previous_results = {}
 
-        # Execute all thinking directions sequentially
-        for i, thinking_direction in enumerate(thinking_sequence):
-            logger.info(
-                f"    🧠 Processing {thinking_direction.value} thinking ({i + 1}/{len(thinking_sequence)})"
+        # Step 1: Initial SYNTHESIS for orchestration (if first agent is SYNTHESIS)
+        if thinking_sequence[0] == ThinkingDirection.SYNTHESIS:
+            logger.info("    Step 1: Initial synthesis orchestration")
+
+            initial_synthesis_model = self.model_config.create_enhanced_model()
+            logger.info("      Using enhanced model for initial orchestration")
+
+            initial_synthesis_agent = self.thinking_factory.create_thinking_agent(
+                ThinkingDirection.SYNTHESIS, initial_synthesis_model, context, {}
             )
 
-            # Use enhanced model for synthesis thinking, standard model for other directions
-            if thinking_direction == ThinkingDirection.SYNTHESIS:
-                model = self.model_config.create_enhanced_model()
-                logger.info(
-                    f"      🚀 Using enhanced model for {thinking_direction.value} synthesis"
-                )
-            else:
+            initial_result = await initial_synthesis_agent.arun(input=thought_data.thought)
+            initial_content = self._extract_content(initial_result)
+            individual_results["synthesis_initial"] = initial_content
+
+            logger.info("      Initial orchestration completed")
+
+        # Step 2: Identify non-synthesis agents for parallel execution
+        non_synthesis_agents = [
+            direction for direction in thinking_sequence
+            if direction != ThinkingDirection.SYNTHESIS
+        ]
+
+        if non_synthesis_agents:
+            logger.info(f"    Step 2: Parallel execution of {len(non_synthesis_agents)} thinking agents")
+
+            import asyncio
+            tasks = []
+
+            for thinking_direction in non_synthesis_agents:
+                logger.info(f"      Preparing {thinking_direction.value} thinking for parallel execution")
+
                 model = self.model_config.create_standard_model()
-                logger.info(
-                    f"      📎 Using standard model for {thinking_direction.value} thinking"
+                logger.info(f"        Using standard model for {thinking_direction.value} thinking")
+
+                agent = self.thinking_factory.create_thinking_agent(
+                    thinking_direction, model, context, {}
                 )
 
-            agent = self.thinking_factory.create_thinking_agent(
-                thinking_direction, model, context, previous_results
+                # All non-synthesis agents receive original input (parallel processing)
+                task = agent.arun(input=thought_data.thought)
+                tasks.append((thinking_direction, task))
+
+            # Execute all non-synthesis agents in parallel
+            logger.info(f"      Executing {len(tasks)} thinking agents in parallel")
+            parallel_results = await asyncio.gather(*[task for _, task in tasks])
+
+            # Process parallel results
+            for (thinking_direction, _), result in zip(tasks, parallel_results):
+                content = self._extract_content(result)
+                individual_results[thinking_direction.value] = content
+                logger.info(f"        {thinking_direction.value} thinking completed (parallel)")
+
+        # Step 3: Final SYNTHESIS for integration (if last agent is SYNTHESIS)
+        final_synthesis_agents = [
+            i for i, direction in enumerate(thinking_sequence)
+            if direction == ThinkingDirection.SYNTHESIS and i > 0
+        ]
+
+        if final_synthesis_agents:
+            logger.info("    Step 3: Final synthesis integration")
+
+            final_synthesis_model = self.model_config.create_enhanced_model()
+            logger.info("      Using enhanced model for final synthesis")
+
+            # Remove initial synthesis from results for final integration
+            integration_results = {
+                k: v for k, v in individual_results.items()
+                if not k.startswith("synthesis_")
+            }
+
+            final_synthesis_agent = self.thinking_factory.create_thinking_agent(
+                ThinkingDirection.SYNTHESIS, final_synthesis_model, context, integration_results
             )
 
-            # Build input
-            if i == 0 or thinking_direction == ThinkingDirection.SYNTHESIS:
-                # First thinking direction and synthesis thinking: special handling
-                if thinking_direction == ThinkingDirection.SYNTHESIS and i > 0:
-                    # Synthesis thinking integrates all previous results
-                    thinking_input = self._build_synthesis_integration_input(
-                        thought_data.thought, previous_results
-                    )
-                else:
-                    thinking_input = thought_data.thought
-            else:
-                # Other thinking directions: sequential processing
-                thinking_input = self._build_sequential_input(
-                    thought_data.thought, previous_results, thinking_direction
-                )
+            # Build synthesis integration input
+            synthesis_input = self._build_synthesis_integration_input(
+                thought_data.thought, integration_results
+            )
 
-            result = await agent.arun(input=thinking_input)
-            content = self._extract_content(result)
-            individual_results[thinking_direction.value] = content
-            previous_results[thinking_direction.value] = content
+            final_result = await final_synthesis_agent.arun(input=synthesis_input)
+            final_content = self._extract_content(final_result)
+            individual_results["synthesis_final"] = final_content
 
-            logger.info(f"      ✅ {thinking_direction.value} thinking completed")
+            logger.info("      Final synthesis integration completed")
 
-        # Final synthesis thinking result is the final result
-        final_synthesis_result = None
-        for thinking_direction in reversed(thinking_sequence):
-            if thinking_direction == ThinkingDirection.SYNTHESIS:
-                final_synthesis_result = individual_results[thinking_direction.value]
-                break
-
-        final_content = (
-            final_synthesis_result
-            or self._synthesize_full_thinking_results(
+            # Use final synthesis result as the answer
+            final_answer = final_content
+        else:
+            # No final synthesis - create programmatic synthesis
+            final_answer = self._synthesize_full_thinking_results(
                 individual_results, thinking_sequence, thought_data.thought
             )
-        )
 
         return {
-            "final_content": final_content,
+            "final_content": final_answer,
             "individual_results": individual_results,
         }
 

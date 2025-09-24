@@ -226,8 +226,8 @@ class GroqStrategy(BaseProviderStrategy):
     """Groq provider strategy."""
 
     provider_class = Groq
-    default_enhanced_model = "deepseek-r1-distill-llama-70b"
-    default_standard_model = "qwen/qwen3-32b"
+    default_enhanced_model = "openai/gpt-oss-120b"
+    default_standard_model = "openai/gpt-oss-20b"
     api_key_name = "GROQ_API_KEY"
 
 

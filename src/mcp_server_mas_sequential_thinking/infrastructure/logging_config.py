@@ -181,3 +181,34 @@ def create_logger(name: str) -> logging.Logger:
 def configure_logging(level: str = "INFO") -> logging.Logger:
     """Legacy compatibility function."""
     return setup_logging(level)
+
+
+class MetricsLogger:
+    """Simple metrics logger for structured logging output."""
+
+    def __init__(self, logger_name: str = "sequential_thinking") -> None:
+        """Initialize metrics logger with specified logger name."""
+        self.logger = logging.getLogger(logger_name)
+
+    def log_metrics_block(self, title: str, metrics: dict) -> None:
+        """Log a block of metrics with a title.
+
+        Args:
+            title: Block title to display
+            metrics: Dictionary of metrics to log
+        """
+        if not self.logger.isEnabledFor(logging.INFO):
+            return
+
+        self.logger.info("%s", title)
+        for key, value in metrics.items():
+            self.logger.info("  %s: %s", key, value)
+
+    def log_separator(self, length: int = 60) -> None:
+        """Log a separator line.
+
+        Args:
+            length: Length of the separator line
+        """
+        if self.logger.isEnabledFor(logging.INFO):
+            self.logger.info("-" * length)
