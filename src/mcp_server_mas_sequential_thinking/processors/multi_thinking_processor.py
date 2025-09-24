@@ -205,7 +205,7 @@ class MultiThinkingSequentialProcessor:
             parallel_results = await asyncio.gather(*[task for _, task in tasks])
 
             # Process parallel results
-            for (direction, _), result in zip(tasks, parallel_results):
+            for (direction, _), result in zip(tasks, parallel_results, strict=False):
                 content = self._extract_content(result)
                 individual_results[direction.value] = content
                 logger.info(f"    {direction.value} thinking completed (parallel)")
@@ -246,11 +246,11 @@ class MultiThinkingSequentialProcessor:
                 tasks.append((direction, task))
 
             # Execute parallel tasks
-            logger.info(f"    Executing 2 thinking agents in parallel")
+            logger.info("    Executing 2 thinking agents in parallel")
             parallel_results = await asyncio.gather(*[task for _, task in tasks])
 
             # Process parallel results
-            for (direction, _), result in zip(tasks, parallel_results):
+            for (direction, _), result in zip(tasks, parallel_results, strict=False):
                 content = self._extract_content(result)
                 individual_results[direction.value] = content
                 logger.info(f"    {direction.value} thinking completed (parallel)")
@@ -302,7 +302,7 @@ class MultiThinkingSequentialProcessor:
         parallel_results = await asyncio.gather(*[task for _, task in tasks])
 
         # Process parallel results
-        for (thinking_direction, _), result in zip(tasks, parallel_results):
+        for (thinking_direction, _), result in zip(tasks, parallel_results, strict=False):
             content = self._extract_content(result)
             individual_results[thinking_direction.value] = content
             logger.info(f"      {thinking_direction.value} thinking completed (parallel)")
@@ -323,7 +323,7 @@ class MultiThinkingSequentialProcessor:
         """Process full multi-thinking direction sequence with parallel execution."""
         thinking_sequence = decision.strategy.thinking_sequence
         logger.info(
-            f"  FULL THINKING SEQUENCE: Initial orchestration -> Parallel processing -> Final synthesis"
+            "  FULL THINKING SEQUENCE: Initial orchestration -> Parallel processing -> Final synthesis"
         )
 
         individual_results = {}
@@ -376,7 +376,7 @@ class MultiThinkingSequentialProcessor:
             parallel_results = await asyncio.gather(*[task for _, task in tasks])
 
             # Process parallel results
-            for (thinking_direction, _), result in zip(tasks, parallel_results):
+            for (thinking_direction, _), result in zip(tasks, parallel_results, strict=False):
                 content = self._extract_content(result)
                 individual_results[thinking_direction.value] = content
                 logger.info(f"        {thinking_direction.value} thinking completed (parallel)")
