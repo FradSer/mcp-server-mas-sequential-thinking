@@ -18,7 +18,8 @@ CORE ARCHITECTURE:
 
 Key Features:
 - **AI Routing**: Semantic complexity analysis and strategy selection
-- **Multi-Thinking Integration**: Factual, emotional, critical, optimistic, creative, and synthesis processing
+- **Multi-Thinking Integration**: Factual, emotional, critical, optimistic, creative,
+  and synthesis processing
 - **Multi-Provider Support**: DeepSeek, Groq, OpenRouter, GitHub, Ollama
 - **Philosophical Understanding**: Deep analysis for existential questions
 

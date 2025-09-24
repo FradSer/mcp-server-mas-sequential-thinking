@@ -126,15 +126,22 @@ class MultiThinkingWorkflowRouter:
                 # Create ThoughtData - dynamic import to avoid circular dependency
                 from mcp_server_mas_sequential_thinking.core.models import ThoughtData
 
+                # Extract context preservation fields from input if available
+                is_revision = step_input.input.get("isRevision", False) if isinstance(step_input.input, dict) else False
+                branch_from_thought = step_input.input.get("branchFromThought") if isinstance(step_input.input, dict) else None
+                branch_id = step_input.input.get("branchId") if isinstance(step_input.input, dict) else None
+                needs_more_thoughts = step_input.input.get("needsMoreThoughts", False) if isinstance(step_input.input, dict) else False
+                next_thought_needed = step_input.input.get("nextThoughtNeeded", True) if isinstance(step_input.input, dict) else True
+
                 thought_data = ThoughtData(
                     thought=thought_content,
                     thoughtNumber=thought_number,
                     totalThoughts=total_thoughts,
-                    nextThoughtNeeded=True,
-                    isRevision=False,
-                    branchFromThought=None,
-                    branchId=None,
-                    needsMoreThoughts=False,
+                    nextThoughtNeeded=next_thought_needed,
+                    isRevision=is_revision,
+                    branchFromThought=branch_from_thought,
+                    branchId=branch_id,
+                    needsMoreThoughts=needs_more_thoughts,
                 )
 
                 logger.info(f"  📝 Input: {thought_content[:100]}...")

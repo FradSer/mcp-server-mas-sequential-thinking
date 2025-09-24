@@ -1,9 +1,12 @@
-"""Modernized configuration management with dependency injection and clean abstractions."""
+"""Modernized configuration management with dependency injection and clean abstractions.
+
+Clean configuration management with modern Python patterns.
+"""
 
 import os
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Protocol, runtime_checkable
+from typing import Any, Protocol, runtime_checkable
 
 from agno.models.anthropic import Claude
 from agno.models.base import Model
@@ -49,28 +52,36 @@ class GitHubOpenAI(OpenAIChat):
 
         if not valid_token:
             raise ValueError(
-                "Invalid GitHub token format. Token must be a valid GitHub personal access token, "
-                "OAuth token, or fine-grained personal access token with correct prefix and length."
+                "Invalid GitHub token format. Token must be a valid GitHub personal "
+                "access token, "
+                "OAuth token, or fine-grained personal access token with correct "
+                "prefix and length."
             )
 
         # Enhanced entropy validation to prevent fake tokens
-        token_body = token[4:] if token.startswith("ghp_") else token.split("_", 1)[1] if "_" in token else token
+        token_body = (
+            token[4:] if token.startswith("ghp_")
+            else token.split("_", 1)[1] if "_" in token
+            else token
+        )
 
         # Check for minimum entropy (character diversity)
         unique_chars = len(set(token_body.lower()))
         if unique_chars < 15:  # GitHub tokens should have high entropy
             raise ValueError(
-                "GitHub token appears to have insufficient entropy. Please ensure you're using a real GitHub token."
+                "GitHub token appears to have insufficient entropy. Please ensure "
+                "you're using a real GitHub token."
             )
 
         # Check for obvious fake patterns
         fake_patterns = ["test", "fake", "demo", "example", "placeholder", "your_token"]
         if any(pattern in token.lower() for pattern in fake_patterns):
             raise ValueError(
-                "GitHub token appears to be a placeholder or test value. Please use a real GitHub token."
+                "GitHub token appears to be a placeholder or test value. Please "
+                "use a real GitHub token."
             )
 
-    def __init__(self, **kwargs) -> None:
+    def __init__(self, **kwargs: dict[str, Any]) -> None:
         # Set GitHub Models configuration
         kwargs.setdefault("base_url", "https://models.github.ai/inference")
 
@@ -80,7 +91,8 @@ class GitHubOpenAI(OpenAIChat):
         api_key = kwargs.get("api_key")
         if not api_key:
             raise ValueError(
-                "GitHub token is required but not found in GITHUB_TOKEN environment variable"
+                "GitHub token is required but not found in GITHUB_TOKEN "
+                "environment variable"
             )
 
         self._validate_github_token(api_key)

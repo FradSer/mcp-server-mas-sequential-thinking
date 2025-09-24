@@ -8,10 +8,9 @@ import logging.handlers
 import os
 import sys
 from pathlib import Path
-from typing import Optional
 
 
-def setup_logging(level: Optional[str] = None) -> logging.Logger:
+def setup_logging(level: str | None = None) -> logging.Logger:
     """Setup streamlined logging with environment-based configuration.
 
     Args:
@@ -71,7 +70,7 @@ def setup_logging(level: Optional[str] = None) -> logging.Logger:
     return logger
 
 
-def get_logger(name: Optional[str] = None) -> logging.Logger:
+def get_logger(name: str | None = None) -> logging.Logger:
     """Get a logger instance with consistent configuration.
 
     Args:
@@ -84,7 +83,7 @@ def get_logger(name: Optional[str] = None) -> logging.Logger:
         # Get caller's module name for better traceability
         import inspect
         frame = inspect.currentframe().f_back
-        name = frame.f_globals.get('__name__', 'sequential_thinking')
+        name = frame.f_globals.get("__name__", "sequential_thinking")
 
     return logging.getLogger(name)
 
@@ -118,7 +117,7 @@ def log_thought_processing(logger: logging.Logger, stage: str, thought_number: i
 class LogTimer:
     """Context manager for timing operations with automatic logging."""
 
-    def __init__(self, logger: logging.Logger, operation: str, level: int = logging.INFO):
+    def __init__(self, logger: logging.Logger, operation: str, level: int = logging.INFO) -> None:
         self.logger = logger
         self.operation = operation
         self.level = level

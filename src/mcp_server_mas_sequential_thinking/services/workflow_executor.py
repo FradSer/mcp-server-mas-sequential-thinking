@@ -7,6 +7,7 @@ managing workflow routing and coordination of processing strategies.
 import time
 from typing import TYPE_CHECKING, Any
 
+from mcp_server_mas_sequential_thinking.config.constants import PerformanceMetrics
 from mcp_server_mas_sequential_thinking.core import SessionMemory, ThoughtData
 from mcp_server_mas_sequential_thinking.utils import setup_logging
 
@@ -36,7 +37,7 @@ class WorkflowExecutor:
         """
         logger.info("Initializing Multi-Thinking Workflow Router")
         # Dynamic import to avoid circular dependency
-        from mcp_server_mas_sequential_thinking.routing import (
+        from mcp_server_mas_sequential_thinking.routing import (  # noqa: PLC0415
             MultiThinkingWorkflowRouter,
         )
 
@@ -91,7 +92,9 @@ class WorkflowExecutor:
             "Response length": f"{len(final_response)} chars",
         }
 
-        self._log_metrics_block("🧠 MULTI-THINKING WORKFLOW COMPLETION:", completion_metrics)
+        self._log_metrics_block(
+            "🧠 MULTI-THINKING WORKFLOW COMPLETION:", completion_metrics
+        )
         self._log_separator()
 
         # Performance metrics
@@ -117,14 +120,12 @@ class WorkflowExecutor:
             title: The title for the metrics block
             metrics: Dictionary of metrics to log
         """
-        logger.info(f"{title}")
+        logger.info("%s", title)
         for key, value in metrics.items():
             if isinstance(value, float):
-                logger.info(f"  {key}: {value:.2f}")
-            elif isinstance(value, (int, str)):
-                logger.info(f"  {key}: {value}")
+                logger.info("  %s: %.2f", key, value)
             else:
-                logger.info(f"  {key}: {value}")
+                logger.info("  %s: %s", key, value)
 
     def _log_separator(self, length: int = 60) -> None:
         """Log a separator line.
@@ -132,15 +133,9 @@ class WorkflowExecutor:
         Args:
             length: Length of the separator line
         """
-        # Try to use performance metrics constant if available
-        try:
-            from mcp_server_mas_sequential_thinking.config import PerformanceMetrics
-
-            length = PerformanceMetrics.SEPARATOR_LENGTH
-        except ImportError:
-            pass
-
-        logger.info(f"  {'=' * length}")
+        # Use performance metrics constant
+        length = PerformanceMetrics.SEPARATOR_LENGTH
+        logger.info("  %s", "=" * length)
 
     def _calculate_efficiency_score(self, processing_time: float) -> float:
         """Calculate efficiency score using standard metrics.
@@ -151,17 +146,10 @@ class WorkflowExecutor:
         Returns:
             Efficiency score between 0 and 1
         """
-        # Use constants if available, otherwise use fallback values
-        try:
-            from mcp_server_mas_sequential_thinking.config import PerformanceMetrics
-
-            perfect_score = PerformanceMetrics.PERFECT_EFFICIENCY_SCORE
-            threshold = PerformanceMetrics.EFFICIENCY_TIME_THRESHOLD
-            minimum_score = PerformanceMetrics.MINIMUM_EFFICIENCY_SCORE
-        except ImportError:
-            perfect_score = 1.0
-            threshold = 5.0
-            minimum_score = 0.1
+        # Use constants from PerformanceMetrics
+        perfect_score = PerformanceMetrics.PERFECT_EFFICIENCY_SCORE
+        threshold = PerformanceMetrics.EFFICIENCY_TIME_THRESHOLD
+        minimum_score = PerformanceMetrics.MINIMUM_EFFICIENCY_SCORE
 
         return (
             perfect_score
@@ -178,13 +166,8 @@ class WorkflowExecutor:
         Returns:
             Execution consistency score
         """
-        try:
-            from mcp_server_mas_sequential_thinking.config import PerformanceMetrics
-
-            perfect_consistency = PerformanceMetrics.PERFECT_EXECUTION_CONSISTENCY
-            default_consistency = PerformanceMetrics.DEFAULT_EXECUTION_CONSISTENCY
-        except ImportError:
-            perfect_consistency = 1.0
-            default_consistency = 0.5
+        # Use constants from PerformanceMetrics
+        perfect_consistency = PerformanceMetrics.PERFECT_EXECUTION_CONSISTENCY
+        default_consistency = PerformanceMetrics.DEFAULT_EXECUTION_CONSISTENCY
 
         return perfect_consistency if success_indicator else default_consistency

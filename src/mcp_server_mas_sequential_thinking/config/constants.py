@@ -1,6 +1,7 @@
 """Constants for the MCP Sequential Thinking Server."""
 
 from enum import Enum
+from typing import ClassVar
 
 
 class TokenCosts:
@@ -202,7 +203,7 @@ class ThoughtProcessingLimits:
 class TechnicalTerms:
     """Technical terms for complexity analysis."""
 
-    KEYWORDS = [
+    KEYWORDS: ClassVar[list[str]] = [
         "algorithm",
         "data",
         "analysis",
@@ -316,7 +317,7 @@ class ComplexityAnalysisConstants:
 
     # Multilingual text analysis requires different tokenization strategies
     CHINESE_WORD_RATIO = 2  # Character-based scripts need different word boundaries
-    CHINESE_DOMINANCE_THRESHOLD = 0.3  # Script detection threshold for processing optimization
+    CHINESE_DOMINANCE_THRESHOLD = 0.3  # Script detection threshold for optimization
 
     # Complexity scoring weights (extracted from adaptive_routing.py)
     WORD_COUNT_WEIGHT = 0.15
@@ -344,7 +345,7 @@ class SecurityConstants:
     """Security-related constants for input validation."""
 
     # Patterns that indicate potential prompt injection attempts
-    INJECTION_PATTERNS = [
+    INJECTION_PATTERNS: ClassVar[list[str]] = [
         # System/role instruction injections
         "system:", "user:", "assistant:", "role:",
         # Prompt escape attempts

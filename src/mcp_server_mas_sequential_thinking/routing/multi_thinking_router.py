@@ -204,10 +204,9 @@ class MultiThinkingIntelligentRouter:
         complexity_metrics = await self.complexity_analyzer.analyze(thought_data)
         complexity_score = complexity_metrics.complexity_score
 
-        # Extract AI analysis results
-        ai_result = complexity_metrics.get("ai_analysis", {})
-        problem_type = ai_result.get("primary_problem_type", "GENERAL")
-        thinking_modes_needed = ai_result.get("thinking_modes_needed", ["SYNTHESIS"])
+        # Extract AI analysis results directly from ComplexityMetrics
+        problem_type = complexity_metrics.primary_problem_type
+        thinking_modes_needed = complexity_metrics.thinking_modes_needed or ["SYNTHESIS"]
 
         logger.info("AI analysis - Complexity: %.1f, Type: %s, Modes: %s",
                    complexity_score, problem_type, thinking_modes_needed)

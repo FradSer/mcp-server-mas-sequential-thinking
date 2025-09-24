@@ -4,18 +4,18 @@ This module contains infrastructure concerns including logging configuration
 and persistent memory.
 """
 
-from .logging_config import get_logger, setup_logging, LogTimer
+from .logging_config import LogTimer, get_logger, setup_logging
 from .persistent_memory import (
     PersistentMemoryManager,
     create_persistent_memory,
 )
 
 __all__ = [
-    # From logging_config
-    "get_logger",
-    "setup_logging",
     "LogTimer",
     # From persistent_memory
     "PersistentMemoryManager",
     "create_persistent_memory",
+    # From logging_config
+    "get_logger",
+    "setup_logging",
 ]

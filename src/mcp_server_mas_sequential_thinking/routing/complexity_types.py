@@ -47,9 +47,17 @@ class ComplexityMetrics:
     analysis_depth: int = 0
     philosophical_depth_boost: int = 0
 
+    # AI Analysis Results (critical for routing decisions)
+    primary_problem_type: str = "GENERAL"  # AI-determined problem type
+    thinking_modes_needed: list[str] | None = None  # AI-recommended thinking modes
+
     # Analysis metadata
     analyzer_type: str = "unknown"  # "ai" or "basic"
     reasoning: str = ""  # Why this score was assigned
+
+    def __post_init__(self):
+        if self.thinking_modes_needed is None:
+            self.thinking_modes_needed = ["SYNTHESIS"]
 
 
 @dataclass

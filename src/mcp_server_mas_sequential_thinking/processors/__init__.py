@@ -18,14 +18,14 @@ from .multi_thinking_processor import (
 )
 
 __all__ = [
-    # From multi_thinking_core
-    "ThinkingDirection",
     "MultiThinkingAgentFactory",
     # From multi_thinking_processor
     "MultiThinkingProcessingResult",
     "MultiThinkingSequentialProcessor",
-    "create_thinking_agent",
+    # From multi_thinking_core
+    "ThinkingDirection",
     "create_multi_thinking_step_output",
+    "create_thinking_agent",
     "get_all_thinking_directions",
     "get_thinking_timing",
 ]

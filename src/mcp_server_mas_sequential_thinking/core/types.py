@@ -6,11 +6,11 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import TYPE_CHECKING, Any, Protocol, TypedDict
 
-from agno.agent import Agent
-from agno.models.base import Model
-from agno.team.team import Team
-
 if TYPE_CHECKING:
+    from agno.agent import Agent
+    from agno.models.base import Model
+    from agno.team.team import Team
+
     from mcp_server_mas_sequential_thinking.config.modernized_config import ModelConfig
     from mcp_server_mas_sequential_thinking.core.models import ThoughtData
 

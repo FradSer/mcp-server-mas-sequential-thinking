@@ -135,6 +135,9 @@ class AIComplexityAnalyzer(ComplexityAnalyzer):
                 philosophical_depth_boost=complexity_data.get(
                     "philosophical_depth_boost", 0
                 ),
+                # AI Analysis Results (critical for routing)
+                primary_problem_type=complexity_data.get("primary_problem_type", "GENERAL"),
+                thinking_modes_needed=complexity_data.get("thinking_modes_needed", ["SYNTHESIS"]),
                 analyzer_type="ai",
                 reasoning=complexity_data.get("reasoning", "AI analysis"),
             )
@@ -147,7 +150,7 @@ class AIComplexityAnalyzer(ComplexityAnalyzer):
             return metrics
 
         except Exception as e:
-            logger.error(f"❌ AI complexity analysis failed: {e}")
+            logger.exception(f"❌ AI complexity analysis failed: {e}")
             # Fallback to basic analysis
             return self._basic_fallback_analysis(thought_data)
 
@@ -228,6 +231,9 @@ class AIComplexityAnalyzer(ComplexityAnalyzer):
             research_indicators=0,
             analysis_depth=philosophical_count,
             philosophical_depth_boost=min(philosophical_count * 5, 15),
+            # Basic AI analysis results for fallback
+            primary_problem_type="PHILOSOPHICAL" if philosophical_count > 0 else "GENERAL",
+            thinking_modes_needed=["SYNTHESIS", "CREATIVE"] if philosophical_count > 2 else ["FACTUAL"],
             analyzer_type="basic_fallback",
             reasoning="Fallback analysis due to AI failure",
         )
