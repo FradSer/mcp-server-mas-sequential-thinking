@@ -188,195 +188,65 @@ ANTHROPIC_STANDARD_MODEL_ID="claude-3-5-haiku-20241022"   # Processing
 
 ## Critical Implementation Patterns
 
-### Dependency Injection Architecture
+### Core Architecture Principles
 
-The system uses **manual dependency injection** throughout, following clean architecture principles:
+**Dependency Injection**: Manual constructor injection throughout - services compose via constructors, Protocol-based interfaces in `core/types.py`, immutable configs with `@dataclass(frozen=True, slots=True)`.
 
-- **Constructor injection**: All services receive dependencies via constructors
-- **Service composition**: Complex services compose simpler ones (e.g., `ThoughtProcessor` composes `ContextBuilder`, `WorkflowExecutor`, `ResponseFormatter`)
-- **Protocol-based design**: Uses `Protocol` classes in `core/types.py` for flexible interfaces
-- **Immutable configurations**: Uses `@dataclass(frozen=True, slots=True)` for configuration objects
+**Two-Tier Model System**:
+- **Enhanced Model**: Synthesis agents (Blue Hat) for complex integration
+- **Standard Model**: Individual thinking agents (Factual, Emotional, etc.)
+- Configuration: `{PROVIDER}_ENHANCED_MODEL_ID` and `{PROVIDER}_STANDARD_MODEL_ID`
 
-**Example Pattern**:
-```python
-class ThoughtProcessor:
-    def __init__(self, session: SessionMemory) -> None:
-        self._context_builder = ContextBuilder(session)
-        self._workflow_executor = WorkflowExecutor(session)
-        self._response_formatter = ResponseFormatter()
-```
+**Parallel Processing**: Non-synthesis agents use `asyncio.gather` for simultaneous execution. Only Synthesis agents run sequentially.
 
-### Error Handling Strategy
+### Critical Gotchas
 
-**Hierarchical Exception Design**: Custom exceptions inherit from base types in `core/types.py`:
-- `ThoughtProcessingError` (base for processing errors)
-  - `RoutingDecisionError`, `CostOptimizationError`, `PersistentStorageError`
-- `ConfigurationError` (base for config errors)
-  - `ModelConfigurationError`
-
-**Retry Pattern**: `RetryHandler` uses configurable exponential backoff:
-- Default: 3 attempts with 0.5s base sleep
-- Comprehensive logging of retry attempts and failures
-- Context-aware error reporting with operation metadata
-
-### Multi-Model Intelligence
-
-**Critical Pattern**: The system uses **two distinct model tiers**:
-- **Enhanced Model**: For Synthesis agents (Blue Hat) - complex integration tasks
-- **Standard Model**: For individual thinking agents (White, Red, Black, Yellow, Green)
-
-**Provider Strategy Pattern**: Each provider implements both enhanced/standard model selection:
-```python
-{PROVIDER}_ENHANCED_MODEL_ID="model-for-synthesis"
-{PROVIDER}_STANDARD_MODEL_ID="model-for-processing"
-```
-
-### Async/Parallel Processing Architecture
-
-**Critical Performance Pattern**: Non-synthesis agents run in **parallel** using `asyncio.gather`:
-- Double/Triple sequences: All non-synthesis agents execute simultaneously
-- Full sequences: 3-step process (Initial Synthesis → Parallel Agents → Final Synthesis)
-- Performance optimization: Reduces execution time while maintaining analysis quality
-
-### Configuration Management
-
-**Environment-Only Pattern**: No config files - all configuration via environment variables:
-- Provider detection: `LLM_PROVIDER` determines which provider strategy to use
-- Model selection: `{PROVIDER}_ENHANCED_MODEL_ID` and `{PROVIDER}_STANDARD_MODEL_ID`
-- Feature flags: `ENABLE_ADAPTIVE_ROUTING`, `ENABLE_MULTI_THINKING`
-
-**GitHub Token Validation**: Special validation for GitHub tokens with entropy checks and fake pattern detection.
-
-### Memory and State Management
-
-**Immutable Data Patterns**: All core data structures use Pydantic models with immutability:
-- `ThoughtData`: Validated input with relationship constraints
-- `ServerConfig`: Frozen dataclass for server configuration
-- `ThinkingTimingConfig`: Frozen configuration for thinking direction timing
-
-**Session State**: `SessionMemory` manages thought history and branching without team dependencies (simplified from legacy architecture).
-
-### Import and Circular Dependency Management
-
-**Critical Pattern**: The codebase uses **lazy imports** and `TYPE_CHECKING` to break circular dependencies:
-
+**Import Management**: Use `TYPE_CHECKING` imports and lazy loading to avoid circular dependencies:
 ```python
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
-    from agno.agent import Agent
-    from agno.models.base import Model
+    from module import Class
 ```
 
-**Conditional Tool Imports**: ExaTools import is wrapped in try/catch with graceful degradation:
+**Thread Safety**: Global state uses async locks:
+```python
+_processor_lock = asyncio.Lock()
+async with _processor_lock:
+    # Safe initialization
+```
+
+**ExaTools Integration**: Graceful degradation pattern:
 ```python
 try:
     from agno.tools.exa import ExaTools
     EXA_AVAILABLE = bool(os.environ.get("EXA_API_KEY"))
 except ImportError:
-    ExaTools = None
     EXA_AVAILABLE = False
 ```
 
-### Logging Architecture
+**Multi-Thinking Direction Setup**: Six cognitive perspectives with specific timing:
+- `FACTUAL`/`CRITICAL`/`OPTIMISTIC`/`CREATIVE`: 120-240s, with ExaTools
+- `EMOTIONAL`: 30s quick reaction mode
+- `SYNTHESIS`: 60s, Enhanced Model, no ExaTools
 
-**Streamlined Approach**: Replaced complex 985-line logging with focused implementation:
-- **File rotation**: 5MB files, 3 backups in `~/.sequential_thinking/logs/`
-- **Environment-based**: Console logging only in non-production
-- **Application-scoped**: Uses `sequential_thinking` logger namespace to avoid conflicts
-- **Performance focus**: `MetricsLogger` mixin provides consistent performance logging patterns
+### Essential Development Rules
 
-### Multi-Thinking Direction Architecture
+**Error Handling**: Use `ThoughtProcessingError` hierarchy, never catch bare `Exception`, include `ProcessingMetadata` for debugging.
 
-**Enum-Driven Design**: `ThinkingDirection` enum defines six distinct cognitive perspectives:
-- `FACTUAL`: Facts and data (120s, with ExaTools)
-- `EMOTIONAL`: Intuition (30s, quick reaction mode)
-- `CRITICAL`: Risk assessment (120s, with ExaTools)
-- `OPTIMISTIC`: Opportunities (120s, with ExaTools)
-- `CREATIVE`: Innovation (240s, with ExaTools)
-- `SYNTHESIS`: Integration (60s, Enhanced Model, no ExaTools)
+**Performance**: Use `@dataclass(frozen=True, slots=True)` for frequent objects, `TokenEstimates` constants for cost calculation.
 
-**Timing Configuration**: `ThinkingTimingConfig` enforces different processing times per direction with min/max bounds.
+**Security**: All inputs sanitized via `html.escape()`, injection patterns checked via `SecurityConstants.INJECTION_PATTERNS`.
 
-## Parallel Processing Architecture
+**Logging**: Application-scoped `sequential_thinking` namespace, 5MB rotation, use `MetricsLogger.log_metrics_block()` for performance tracking.
 
-**Critical Implementation Detail**: The system uses `asyncio.gather` for parallel execution of thinking agents:
+## Debugging Essentials
 
-- **Non-Synthesis Agents**: Run in parallel for maximum efficiency (Factual, Emotional, Critical, Optimistic, Creative)
-- **Synthesis Agent**: Runs sequentially after parallel agents complete, uses Enhanced Model for integration
-- **Key Methods**:
-  - `_process_double_direction_sequence()`: Parallel execution for 2-agent strategies
-  - `_process_triple_direction_sequence()`: Parallel execution for 3-agent strategies
-  - `_process_full_direction_sequence()`: 3-step process (Initial Synthesis → Parallel Agents → Final Synthesis)
+**Common Issues**:
+- Circular imports → Use `TYPE_CHECKING` or dynamic imports
+- Empty Agno content → Check `StepOutput.success` and `session_state`
+- API key errors → Ensure real tokens (GitHub needs 15+ unique chars, no fake patterns)
 
-**Performance Impact**: Parallel processing reduces total execution time while maintaining comprehensive analysis quality.
-
-## Error Handling & Logging
-
-**Structured Logging System**:
-- **MetricsLogger**: Located in `infrastructure/logging_config.py`, provides `log_metrics_block()` and `log_separator()` methods
-- **Log Location**: `~/.sequential_thinking/logs/sequential_thinking.log` with 5MB rotation, 3 backups
-- **Performance Logging**: Uses `log_performance_metric()` for timing operations
-- **Error Recovery**: Single-agent fallback when team processing fails
-
-**Common Import Fix**: If you see `cannot import name 'MetricsLogger'`, ensure `infrastructure/__init__.py` exports it properly.
-
-## Provider Configuration Patterns
-
-**Model Selection Strategy**:
-```bash
-# Provider-specific model configuration
-{PROVIDER}_ENHANCED_MODEL_ID="model-for-synthesis"    # Blue Hat/Synthesis Agent
-{PROVIDER}_STANDARD_MODEL_ID="model-for-processing"   # Individual thinking agents
-```
-
-**Current Provider Models**:
-- **Groq**: Enhanced=`openai/gpt-oss-120b`, Standard=`openai/gpt-oss-20b`
-- **DeepSeek**: Both use `deepseek-chat`
-- **Anthropic**: Enhanced=`claude-3-5-sonnet-20241022`, Standard=`claude-3-5-haiku-20241022`
-- **GitHub Models**: Enhanced=`openai/gpt-5`, Standard=`openai/gpt-5-min`
-- **OpenRouter**: Enhanced=`deepseek/deepseek-chat-v3-0324`, Standard=`deepseek/deepseek-r1`
-- **Ollama**: Enhanced=`devstral:24b`, Standard=`devstral:24b`
-
-## Configuration Management
-
-**Environment File Template**: Use `.env.example` as a starting point for your configuration. The file includes comprehensive examples for all supported providers and advanced features including:
-
-- **Adaptive Routing**: Automatic single vs multi-agent selection based on complexity
-- **Budget Management**: Daily, monthly, and per-thought cost limits
-- **Performance Monitoring**: Real-time performance tracking with baselines
-- **Smart Logging**: Intelligent logging with adaptive verbosity levels
-- **Memory Management**: Persistent storage with automatic pruning policies
-
-## Development Gotchas and Critical Patterns
-
-### Module Import Patterns
-- **Always use lazy imports** in type annotations to avoid circular dependencies
-- **Use `__slots__`** in performance-critical classes like `ThoughtProcessor`
-- **Protocol-based typing**: Prefer `Protocol` classes over concrete inheritance for better flexibility
-
-### Error Handling Requirements
-- **Never catch bare `Exception`**: Always catch specific exceptions or use `ThoughtProcessingError` hierarchy
-- **Include metadata**: Use `ProcessingMetadata` in exceptions for debugging context
-- **Retry-aware design**: Operations should be idempotent to support retry logic
-
-### Configuration Anti-Patterns
-- **No hardcoded paths**: Always use `Path.home()` and environment variables
-- **Provider validation**: All provider configurations must validate API keys before use
-- **Model fallbacks**: Enhanced models must have Standard model fallbacks configured
-
-### Performance Considerations
-- **Parallel vs Sequential**: Only Synthesis agents run sequentially; all others use `asyncio.gather`
-- **Token estimation**: Use `TokenEstimates` constants for cost calculation
-- **Memory efficiency**: Use `@dataclass(frozen=True, slots=True)` for frequent objects
-
-### Multi-Thinking Sequence Rules
-- **Timing enforcement**: Each `ThinkingDirection` has strict min/max time bounds
-- **Tool availability**: Only Factual, Critical, Optimistic, and Creative agents get ExaTools
-- **Model selection**: Synthesis agents MUST use Enhanced models for quality integration
-- **Parallel execution**: Non-synthesis agents in Double/Triple/Full sequences run in parallel for performance
-
-### Logging Best Practices
-- **Use structured logging**: Always include operation context in log messages
-- **Performance metrics**: Log execution time and efficiency scores for optimization
-- **Error context**: Include thought metadata and processing state in error logs
-- **Log rotation**: Respect 5MB file limits and 3-backup rotation policy
+**Debug Commands**:
+- Test server: `npx @modelcontextprotocol/inspector uv run python src/mcp_server_mas_sequential_thinking/main.py`
+- Monitor: `tail -f ~/.sequential_thinking/logs/sequential_thinking.log`
+- Debug level: Set `LOG_LEVEL=DEBUG`
