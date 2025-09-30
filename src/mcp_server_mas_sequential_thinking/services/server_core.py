@@ -117,29 +117,17 @@ class ServerInitializer(ABC):
 
 
 class EnvironmentInitializer(ServerInitializer):
-    """Handles environment validation and setup."""
+    """Handles environment validation and setup with comprehensive early validation."""
 
     async def initialize(self, config: ServerConfig) -> None:
-        """Validate environment requirements with enhanced error handling."""
+        """Validate environment requirements with enhanced error handling and early failure detection."""
         logger.info(f"Initializing environment with {config.provider} provider")
 
         try:
-            # Graceful degradation prevents startup failures from missing optional keys
-            missing_keys = check_required_api_keys()
-            if missing_keys:
-                logger.warning(f"Missing API keys: {', '.join(missing_keys)}")
-                # Note: Don't fail here as some providers might not require keys
-
-            # Ensure log directory exists
-            log_dir = Path.home() / ".sequential_thinking" / "logs"
-            if not log_dir.exists():
-                logger.info(f"Creating log directory: {log_dir}")
-                try:
-                    log_dir.mkdir(parents=True, exist_ok=True)
-                except OSError as e:
-                    raise ConfigurationError(
-                        f"Failed to create log directory {log_dir}: {e}"
-                    ) from e
+            # Early comprehensive validation
+            await self._validate_provider_configuration(config)
+            await self._validate_system_requirements()
+            await self._setup_directories()
 
         except Exception as e:
             if not isinstance(e, ConfigurationError):
@@ -148,8 +136,154 @@ class EnvironmentInitializer(ServerInitializer):
                 ) from e
             raise
 
+    async def _validate_provider_configuration(self, config: ServerConfig) -> None:
+        """Validate provider-specific configuration with actionable error messages."""
+        try:
+            # Import here to avoid circular dependency
+            from mcp_server_mas_sequential_thinking.config.modernized_config import (
+                get_model_config,
+                get_available_providers,
+            )
+
+            # Check if provider is supported
+            available_providers = get_available_providers()
+            if config.provider not in available_providers:
+                raise ConfigurationError(
+                    f"Unsupported provider '{config.provider}'. "
+                    f"Available providers: {', '.join(available_providers)}. "
+                    f"Set LLM_PROVIDER environment variable to one of the supported providers."
+                )
+
+            # Validate provider configuration
+            try:
+                model_config = get_model_config(config.provider)
+                logger.info(f"✓ Provider '{config.provider}' configuration validated")
+                logger.info(f"  Enhanced model: {model_config.enhanced_model_id}")
+                logger.info(f"  Standard model: {model_config.standard_model_id}")
+
+            except Exception as e:
+                provider_specific_help = self._get_provider_setup_help(config.provider)
+                raise ConfigurationError(
+                    f"Failed to configure provider '{config.provider}': {e}\n\n"
+                    f"Setup instructions:\n{provider_specific_help}"
+                ) from e
+
+        except ImportError as e:
+            raise ConfigurationError(
+                f"Failed to import configuration modules: {e}. "
+                "This indicates a broken installation. Please reinstall the package."
+            ) from e
+
+    async def _validate_system_requirements(self) -> None:
+        """Validate system-level requirements."""
+        import sys
+
+        # Python version check
+        if sys.version_info < (3, 10):
+            raise ConfigurationError(
+                f"Python 3.10+ required, but found {sys.version_info.major}.{sys.version_info.minor}. "
+                "Please upgrade Python or use a compatible environment."
+            )
+
+        # Check required packages are available
+        required_packages = [
+            ("agno", "2.0.5"),
+            ("mcp", None),
+            ("pydantic", None),
+            ("asyncio", None),
+        ]
+
+        for package_name, min_version in required_packages:
+            try:
+                __import__(package_name)
+                if min_version and package_name == "agno":
+                    import agno
+                    if hasattr(agno, "__version__"):
+                        from packaging import version
+                        if version.parse(agno.__version__) < version.parse(min_version):
+                            raise ConfigurationError(
+                                f"Agno {min_version}+ required, but found {agno.__version__}. "
+                                "Run: uv pip install --upgrade agno"
+                            )
+            except ImportError as e:
+                raise ConfigurationError(
+                    f"Required package '{package_name}' not found: {e}. "
+                    "Run: uv pip install -e '.[dev]' to install all dependencies."
+                ) from e
+
+        logger.info("✓ System requirements validated")
+
+    async def _setup_directories(self) -> None:
+        """Setup required directories with proper error handling."""
+        # Ensure log directory exists
+        log_dir = Path.home() / ".sequential_thinking" / "logs"
+        if not log_dir.exists():
+            logger.info(f"Creating log directory: {log_dir}")
+            try:
+                log_dir.mkdir(parents=True, exist_ok=True)
+                logger.info("✓ Log directory created successfully")
+            except OSError as e:
+                raise ConfigurationError(
+                    f"Failed to create log directory {log_dir}: {e}. "
+                    "Please check file system permissions."
+                ) from e
+        else:
+            logger.info("✓ Log directory already exists")
+
+        # Validate write permissions
+        test_file = log_dir / "test_write.tmp"
+        try:
+            test_file.write_text("test")
+            test_file.unlink()
+            logger.info("✓ Log directory write permissions validated")
+        except OSError as e:
+            raise ConfigurationError(
+                f"Cannot write to log directory {log_dir}: {e}. "
+                "Please check file system permissions."
+            ) from e
+
+    def _get_provider_setup_help(self, provider: str) -> str:
+        """Get provider-specific setup instructions."""
+        help_text = {
+            "deepseek": (
+                "1. Get API key from https://platform.deepseek.com/api_keys\n"
+                "2. Set environment variable: export DEEPSEEK_API_KEY='your-key'\n"
+                "3. (Optional) Set models: DEEPSEEK_ENHANCED_MODEL_ID, DEEPSEEK_STANDARD_MODEL_ID"
+            ),
+            "groq": (
+                "1. Get API key from https://console.groq.com/keys\n"
+                "2. Set environment variable: export GROQ_API_KEY='your-key'\n"
+                "3. (Optional) Set models: GROQ_ENHANCED_MODEL_ID, GROQ_STANDARD_MODEL_ID"
+            ),
+            "github": (
+                "1. Get GitHub token from https://github.com/settings/tokens\n"
+                "2. Set environment variable: export GITHUB_TOKEN='your-token'\n"
+                "3. (Optional) Set models: GITHUB_ENHANCED_MODEL_ID, GITHUB_STANDARD_MODEL_ID\n"
+                "4. Token must have appropriate permissions for GitHub Models API"
+            ),
+            "anthropic": (
+                "1. Get API key from https://console.anthropic.com/\n"
+                "2. Set environment variable: export ANTHROPIC_API_KEY='your-key'\n"
+                "3. (Optional) Set models: ANTHROPIC_ENHANCED_MODEL_ID, ANTHROPIC_STANDARD_MODEL_ID"
+            ),
+            "openrouter": (
+                "1. Get API key from https://openrouter.ai/keys\n"
+                "2. Set environment variable: export OPENROUTER_API_KEY='your-key'\n"
+                "3. (Optional) Set models: OPENROUTER_ENHANCED_MODEL_ID, OPENROUTER_STANDARD_MODEL_ID"
+            ),
+            "ollama": (
+                "1. Install Ollama from https://ollama.ai/\n"
+                "2. Start Ollama service: ollama serve\n"
+                "3. Pull required models: ollama pull llama2\n"
+                "4. (Optional) Set models: OLLAMA_ENHANCED_MODEL_ID, OLLAMA_STANDARD_MODEL_ID"
+            ),
+        }
+
+        return help_text.get(provider, f"Please check documentation for '{provider}' provider setup.")
+
     async def cleanup(self) -> None:
         """No cleanup needed for environment."""
+        logger.info("Environment cleanup completed")
 
 
 class ServerState:
@@ -300,22 +434,4 @@ def create_validated_thought_data(
         raise ValueError(f"Invalid thought data: {e}") from e
 
 
-# Global server state with workflow support
-_server_state: ServerState | None = None
-_thought_processor: ThoughtProcessor | None = None
-
-
-async def get_thought_processor() -> ThoughtProcessor:
-    """Get or create the global thought processor with workflow support."""
-    global _thought_processor, _server_state
-
-    if _thought_processor is None:
-        if _server_state is None:
-            raise RuntimeError(
-                "Server not properly initialized - _server_state is None. Ensure app_lifespan is running."
-            )
-
-        logger.info("Initializing ThoughtProcessor with multi-thinking workflow")
-        _thought_processor = ThoughtProcessor(_server_state.session)
-
-    return _thought_processor
+# Legacy global state removed - use dependency injection through ApplicationContainer

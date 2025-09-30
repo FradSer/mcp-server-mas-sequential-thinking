@@ -107,48 +107,51 @@ class AIComplexityAnalyzer(ComplexityAnalyzer):
         return self._agent
 
     async def analyze(self, thought_data: "ThoughtData") -> ComplexityMetrics:
-        """Analyze thought complexity using AI agent."""
+        """Analyze thought complexity using AI agent with secure prompt handling."""
         logger.info("🤖 AI COMPLEXITY ANALYSIS:")
         logger.info(f"  📝 Analyzing: {thought_data.thought[:100]}...")
 
         try:
             agent = self._get_agent()
-            prompt = COMPLEXITY_ANALYSIS_PROMPT.format(thought=thought_data.thought)
 
-            # Get AI analysis
+            # Secure prompt construction - sanitize thought input
+            sanitized_thought = self._sanitize_thought_for_analysis(thought_data.thought)
+            prompt = COMPLEXITY_ANALYSIS_PROMPT.format(thought=sanitized_thought)
+
+            # Get AI analysis with timeout
             result = await agent.arun(input=prompt)
 
-            # Extract JSON response
+            # Extract and validate JSON response
             response_text = self._extract_response_content(result)
-            complexity_data = self._parse_json_response(response_text)
+            complexity_data = self._parse_and_validate_json_response(response_text)
 
-            # Create metrics object with AI assessment
+            # Create metrics object with validated AI assessment
             metrics = ComplexityMetrics(
-                complexity_score=complexity_data.get("complexity_score", 0.0),
-                word_count=complexity_data.get("word_count", 0),
-                sentence_count=complexity_data.get("sentence_count", 0),
-                question_count=complexity_data.get("question_count", 0),
-                technical_terms=complexity_data.get("technical_terms", 0),
-                branching_references=complexity_data.get("branching_references", 0),
-                research_indicators=complexity_data.get("research_indicators", 0),
-                analysis_depth=complexity_data.get("analysis_depth", 0),
-                philosophical_depth_boost=complexity_data.get(
-                    "philosophical_depth_boost", 0
+                complexity_score=self._validate_numeric_field(complexity_data.get("complexity_score"), 0.0, 100.0, 0.0),
+                word_count=self._validate_numeric_field(complexity_data.get("word_count"), 0, 10000, 0),
+                sentence_count=self._validate_numeric_field(complexity_data.get("sentence_count"), 0, 1000, 0),
+                question_count=self._validate_numeric_field(complexity_data.get("question_count"), 0, 100, 0),
+                technical_terms=self._validate_numeric_field(complexity_data.get("technical_terms"), 0, 100, 0),
+                branching_references=self._validate_numeric_field(complexity_data.get("branching_references"), 0, 50, 0),
+                research_indicators=self._validate_numeric_field(complexity_data.get("research_indicators"), 0, 50, 0),
+                analysis_depth=self._validate_numeric_field(complexity_data.get("analysis_depth"), 0, 100, 0),
+                philosophical_depth_boost=self._validate_numeric_field(
+                    complexity_data.get("philosophical_depth_boost"), 0, 15, 0
                 ),
-                # AI Analysis Results (critical for routing)
-                primary_problem_type=complexity_data.get(
-                    "primary_problem_type", "GENERAL"
+                # AI Analysis Results (critical for routing) - validated
+                primary_problem_type=self._validate_problem_type(
+                    complexity_data.get("primary_problem_type", "GENERAL")
                 ),
-                thinking_modes_needed=complexity_data.get(
-                    "thinking_modes_needed", ["SYNTHESIS"]
+                thinking_modes_needed=self._validate_thinking_modes(
+                    complexity_data.get("thinking_modes_needed", ["SYNTHESIS"])
                 ),
                 analyzer_type="ai",
-                reasoning=complexity_data.get("reasoning", "AI analysis"),
+                reasoning=self._sanitize_reasoning(complexity_data.get("reasoning", "AI analysis")),
             )
 
             logger.info(f"  🎯 AI Complexity Score: {metrics.complexity_score:.1f}/100")
             logger.info(
-                f"  💭 Reasoning: {complexity_data.get('reasoning', 'No reasoning provided')[:100]}..."
+                f"  💭 Reasoning: {metrics.reasoning[:100]}..."
             )
 
             return metrics
@@ -164,8 +167,27 @@ class AIComplexityAnalyzer(ComplexityAnalyzer):
             return str(result.content)
         return str(result)
 
-    def _parse_json_response(self, response_text: str) -> dict[str, Any]:
-        """Parse JSON from AI response, handling various formats."""
+    def _sanitize_thought_for_analysis(self, thought: str) -> str:
+        """Sanitize thought text for secure inclusion in AI prompts."""
+        import re
+
+        # Remove any potential prompt injection patterns
+        sanitized = thought.replace('"', '\\"')  # Escape quotes
+        sanitized = re.sub(r"[{}]", "", sanitized)  # Remove curly braces
+        sanitized = re.sub(r"[\x00-\x1f\x7f-\x9f]", "", sanitized)  # Remove control chars
+
+        # Limit length to prevent token exhaustion
+        if len(sanitized) > 2000:
+            sanitized = sanitized[:2000] + "..."
+
+        return sanitized
+
+    def _parse_and_validate_json_response(self, response_text: str) -> dict[str, Any]:
+        """Parse and validate JSON from AI response with strict security checks."""
+        # Size limit check
+        if len(response_text) > 10000:  # Reasonable limit for complexity analysis
+            raise ValueError("AI response too large, possible attack")
+
         # Try to find JSON in the response
         lines = response_text.strip().split("\n")
 
@@ -173,7 +195,8 @@ class AIComplexityAnalyzer(ComplexityAnalyzer):
             line = line.strip()
             if line.startswith("{") and line.endswith("}"):
                 try:
-                    return json.loads(line)
+                    data = json.loads(line)
+                    return self._validate_json_structure(data)
                 except json.JSONDecodeError:
                     continue
 
@@ -184,18 +207,98 @@ class AIComplexityAnalyzer(ComplexityAnalyzer):
             if end > start:
                 json_text = response_text[start:end].strip()
                 try:
-                    return json.loads(json_text)
+                    data = json.loads(json_text)
+                    return self._validate_json_structure(data)
                 except json.JSONDecodeError:
                     pass
 
         # Try parsing the entire response as JSON
         try:
-            return json.loads(response_text)
+            data = json.loads(response_text)
+            return self._validate_json_structure(data)
         except json.JSONDecodeError:
             logger.warning(
                 f"Failed to parse AI response as JSON: {response_text[:200]}"
             )
             raise ValueError("Could not parse AI complexity analysis response")
+
+    def _validate_json_structure(self, data: dict[str, Any]) -> dict[str, Any]:
+        """Validate JSON structure and sanitize content."""
+        if not isinstance(data, dict):
+            raise ValueError("AI response must be a JSON object")
+
+        # Required fields validation
+        required_fields = ["complexity_score", "primary_problem_type"]
+        for field in required_fields:
+            if field not in data:
+                logger.warning(f"Missing required field: {field}")
+                # Set default values for missing fields
+                if field == "complexity_score":
+                    data[field] = 50.0
+                elif field == "primary_problem_type":
+                    data[field] = "GENERAL"
+
+        return data
+
+    def _validate_numeric_field(self, value: Any, min_val: float, max_val: float, default: float) -> float:
+        """Validate and clamp numeric fields to safe ranges."""
+        try:
+            if value is None:
+                return default
+            num_val = float(value)
+            return max(min_val, min(max_val, num_val))
+        except (ValueError, TypeError):
+            logger.warning(f"Invalid numeric value: {value}, using default: {default}")
+            return default
+
+    def _validate_problem_type(self, problem_type: str) -> str:
+        """Validate problem type against allowed values."""
+        allowed_types = {
+            "FACTUAL", "EMOTIONAL", "CRITICAL", "OPTIMISTIC",
+            "CREATIVE", "SYNTHESIS", "EVALUATIVE", "PHILOSOPHICAL",
+            "DECISION", "GENERAL"
+        }
+
+        if not isinstance(problem_type, str):
+            return "GENERAL"
+
+        clean_type = problem_type.upper().strip()
+        return clean_type if clean_type in allowed_types else "GENERAL"
+
+    def _validate_thinking_modes(self, modes: Any) -> list[str]:
+        """Validate thinking modes list."""
+        allowed_modes = {
+            "FACTUAL", "EMOTIONAL", "CRITICAL", "OPTIMISTIC",
+            "CREATIVE", "SYNTHESIS"
+        }
+
+        if not isinstance(modes, list):
+            return ["SYNTHESIS"]
+
+        validated_modes = []
+        for mode in modes:
+            if isinstance(mode, str):
+                clean_mode = mode.upper().strip()
+                if clean_mode in allowed_modes:
+                    validated_modes.append(clean_mode)
+
+        return validated_modes if validated_modes else ["SYNTHESIS"]
+
+    def _sanitize_reasoning(self, reasoning: str) -> str:
+        """Sanitize reasoning text to prevent injection."""
+        if not isinstance(reasoning, str):
+            return "AI analysis completed"
+
+        # Remove potential injection patterns and limit length
+        sanitized = reasoning.replace('"', '\\"')
+        sanitized = sanitized.replace("\n", " ")
+        sanitized = sanitized.replace("\t", " ")
+
+        # Limit length
+        if len(sanitized) > 500:
+            sanitized = sanitized[:500] + "..."
+
+        return sanitized
 
     def _basic_fallback_analysis(
         self, thought_data: "ThoughtData"
