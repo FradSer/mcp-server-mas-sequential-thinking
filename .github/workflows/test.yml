@@ -1,0 +1,95 @@
+name: Tests and Quality Checks
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.10", "3.11", "3.12"]
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Install uv
+      uses: astral-sh/setup-uv@v3
+      with:
+        version: "latest"
+
+    - name: Set up Python ${{ matrix.python-version }}
+      run: uv python install ${{ matrix.python-version }}
+
+    - name: Install dependencies
+      run: |
+        uv sync --all-extras --dev
+
+    - name: Run security tests
+      run: |
+        uv run pytest tests/unit/test_security_validation.py -v --tb=short
+
+    - name: Run configuration tests
+      run: |
+        uv run pytest tests/unit/test_configuration_validation.py -v --tb=short
+
+    - name: Run unit tests with coverage
+      run: |
+        uv run pytest tests/unit --cov=src/mcp_server_mas_sequential_thinking --cov-report=xml --cov-report=term-missing
+
+    - name: Run integration tests
+      run: |
+        uv run pytest tests/integration -v --tb=short
+
+    - name: Type checking with mypy
+      run: |
+        uv run mypy src --ignore-missing-imports
+
+    - name: Linting with ruff
+      run: |
+        uv run ruff check src tests
+
+    - name: Security scan with bandit
+      run: |
+        uv run bandit -r src -f json -o bandit-results.json || true
+
+    - name: Upload coverage to Codecov
+      if: matrix.python-version == '3.11'
+      uses: codecov/codecov-action@v3
+      with:
+        file: ./coverage.xml
+        flags: unittests
+        name: codecov-umbrella
+        fail_ci_if_error: false
+
+  security:
+    runs-on: ubuntu-latest
+    name: Security Analysis
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Install uv
+      uses: astral-sh/setup-uv@v3
+
+    - name: Set up Python
+      run: uv python install 3.11
+
+    - name: Install dependencies
+      run: |
+        uv sync --all-extras --dev
+
+    - name: Run security-focused tests
+      run: |
+        uv run pytest tests -m security -v --tb=short
+
+    - name: Security scan with safety
+      run: |
+        uv run safety check --json --output safety-results.json || true
+
+    - name: Dependency vulnerability scan
+      run: |
+        uv run pip-audit --format=json --output=audit-results.json || true
