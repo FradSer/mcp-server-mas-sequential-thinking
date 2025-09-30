@@ -328,27 +328,119 @@ class ConfigurationManager:
         return strategy.get_config()
 
     def validate_environment(self, provider_name: str | None = None) -> dict[str, str]:
-        """Validate environment variables and return missing required ones."""
+        """Validate environment variables and return missing required ones with enhanced validation."""
         strategy = self.get_strategy(provider_name)
         required_vars = strategy.get_required_environment_variables()
 
         missing: dict[str, str] = {}
+        validation_errors: dict[str, str] = {}
+
         for var_name, is_optional in required_vars.items():
-            if not is_optional and not os.environ.get(var_name):
+            env_value = os.environ.get(var_name, "").strip()
+
+            if not is_optional and not env_value:
                 missing[var_name] = "Required but not set"
+                continue
+
+            # Validate API key format if present
+            if env_value and "API_KEY" in var_name or "TOKEN" in var_name:
+                try:
+                    self._validate_api_key_format(var_name, env_value)
+                except ValueError as e:
+                    validation_errors[var_name] = str(e)
+
+        # Combine missing and invalid keys
+        missing.update(validation_errors)
 
         # Check EXA API key for research functionality (optional)
-        # Note: EXA tools will be disabled if key is not provided
-        exa_key = os.environ.get("EXA_API_KEY")
+        exa_key = os.environ.get("EXA_API_KEY", "").strip()
         if not exa_key:
-            # Don't fail startup - just log warning that research will be disabled
             import logging
-
             logging.getLogger(__name__).warning(
                 "EXA_API_KEY not found. Research tools will be disabled."
             )
+        elif exa_key:
+            try:
+                self._validate_api_key_format("EXA_API_KEY", exa_key)
+            except ValueError as e:
+                validation_errors["EXA_API_KEY"] = f"Optional research key invalid: {e}"
 
         return missing
+
+    def _validate_api_key_format(self, key_name: str, key_value: str) -> None:
+        """Validate API key format with provider-specific rules."""
+        if not key_value or not key_value.strip():
+            raise ValueError(f"{key_name} is empty")
+
+        key_value = key_value.strip()
+
+        # Basic validation - check for obvious test/placeholder values
+        test_patterns = [
+            "test", "demo", "example", "placeholder", "your_key", "your_token",
+            "api_key_here", "insert_key", "replace_me", "xxx", "yyy", "zzz"
+        ]
+
+        for pattern in test_patterns:
+            if pattern in key_value.lower():
+                raise ValueError(
+                    f"{key_name} appears to be a placeholder value. Please use a real API key."
+                )
+
+        # Length validation - most API keys are at least 20 characters
+        if len(key_value) < 10:
+            raise ValueError(
+                f"{key_name} is too short ({len(key_value)} chars). Valid API keys are typically 20+ characters."
+            )
+
+        # Character validation - API keys should be alphanumeric with some special chars
+        import re
+        if not re.match(r'^[a-zA-Z0-9._-]+$', key_value):
+            raise ValueError(
+                f"{key_name} contains invalid characters. API keys should only contain letters, numbers, dots, hyphens, and underscores."
+            )
+
+        # Provider-specific validation
+        if "GITHUB" in key_name.upper():
+            self._validate_github_token_format(key_value)
+        elif "ANTHROPIC" in key_name.upper():
+            self._validate_anthropic_key_format(key_value)
+        elif "OPENAI" in key_name.upper() or "GROQ" in key_name.upper():
+            self._validate_openai_style_key_format(key_value)
+
+    def _validate_github_token_format(self, token: str) -> None:
+        """Validate GitHub token format (delegated to GitHubOpenAI class)."""
+        try:
+            GitHubOpenAI._validate_github_token(token)
+        except ValueError:
+            # Re-raise with less technical message for general validation
+            raise ValueError(
+                "Invalid GitHub token format. Please ensure you're using a valid GitHub personal access token."
+            )
+
+    def _validate_anthropic_key_format(self, key: str) -> None:
+        """Validate Anthropic API key format."""
+        if not key.startswith("sk-ant-"):
+            raise ValueError(
+                "Anthropic API keys must start with 'sk-ant-'. Please check your API key."
+            )
+
+        # Anthropic keys have a specific length
+        if len(key) < 50:
+            raise ValueError(
+                "Anthropic API key appears too short. Please verify the complete key."
+            )
+
+    def _validate_openai_style_key_format(self, key: str) -> None:
+        """Validate OpenAI-style API key format (used by OpenAI, Groq, etc.)."""
+        if not key.startswith("sk-"):
+            raise ValueError(
+                "OpenAI-style API keys must start with 'sk-'. Please check your API key."
+            )
+
+        if len(key) < 40:
+            raise ValueError(
+                "API key appears too short. Please verify the complete key."
+            )
 
     def get_available_providers(self) -> list[str]:
         """Get list of available provider names."""
@@ -366,9 +458,14 @@ def get_model_config(provider_name: str | None = None) -> ModelConfig:
 
 
 def check_required_api_keys(provider_name: str | None = None) -> list[str]:
-    """Check for missing required API keys."""
-    missing_vars = _config_manager.validate_environment(provider_name)
-    return list(missing_vars.keys())
+    """Check for missing required API keys with enhanced validation."""
+    validation_result = _config_manager.validate_environment(provider_name)
+    return list(validation_result.keys())
+
+
+def validate_configuration_comprehensive(provider_name: str | None = None) -> dict[str, str]:
+    """Perform comprehensive configuration validation and return detailed error information."""
+    return _config_manager.validate_environment(provider_name)
 
 
 def register_provider_strategy(name: str, strategy: ConfigurationStrategy) -> None:

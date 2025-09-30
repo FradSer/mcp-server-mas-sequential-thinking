@@ -344,33 +344,54 @@ class ComplexityAnalysisConstants:
 class SecurityConstants:
     """Security-related constants for input validation."""
 
-    # Patterns that indicate potential prompt injection attempts
+    # Enhanced regex patterns for comprehensive injection detection
     INJECTION_PATTERNS: ClassVar[list[str]] = [
-        # System/role instruction injections
-        "system:",
-        "user:",
-        "assistant:",
-        "role:",
-        # Prompt escape attempts
-        "ignore previous",
-        "ignore all",
-        "disregard",
-        # Code execution attempts
-        "```python",
-        "```bash",
-        "exec(",
-        "eval(",
-        "__import__",
-        # Instruction manipulation
-        "new instructions",
-        "override",
-        "instead of",
-        # Data extraction attempts
-        "print(",
-        "console.log",
-        "alert(",
-        "document.cookie",
+        # System/role instruction injections (case-insensitive, with variations)
+        r"(?i)\b(?:system|user|assistant|role)\s*[:]\s*",
+        r"(?i)\b(?:you\s+are|act\s+as|pretend\s+to\s+be)\b",
+        r"(?i)\b(?:now\s+you|from\s+now)\b",
+
+        # Prompt escape and override attempts
+        r"(?i)\b(?:ignore|disregard|forget)\s+(?:previous|all|everything|instructions?)\b",
+        r"(?i)\b(?:new|different|updated)\s+(?:instructions?|rules?|prompt)\b",
+        r"(?i)\b(?:override|overwrite|replace)\s+(?:instructions?|rules?|prompt)\b",
+        r"(?i)\b(?:instead\s+of|rather\s+than)\b",
+
+        # Code execution attempts (enhanced patterns)
+        r"```\s*(?:python|bash|shell|javascript|js|sql|php|ruby|perl)",
+        r"(?i)\b(?:exec|eval|system|spawn|fork)\s*\(",
+        r"(?i)__(?:import__|builtins__|globals__|locals__)__",
+        r"(?i)\b(?:subprocess|os\.system|shell_exec)\b",
+
+        # Direct manipulation attempts
+        r"(?i)\b(?:break|exit|quit)\s+(?:out|from)\b",
+        r"(?i)\b(?:escape|bypass|circumvent)\b",
+        r"(?i)\b(?:jailbreak|untethered)\b",
+
+        # Data extraction and reconnaissance
+        r"(?i)\b(?:print|console\.log|alert|confirm|prompt)\s*\(",
+        r"(?i)\b(?:document\.|window\.|global\.|process\.)",
+        r"(?i)\b(?:env|environment|config|settings|secrets?)\b",
+
+        # Role confusion attempts
+        r"(?i)\b(?:simulate|emulate|roleplay)\s+(?:being|as)\b",
+        r"(?i)\b(?:imagine|pretend)\s+(?:you|that)\b",
+
+        # Boundary testing
+        r"(?i)\b(?:test|check|verify)\s+(?:limits?|boundaries)\b",
+        r"(?i)\b(?:what\s+if|suppose)\s+(?:you|i)\b",
+
+        # Special characters that might indicate injection
+        r"[\\]{2,}",  # Multiple backslashes
+        r"[\"']{3,}",  # Triple quotes
+        r"[{}()]{3,}",  # Multiple brackets/parentheses
+        r"[\x00-\x1f\x7f-\x9f]",  # Control characters
     ]
+
+    # Additional security thresholds
+    MAX_QUOTATION_MARKS = 10
+    MAX_CONTROL_CHARACTERS = 0
+    MIN_ENTROPY_THRESHOLD = 0.3  # Minimum Shannon entropy for input validation
 
 
 class ProcessingStrategy(Enum):

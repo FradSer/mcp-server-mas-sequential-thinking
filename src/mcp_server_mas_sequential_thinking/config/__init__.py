@@ -16,7 +16,7 @@ from .constants import (
     SecurityConstants,
     ValidationLimits,
 )
-from .modernized_config import check_required_api_keys, get_model_config
+from .modernized_config import check_required_api_keys, get_model_config, validate_configuration_comprehensive
 
 __all__ = [
     # From constants
@@ -33,4 +33,5 @@ __all__ = [
     # From modernized_config
     "check_required_api_keys",
     "get_model_config",
+    "validate_configuration_comprehensive",
 ]
