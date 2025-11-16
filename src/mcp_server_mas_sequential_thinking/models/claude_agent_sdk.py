@@ -50,9 +50,14 @@ class ClaudeAgentSDKModel(Model):
 
         # Lazy import to avoid issues if SDK not installed
         try:
-            from claude_agent_sdk import query as claude_query  # noqa: PLC0415
+            # Import both classes from claude_agent_sdk
+            from claude_agent_sdk import (  # noqa: PLC0415, I001
+                ClaudeAgentOptions,
+                query as claude_query,
+            )
 
             self._claude_query = claude_query
+            self._claude_options_class = ClaudeAgentOptions
         except ImportError as e:
             logger.exception(
                 "claude-agent-sdk not installed. Please install it: "
@@ -68,24 +73,30 @@ class ClaudeAgentSDKModel(Model):
             model_id,
         )
 
-    def _convert_messages_to_prompt(self, messages: list[Message]) -> str:
-        """Convert Agno messages to a single prompt string for Claude Agent SDK.
+    def _extract_system_and_messages(
+        self, messages: list[Message]
+    ) -> tuple[str | None, str]:
+        """Extract system prompt and convert messages to prompt string.
+
+        System messages are separated and used for ClaudeAgentOptions.system_prompt.
+        Other messages are converted to the main prompt.
 
         Args:
             messages: List of Agno Message objects
 
         Returns:
-            Combined prompt string
+            Tuple of (system_prompt, user_prompt)
         """
+        system_parts = []
         prompt_parts = []
 
         for msg in messages:
             role = msg.role if hasattr(msg, "role") else "user"
             content = msg.content if hasattr(msg, "content") else str(msg)
 
-            # Format based on role
+            # Separate system messages for ClaudeAgentOptions
             if role == "system":
-                prompt_parts.append(f"System: {content}")
+                system_parts.append(content)
             elif role == "user":
                 prompt_parts.append(f"User: {content}")
             elif role == "assistant":
@@ -93,7 +104,10 @@ class ClaudeAgentSDKModel(Model):
             else:
                 prompt_parts.append(str(content))
 
-        return "\n\n".join(prompt_parts)
+        system_prompt = "\n\n".join(system_parts) if system_parts else None
+        user_prompt = "\n\n".join(prompt_parts) if prompt_parts else ""
+
+        return system_prompt, user_prompt
 
     async def aresponse(
         self,
@@ -101,7 +115,7 @@ class ClaudeAgentSDKModel(Model):
         response_format: dict[str, Any] | type | None = None,  # noqa: ARG002
         tools: list[Any] | None = None,  # noqa: ARG002
         tool_choice: str | dict[str, Any] | None = None,  # noqa: ARG002
-        tool_call_limit: int | None = None,  # noqa: ARG002
+        tool_call_limit: int | None = None,
         run_response: Any = None,  # noqa: ARG002, ANN401
         send_media_to_model: bool = True,  # noqa: ARG002
     ) -> ModelResponse:
@@ -122,16 +136,24 @@ class ClaudeAgentSDKModel(Model):
             ModelResponse with generated content
         """
         try:
-            # Convert Agno messages to Claude Agent SDK prompt
-            prompt = self._convert_messages_to_prompt(messages)
+            # Extract system prompt and convert messages
+            system_prompt, prompt = self._extract_system_and_messages(messages)
+
+            # Create Claude Agent SDK options
+            options = self._claude_options_class(
+                system_prompt=system_prompt,
+                max_turns=tool_call_limit or 10,  # Use tool_call_limit as max_turns
+            )
 
             logger.debug(
-                "Claude Agent SDK query - prompt length: %d chars", len(prompt)
+                "Claude Agent SDK query - prompt: %d chars, system: %d chars",
+                len(prompt),
+                len(system_prompt) if system_prompt else 0,
             )
 
             # Collect response from Claude Agent SDK
             full_response = ""
-            async for message in self._claude_query(prompt=prompt):
+            async for message in self._claude_query(prompt=prompt, options=options):
                 # Claude Agent SDK returns message objects
                 # Extract text content
                 if hasattr(message, "content"):
@@ -182,7 +204,7 @@ class ClaudeAgentSDKModel(Model):
         response_format: dict[str, Any] | type | None = None,  # noqa: ARG002
         tools: list[Any] | None = None,  # noqa: ARG002
         tool_choice: str | dict[str, Any] | None = None,  # noqa: ARG002
-        tool_call_limit: int | None = None,  # noqa: ARG002
+        tool_call_limit: int | None = None,
         stream_model_response: bool = True,  # noqa: ARG002
         run_response: Any = None,  # noqa: ARG002, ANN401
         send_media_to_model: bool = True,  # noqa: ARG002
@@ -203,14 +225,22 @@ class ClaudeAgentSDKModel(Model):
             ModelResponse objects as they arrive
         """
         try:
-            prompt = self._convert_messages_to_prompt(messages)
+            # Extract system prompt and convert messages
+            system_prompt, prompt = self._extract_system_and_messages(messages)
 
-            logger.debug(
-                "Claude Agent SDK streaming query - prompt length: %d chars",
-                len(prompt),
+            # Create Claude Agent SDK options
+            options = self._claude_options_class(
+                system_prompt=system_prompt,
+                max_turns=tool_call_limit or 10,
             )
 
-            async for message in self._claude_query(prompt=prompt):
+            logger.debug(
+                "Claude Agent SDK streaming - prompt: %d chars, system: %d chars",
+                len(prompt),
+                len(system_prompt) if system_prompt else 0,
+            )
+
+            async for message in self._claude_query(prompt=prompt, options=options):
                 # Extract content from message
                 content = ""
                 if hasattr(message, "content"):
