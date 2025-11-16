@@ -16,6 +16,10 @@ from agno.models.ollama import Ollama
 from agno.models.openai import OpenAIChat
 from agno.models.openrouter import OpenRouter
 
+from mcp_server_mas_sequential_thinking.models.claude_agent_sdk import (
+    ClaudeAgentSDKModel,
+)
+
 
 class GitHubOpenAI(OpenAIChat):
     """OpenAI provider configured for GitHub Models API with enhanced validation."""
@@ -83,7 +87,7 @@ class GitHubOpenAI(OpenAIChat):
                 "use a real GitHub token."
             )
 
-    def __init__(self, **kwargs: Any) -> None:
+    def __init__(self, **kwargs: Any) -> None:  # noqa: ANN401
         # Set GitHub Models configuration
         kwargs.setdefault("base_url", "https://models.github.ai/inference")
 
@@ -117,7 +121,8 @@ class ModelConfig:
         if self.provider_class == Claude:
             return self.provider_class(
                 id=self.enhanced_model_id,
-                # Note: cache_system_prompt removed - not available in current Agno version
+                # Note: cache_system_prompt removed - not available in
+                # current Agno version
             )
         return self.provider_class(id=self.enhanced_model_id)
 
@@ -127,7 +132,8 @@ class ModelConfig:
         if self.provider_class == Claude:
             return self.provider_class(
                 id=self.standard_model_id,
-                # Note: cache_system_prompt removed - not available in current Agno version
+                # Note: cache_system_prompt removed - not available in
+                # current Agno version
             )
         return self.provider_class(id=self.standard_model_id)
 
@@ -289,6 +295,34 @@ class AnthropicStrategy(BaseProviderStrategy):
         return "ANTHROPIC_API_KEY"
 
 
+class ClaudeAgentSDKStrategy(BaseProviderStrategy):
+    """Claude Agent SDK provider strategy (uses local Claude Code).
+
+    This provider uses the Claude Agent SDK to communicate with locally installed
+    Claude Code, eliminating the need for API keys and enabling the use of
+    Claude Code's capabilities within the Multi-Thinking framework.
+    """
+
+    @property
+    def provider_class(self) -> type[Model]:
+        return ClaudeAgentSDKModel
+
+    @property
+    def default_enhanced_model(self) -> str:
+        # Claude Code uses internal models, but we specify sonnet as default
+        return "claude-sonnet-4-5"
+
+    @property
+    def default_standard_model(self) -> str:
+        # Both enhanced and standard use the same model in Claude Code
+        return "claude-sonnet-4-5"
+
+    @property
+    def api_key_name(self) -> str | None:
+        # Claude Agent SDK doesn't require API keys - uses local Claude Code
+        return None
+
+
 class ConfigurationManager:
     """Manages configuration strategies with dependency injection."""
 
@@ -300,6 +334,7 @@ class ConfigurationManager:
             "ollama": OllamaStrategy(),
             "github": GitHubStrategy(),
             "anthropic": AnthropicStrategy(),
+            "claude-agent-sdk": ClaudeAgentSDKStrategy(),
         }
         self._default_strategy = "deepseek"
 
@@ -342,7 +377,7 @@ class ConfigurationManager:
         exa_key = os.environ.get("EXA_API_KEY")
         if not exa_key:
             # Don't fail startup - just log warning that research will be disabled
-            import logging
+            import logging  # noqa: PLC0415
 
             logging.getLogger(__name__).warning(
                 "EXA_API_KEY not found. Research tools will be disabled."

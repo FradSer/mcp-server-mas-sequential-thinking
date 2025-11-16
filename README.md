@@ -202,6 +202,7 @@ Research is **optional** - requires `EXA_API_KEY` environment variable. The syst
 - **AI Selection**: System automatically chooses the right model based on task complexity
 
 ### Supported Providers:
+- **Claude Agent SDK** - Use local Claude Code (no API key required!)
 - **DeepSeek** (default) - High performance, cost-effective
 - **Groq** - Ultra-fast inference
 - **OpenRouter** - Access to multiple models
@@ -339,8 +340,11 @@ Create a `.env` file or set these variables:
 
 ```bash
 # LLM Provider (required)
-LLM_PROVIDER="deepseek"  # deepseek, groq, openrouter, github, anthropic, ollama
+LLM_PROVIDER="deepseek"  # deepseek, groq, openrouter, github, anthropic, ollama, claude-agent-sdk
 DEEPSEEK_API_KEY="sk-..."
+
+# Or use Claude Agent SDK (no API key needed!)
+# LLM_PROVIDER="claude-agent-sdk"  # Requires Claude Code installed locally
 
 # Optional: Enhanced/Standard Model Selection
 # DEEPSEEK_ENHANCED_MODEL_ID="deepseek-chat"  # For synthesis

@@ -57,8 +57,8 @@ External LLM → sequentialthinking tool → ThoughtProcessor → WorkflowExecut
 ### Configuration & Data Flow
 
 **Environment Variables:**
-- `LLM_PROVIDER`: Provider selection (deepseek, groq, openrouter, ollama, github, anthropic)
-- `{PROVIDER}_API_KEY`: API keys (e.g., `DEEPSEEK_API_KEY`, `GITHUB_TOKEN`)
+- `LLM_PROVIDER`: Provider selection (deepseek, groq, openrouter, ollama, github, anthropic, claude-agent-sdk)
+- `{PROVIDER}_API_KEY`: API keys (e.g., `DEEPSEEK_API_KEY`, `GITHUB_TOKEN`) - **Not required for claude-agent-sdk**
 - `{PROVIDER}_ENHANCED_MODEL_ID`: Enhanced model for complex synthesis (Blue Hat)
 - `{PROVIDER}_STANDARD_MODEL_ID`: Standard model for individual hat processing
 - `EXA_API_KEY`: Research capabilities (if using research agents)
@@ -122,6 +122,13 @@ External LLM → sequentialthinking tool → ThoughtProcessor → WorkflowExecut
 
 **Examples:**
 ```bash
+# Claude Agent SDK (uses local Claude Code - no API key needed!)
+LLM_PROVIDER="claude-agent-sdk"
+# No API key required - uses locally installed Claude Code
+# Model IDs are informational - Claude Code uses its internal models
+CLAUDE_AGENT_SDK_ENHANCED_MODEL_ID="claude-sonnet-4-5"  # Both synthesis and processing
+CLAUDE_AGENT_SDK_STANDARD_MODEL_ID="claude-sonnet-4-5"
+
 # GitHub Models
 GITHUB_ENHANCED_MODEL_ID="openai/gpt-5"      # Blue Hat synthesis
 GITHUB_STANDARD_MODEL_ID="openai/gpt-5-min"  # Individual hats

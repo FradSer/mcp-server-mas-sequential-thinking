@@ -172,6 +172,20 @@ wheels = [
 ]
 
 [[package]]
+name = "claude-agent-sdk"
+version = "0.1.6"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "anyio" },
+    { name = "mcp" },
+    { name = "typing-extensions", marker = "python_full_version < '3.11'" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/4f/b6/b73279eb875333fcc3e14c28fc080f815abaf35d2a65b132be0c8b05851c/claude_agent_sdk-0.1.6.tar.gz", hash = "sha256:3090a595896d65a5d951e158e191b462759aafc97399e700e4f857d5265a8f23", size = 49328, upload-time = "2025-10-31T05:15:55.803Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/cc/12/38e4e9f7f79f2c04c7be34cd995ef4a56681f8266e382a5288ce815ede71/claude_agent_sdk-0.1.6-py3-none-any.whl", hash = "sha256:54227b096e8c7cfb60fc8b570082fce1f91ea060413092f65a08a2824cb9cb4b", size = 36369, upload-time = "2025-10-31T05:15:54.767Z" },
+]
+
+[[package]]
 name = "click"
 version = "8.2.1"
 source = { registry = "https://pypi.org/simple" }
@@ -548,6 +562,7 @@ source = { editable = "." }
 dependencies = [
     { name = "agno" },
     { name = "asyncio" },
+    { name = "claude-agent-sdk" },
     { name = "exa-py" },
     { name = "groq" },
     { name = "httpx", extra = ["socks"] },
@@ -577,6 +592,7 @@ requires-dist = [
     { name = "agno", specifier = ">=2.0.5" },
     { name = "asyncio" },
     { name = "black", marker = "extra == 'dev'" },
+    { name = "claude-agent-sdk" },
     { name = "exa-py" },
     { name = "groq" },
     { name = "httpx", extras = ["socks"], specifier = ">=0.28.1" },
@@ -692,15 +708,16 @@ wheels = [
 
 [[package]]
 name = "openrouter"
-version = "1.0"
+version = "0.0.16"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "requests" },
-    { name = "urllib3" },
+    { name = "httpcore" },
+    { name = "httpx" },
+    { name = "pydantic" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/50/3c/e2471e2bf3de74cb1832e52706a8c7288378c03f6060bda8b6f86e6ca2f3/openrouter-1.0.tar.gz", hash = "sha256:1f120ba67d85fa8ef7d4f47d10aeff8bea1d657f02a05b3cbad4e3a60382fff2", size = 3855, upload-time = "2024-08-28T20:30:40.146Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/6c/d5/650560397cd9a1d9f40c561e1b584d5a794fc17936613f48f2c9565c9ccd/openrouter-0.0.16.tar.gz", hash = "sha256:7c5a5ed7f6f046d6db3fc5886a4e7971945f82fa3e12bf26e0ca3693f59bb245", size = 110272, upload-time = "2025-11-15T18:52:37.288Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/06/91/60b826a2499c81dec10642182e8531d4588d059d91f145d1923ca2bf6a6b/openrouter-1.0-py3-none-any.whl", hash = "sha256:4f3d50991dbf4b269d270622ab38be75e6162da9e09acdaead8697081ffe6167", size = 3791, upload-time = "2024-08-28T20:30:38.84Z" },
+    { url = "https://files.pythonhosted.org/packages/a6/ee/2fa3dc5db531d65e21e9c8538f748f2baafd79f91968386c50f443d98636/openrouter-0.0.16-py3-none-any.whl", hash = "sha256:b69bcb5a401d6932ef80740b449859601e5371ce9184052a5cd7c56a0f03c770", size = 234484, upload-time = "2025-11-15T18:52:36.065Z" },
 ]
 
 [[package]]

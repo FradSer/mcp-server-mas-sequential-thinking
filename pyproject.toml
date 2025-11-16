@@ -19,6 +19,7 @@ dependencies = [
     "openrouter",
     "httpx[socks]>=0.28.1",
     "sqlalchemy",
+    "claude-agent-sdk",
 ]
 
 [project.optional-dependencies]
