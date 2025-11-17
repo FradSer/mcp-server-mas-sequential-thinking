@@ -5,7 +5,7 @@ allowing the use of local Claude Code as a model provider within Multi-Thinking.
 """
 
 import logging
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Awaitable, Callable
 from pathlib import Path
 from typing import Any, Literal
 
@@ -22,11 +22,44 @@ class ClaudeAgentSDKModel(Model):
     This class bridges Claude Agent SDK (local Claude Code) with the Agno framework,
     enabling it to be used as a model provider in the Multi-Thinking architecture.
 
-    The wrapper:
+    Features:
     - Converts Agno messages to Claude Agent SDK query format
     - Executes queries through local Claude Code
     - Returns responses in Agno ModelResponse format
     - Supports reasoning tools (Think tool in Claude Agent SDK)
+    - Tool permission management (allowed_tools, can_use_tool callback)
+    - MCP server integration
+    - Environment variables and working directory control
+    - Event hooks (PreToolUse, PostToolUse, UserPromptSubmit, etc.)
+    - Additional directory access for context
+
+    Example:
+        Basic usage:
+        >>> model = ClaudeAgentSDKModel(
+        ...     model_id="claude-sonnet-4-5",
+        ...     permission_mode="bypassPermissions"
+        ... )
+
+        With MCP servers:
+        >>> model = ClaudeAgentSDKModel(
+        ...     mcp_servers={"filesystem": {...}},
+        ...     env={"DEBUG": "1"},
+        ...     add_dirs=["/path/to/project"]
+        ... )
+
+        With hooks:
+        >>> hooks = {
+        ...     "PreToolUse": [lambda ctx: print(f"Using {ctx.tool_name}")],
+        ...     "PostToolUse": [lambda ctx: print(f"Completed {ctx.tool_name}")]
+        ... }
+        >>> model = ClaudeAgentSDKModel(hooks=hooks)
+
+        With permission callback:
+        >>> async def check_permission(tool_name, args, context):
+        ...     if tool_name == "dangerous_tool":
+        ...         return {"allow": False, "reason": "Not allowed"}
+        ...     return {"allow": True}
+        >>> model = ClaudeAgentSDKModel(can_use_tool=check_permission)
     """
 
     def __init__(
@@ -37,6 +70,12 @@ class ClaudeAgentSDKModel(Model):
             "default", "acceptEdits", "plan", "bypassPermissions"
         ] = "bypassPermissions",
         cwd: str | None = None,
+        mcp_servers: dict[str, Any] | str | Path | None = None,
+        env: dict[str, str] | None = None,
+        add_dirs: list[str | Path] | None = None,
+        hooks: dict[str, list[Any]] | None = None,
+        can_use_tool: Callable[[str, dict[str, Any], Any], Awaitable[Any]]
+        | None = None,
         **kwargs: Any,  # noqa: ANN401
     ) -> None:
         """Initialize Claude Agent SDK model.
@@ -50,6 +89,11 @@ class ClaudeAgentSDKModel(Model):
                 - 'plan': Plan mode for reviewing actions
                 - 'bypassPermissions': Bypass all permission checks (default)
             cwd: Working directory for Claude Code (default: current directory)
+            mcp_servers: MCP servers configuration (dict, path to config, or None)
+            env: Environment variables to pass to Claude Code
+            add_dirs: Additional directories for context/file access
+            hooks: Event hooks (PreToolUse, PostToolUse, UserPromptSubmit, etc.)
+            can_use_tool: Runtime callback for tool permission checks
             **kwargs: Additional arguments passed to base Model class
         """
         super().__init__(
@@ -62,6 +106,11 @@ class ClaudeAgentSDKModel(Model):
         # Store configuration
         self.permission_mode = permission_mode
         self.cwd = cwd or str(Path.cwd())
+        self.mcp_servers = mcp_servers
+        self.env = env or {}
+        self.add_dirs = [str(d) for d in add_dirs] if add_dirs else []
+        self.hooks = hooks
+        self.can_use_tool = can_use_tool
 
         # Lazy import to avoid issues if SDK not installed
         try:
@@ -85,10 +134,16 @@ class ClaudeAgentSDKModel(Model):
 
         logger.info(
             "Initialized Claude Agent SDK model: %s (provider: claude-agent-sdk, "
-            "permission_mode: %s, cwd: %s)",
+            "permission_mode: %s, cwd: %s, mcp_servers: %s, env_vars: %d, "
+            "add_dirs: %d, hooks: %s, can_use_tool: %s)",
             model_id,
             permission_mode,
             self.cwd,
+            "configured" if self.mcp_servers else "none",
+            len(self.env),
+            len(self.add_dirs),
+            list(self.hooks.keys()) if self.hooks else "none",
+            "configured" if self.can_use_tool else "none",
         )
 
     def _extract_system_and_messages(
@@ -198,7 +253,7 @@ class ClaudeAgentSDKModel(Model):
 
         return tool_calls
 
-    async def aresponse(
+    async def aresponse(  # noqa: PLR0912
         self,
         messages: list[Message],
         response_format: dict[str, Any] | type | None = None,  # noqa: ARG002
@@ -232,14 +287,34 @@ class ClaudeAgentSDKModel(Model):
             allowed_tools = self._map_tools_to_allowed_tools(tools)
 
             # Create Claude Agent SDK options
-            options = self._claude_options_class(
-                system_prompt=system_prompt,
-                max_turns=tool_call_limit or 10,  # Use tool_call_limit as max_turns
-                model=self.id,  # Pass model ID to Claude Agent SDK
-                permission_mode=self.permission_mode,  # Permission mode
-                cwd=self.cwd,  # Working directory
-                allowed_tools=allowed_tools if allowed_tools else None,
-            )
+            options_kwargs: dict[str, Any] = {
+                "system_prompt": system_prompt,
+                "max_turns": tool_call_limit or 10,
+                "model": self.id,
+                "permission_mode": self.permission_mode,
+                "cwd": self.cwd,
+            }
+
+            # Add optional parameters if provided
+            if allowed_tools:
+                options_kwargs["allowed_tools"] = allowed_tools
+
+            if self.mcp_servers is not None:
+                options_kwargs["mcp_servers"] = self.mcp_servers
+
+            if self.env:
+                options_kwargs["env"] = self.env
+
+            if self.add_dirs:
+                options_kwargs["add_dirs"] = self.add_dirs
+
+            if self.hooks is not None:
+                options_kwargs["hooks"] = self.hooks
+
+            if self.can_use_tool is not None:
+                options_kwargs["can_use_tool"] = self.can_use_tool
+
+            options = self._claude_options_class(**options_kwargs)
 
             logger.debug(
                 "Claude Agent SDK query - prompt: %d chars, system: %d chars, "
@@ -291,6 +366,11 @@ class ClaudeAgentSDKModel(Model):
                     "provider": "claude-agent-sdk",
                     "permission_mode": self.permission_mode,
                     "cwd": self.cwd,
+                    "mcp_servers_configured": self.mcp_servers is not None,
+                    "env_vars_count": len(self.env),
+                    "add_dirs_count": len(self.add_dirs),
+                    "hooks_configured": list(self.hooks.keys()) if self.hooks else [],
+                    "can_use_tool_configured": self.can_use_tool is not None,
                 },
             )
 
@@ -307,7 +387,7 @@ class ClaudeAgentSDKModel(Model):
                 },
             )
 
-    async def aresponse_stream(
+    async def aresponse_stream(  # noqa: PLR0912
         self,
         messages: list[Message],
         response_format: dict[str, Any] | type | None = None,  # noqa: ARG002
@@ -341,14 +421,34 @@ class ClaudeAgentSDKModel(Model):
             allowed_tools = self._map_tools_to_allowed_tools(tools)
 
             # Create Claude Agent SDK options
-            options = self._claude_options_class(
-                system_prompt=system_prompt,
-                max_turns=tool_call_limit or 10,
-                model=self.id,
-                permission_mode=self.permission_mode,
-                cwd=self.cwd,
-                allowed_tools=allowed_tools if allowed_tools else None,
-            )
+            options_kwargs: dict[str, Any] = {
+                "system_prompt": system_prompt,
+                "max_turns": tool_call_limit or 10,
+                "model": self.id,
+                "permission_mode": self.permission_mode,
+                "cwd": self.cwd,
+            }
+
+            # Add optional parameters if provided
+            if allowed_tools:
+                options_kwargs["allowed_tools"] = allowed_tools
+
+            if self.mcp_servers is not None:
+                options_kwargs["mcp_servers"] = self.mcp_servers
+
+            if self.env:
+                options_kwargs["env"] = self.env
+
+            if self.add_dirs:
+                options_kwargs["add_dirs"] = self.add_dirs
+
+            if self.hooks is not None:
+                options_kwargs["hooks"] = self.hooks
+
+            if self.can_use_tool is not None:
+                options_kwargs["can_use_tool"] = self.can_use_tool
+
+            options = self._claude_options_class(**options_kwargs)
 
             logger.debug(
                 "Claude Agent SDK streaming - prompt: %d chars, system: %d chars, "
