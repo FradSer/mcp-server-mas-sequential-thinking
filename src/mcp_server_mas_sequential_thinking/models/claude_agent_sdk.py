@@ -4,6 +4,7 @@ This module provides integration between Claude Agent SDK and Agno framework,
 allowing the use of local Claude Code as a model provider within Multi-Thinking.
 """
 
+import json
 import logging
 from collections.abc import AsyncIterator, Awaitable, Callable
 from pathlib import Path
@@ -12,6 +13,7 @@ from typing import Any, Literal
 from agno.models.base import Model
 from agno.models.message import Message
 from agno.models.response import ModelResponse
+from pydantic import BaseModel
 
 logger = logging.getLogger(__name__)
 
@@ -27,11 +29,15 @@ class ClaudeAgentSDKModel(Model):
     - Executes queries through local Claude Code
     - Returns responses in Agno ModelResponse format
     - Supports reasoning tools (Think tool in Claude Agent SDK)
-    - Tool permission management (allowed_tools, can_use_tool callback)
+    - Tool permission management (allowed_tools, disallowed_tools, can_use_tool)
     - MCP server integration
     - Environment variables and working directory control
     - Event hooks (PreToolUse, PostToolUse, UserPromptSubmit, etc.)
     - Additional directory access for context
+    - Structured outputs support (BaseModel schemas and JSON mode)
+    - Tool choice strategies (none, auto, required, specific tool selection)
+    - Session continuation and user context tracking
+    - Usage and timing metadata extraction (tokens, cache, stop_reason)
 
     Example:
         Basic usage:
@@ -253,14 +259,14 @@ class ClaudeAgentSDKModel(Model):
 
         return tool_calls
 
-    async def aresponse(  # noqa: PLR0912
+    async def aresponse(  # noqa: PLR0912, PLR0915
         self,
         messages: list[Message],
-        response_format: dict[str, Any] | type | None = None,  # noqa: ARG002
+        response_format: dict[str, Any] | type | None = None,
         tools: list[Any] | None = None,
-        tool_choice: str | dict[str, Any] | None = None,  # noqa: ARG002
+        tool_choice: str | dict[str, Any] | None = None,
         tool_call_limit: int | None = None,
-        run_response: Any = None,  # noqa: ARG002, ANN401
+        run_response: Any = None,  # noqa: ANN401
         send_media_to_model: bool = True,  # noqa: ARG002
     ) -> ModelResponse:
         """Generate async response using Claude Agent SDK.
@@ -269,11 +275,11 @@ class ClaudeAgentSDKModel(Model):
 
         Args:
             messages: List of conversation messages
-            response_format: Optional response format specification
+            response_format: Optional response format specification (BaseModel or dict)
             tools: Optional list of tools (ReasoningTools mapped to Think tool)
             tool_choice: Optional tool selection strategy
             tool_call_limit: Optional limit on tool calls
-            run_response: Optional run response object
+            run_response: Optional run response object with session/user metadata
             send_media_to_model: Whether to send media content
 
         Returns:
@@ -283,8 +289,25 @@ class ClaudeAgentSDKModel(Model):
             # Extract system prompt and convert messages
             system_prompt, prompt = self._extract_system_and_messages(messages)
 
+            # Add response_format instructions to system prompt
+            response_format_prompt = self._format_response_format_prompt(
+                response_format
+            )
+            if response_format_prompt and system_prompt:
+                system_prompt += response_format_prompt
+            elif response_format_prompt:
+                system_prompt = response_format_prompt.strip()
+
             # Map Agno tools to Claude Agent SDK allowed_tools
             allowed_tools = self._map_tools_to_allowed_tools(tools)
+
+            # Process tool_choice to get final allowed/disallowed tools
+            final_allowed_tools, disallowed_tools = self._process_tool_choice(
+                tool_choice, allowed_tools
+            )
+
+            # Extract metadata from run_response
+            run_metadata = self._extract_metadata_from_run_response(run_response)
 
             # Create Claude Agent SDK options
             options_kwargs: dict[str, Any] = {
@@ -296,8 +319,11 @@ class ClaudeAgentSDKModel(Model):
             }
 
             # Add optional parameters if provided
-            if allowed_tools:
-                options_kwargs["allowed_tools"] = allowed_tools
+            if final_allowed_tools:
+                options_kwargs["allowed_tools"] = final_allowed_tools
+
+            if disallowed_tools:
+                options_kwargs["disallowed_tools"] = disallowed_tools
 
             if self.mcp_servers is not None:
                 options_kwargs["mcp_servers"] = self.mcp_servers
@@ -314,24 +340,62 @@ class ClaudeAgentSDKModel(Model):
             if self.can_use_tool is not None:
                 options_kwargs["can_use_tool"] = self.can_use_tool
 
+            # Add session continuation support
+            session_id = run_metadata.get("session_id")
+            if session_id:
+                # Use continue_conversation for session continuity
+                options_kwargs["continue_conversation"] = True
+                logger.debug(
+                    "Enabling session continuation with session_id: %s", session_id
+                )
+
+            # Add user information if available
+            user_id = run_metadata.get("user_id")
+            if user_id:
+                options_kwargs["user"] = {"id": user_id}
+                logger.debug("Adding user context: %s", user_id)
+
             options = self._claude_options_class(**options_kwargs)
 
             logger.debug(
                 "Claude Agent SDK query - prompt: %d chars, system: %d chars, "
-                "allowed_tools: %s",
+                "allowed_tools: %s, disallowed_tools: %s, response_format: %s, "
+                "tool_choice: %s, session_id: %s",
                 len(prompt),
                 len(system_prompt) if system_prompt else 0,
-                allowed_tools,
+                final_allowed_tools,
+                disallowed_tools,
+                "configured" if response_format else "none",
+                tool_choice,
+                session_id,
             )
 
             # Collect response from Claude Agent SDK
             full_response = ""
             collected_tool_calls = []
+            accumulated_usage: dict[str, Any] = {}
+
             async for message in self._claude_query(prompt=prompt, options=options):
                 # Extract tool calls from message
                 tool_calls = self._extract_tool_calls(message)
                 if tool_calls:
                     collected_tool_calls.extend(tool_calls)
+
+                # Extract usage metadata
+                usage_data = self._extract_usage_metadata(message)
+                if usage_data:
+                    # Accumulate usage data
+                    for key, value in usage_data.items():
+                        if key in (
+                            "input_tokens",
+                            "output_tokens",
+                            "cache_creation_input_tokens",
+                            "cache_read_input_tokens",
+                        ):
+                            current = accumulated_usage.get(key, 0)
+                            accumulated_usage[key] = current + value
+                        else:
+                            accumulated_usage[key] = value
 
                 # Claude Agent SDK returns message objects
                 # Extract text content
@@ -351,27 +415,43 @@ class ClaudeAgentSDKModel(Model):
                     full_response += str(message)
 
             logger.debug(
-                "Claude Agent SDK response - length: %d chars, tool_calls: %d",
+                "Claude Agent SDK response - length: %d chars, tool_calls: %d, "
+                "usage: %s",
                 len(full_response),
                 len(collected_tool_calls),
+                accumulated_usage,
             )
 
-            # Create Agno ModelResponse with tool calls
+            # Build comprehensive provider_data
+            provider_data: dict[str, Any] = {
+                "model_id": self.id,
+                "provider": "claude-agent-sdk",
+                "permission_mode": self.permission_mode,
+                "cwd": self.cwd,
+                "mcp_servers_configured": self.mcp_servers is not None,
+                "env_vars_count": len(self.env),
+                "add_dirs_count": len(self.add_dirs),
+                "hooks_configured": list(self.hooks.keys()) if self.hooks else [],
+                "can_use_tool_configured": self.can_use_tool is not None,
+                "response_format_used": response_format is not None,
+                "tool_choice_used": tool_choice,
+                "session_continuation": session_id is not None,
+            }
+
+            # Add usage data to provider_data
+            if accumulated_usage:
+                provider_data["usage"] = accumulated_usage
+
+            # Add run metadata
+            if run_metadata:
+                provider_data["run_metadata"] = run_metadata
+
+            # Create Agno ModelResponse with all metadata
             return ModelResponse(
                 role="assistant",
                 content=full_response,
                 tool_calls=collected_tool_calls if collected_tool_calls else [],
-                provider_data={
-                    "model_id": self.id,
-                    "provider": "claude-agent-sdk",
-                    "permission_mode": self.permission_mode,
-                    "cwd": self.cwd,
-                    "mcp_servers_configured": self.mcp_servers is not None,
-                    "env_vars_count": len(self.env),
-                    "add_dirs_count": len(self.add_dirs),
-                    "hooks_configured": list(self.hooks.keys()) if self.hooks else [],
-                    "can_use_tool_configured": self.can_use_tool is not None,
-                },
+                provider_data=provider_data,
             )
 
         except Exception as e:
@@ -387,27 +467,27 @@ class ClaudeAgentSDKModel(Model):
                 },
             )
 
-    async def aresponse_stream(  # noqa: PLR0912
+    async def aresponse_stream(  # noqa: PLR0912, PLR0915
         self,
         messages: list[Message],
-        response_format: dict[str, Any] | type | None = None,  # noqa: ARG002
+        response_format: dict[str, Any] | type | None = None,
         tools: list[Any] | None = None,
-        tool_choice: str | dict[str, Any] | None = None,  # noqa: ARG002
+        tool_choice: str | dict[str, Any] | None = None,
         tool_call_limit: int | None = None,
         stream_model_response: bool = True,  # noqa: ARG002
-        run_response: Any = None,  # noqa: ARG002, ANN401
+        run_response: Any = None,  # noqa: ANN401
         send_media_to_model: bool = True,  # noqa: ARG002
     ) -> AsyncIterator[ModelResponse]:
         """Generate streaming async response using Claude Agent SDK.
 
         Args:
             messages: List of conversation messages
-            response_format: Optional response format specification
+            response_format: Optional response format specification (BaseModel or dict)
             tools: Optional list of tools
             tool_choice: Optional tool selection strategy
             tool_call_limit: Optional limit on tool calls
             stream_model_response: Whether to stream responses
-            run_response: Optional run response object
+            run_response: Optional run response object with session/user metadata
             send_media_to_model: Whether to send media content
 
         Yields:
@@ -417,8 +497,25 @@ class ClaudeAgentSDKModel(Model):
             # Extract system prompt and convert messages
             system_prompt, prompt = self._extract_system_and_messages(messages)
 
+            # Add response_format instructions to system prompt
+            response_format_prompt = self._format_response_format_prompt(
+                response_format
+            )
+            if response_format_prompt and system_prompt:
+                system_prompt += response_format_prompt
+            elif response_format_prompt:
+                system_prompt = response_format_prompt.strip()
+
             # Map Agno tools to Claude Agent SDK allowed_tools
             allowed_tools = self._map_tools_to_allowed_tools(tools)
+
+            # Process tool_choice to get final allowed/disallowed tools
+            final_allowed_tools, disallowed_tools = self._process_tool_choice(
+                tool_choice, allowed_tools
+            )
+
+            # Extract metadata from run_response
+            run_metadata = self._extract_metadata_from_run_response(run_response)
 
             # Create Claude Agent SDK options
             options_kwargs: dict[str, Any] = {
@@ -430,8 +527,11 @@ class ClaudeAgentSDKModel(Model):
             }
 
             # Add optional parameters if provided
-            if allowed_tools:
-                options_kwargs["allowed_tools"] = allowed_tools
+            if final_allowed_tools:
+                options_kwargs["allowed_tools"] = final_allowed_tools
+
+            if disallowed_tools:
+                options_kwargs["disallowed_tools"] = disallowed_tools
 
             if self.mcp_servers is not None:
                 options_kwargs["mcp_servers"] = self.mcp_servers
@@ -448,19 +548,42 @@ class ClaudeAgentSDKModel(Model):
             if self.can_use_tool is not None:
                 options_kwargs["can_use_tool"] = self.can_use_tool
 
+            # Add session continuation support
+            session_id = run_metadata.get("session_id")
+            if session_id:
+                options_kwargs["continue_conversation"] = True
+                logger.debug(
+                    "Enabling session continuation (stream) with session_id: %s",
+                    session_id,
+                )
+
+            # Add user information if available
+            user_id = run_metadata.get("user_id")
+            if user_id:
+                options_kwargs["user"] = {"id": user_id}
+                logger.debug("Adding user context (stream): %s", user_id)
+
             options = self._claude_options_class(**options_kwargs)
 
             logger.debug(
                 "Claude Agent SDK streaming - prompt: %d chars, system: %d chars, "
-                "allowed_tools: %s",
+                "allowed_tools: %s, disallowed_tools: %s, response_format: %s, "
+                "tool_choice: %s, session_id: %s",
                 len(prompt),
                 len(system_prompt) if system_prompt else 0,
-                allowed_tools,
+                final_allowed_tools,
+                disallowed_tools,
+                "configured" if response_format else "none",
+                tool_choice,
+                session_id,
             )
 
             async for message in self._claude_query(prompt=prompt, options=options):
                 # Extract tool calls from message
                 tool_calls = self._extract_tool_calls(message)
+
+                # Extract usage metadata for each chunk
+                usage_data = self._extract_usage_metadata(message)
 
                 # Extract content from message
                 content = ""
@@ -476,18 +599,32 @@ class ClaudeAgentSDKModel(Model):
                 else:
                     content = str(message)
 
+                # Build provider_data for this chunk
+                provider_data: dict[str, Any] = {
+                    "model_id": self.id,
+                    "provider": "claude-agent-sdk",
+                    "streaming": True,
+                    "permission_mode": self.permission_mode,
+                    "response_format_used": response_format is not None,
+                    "tool_choice_used": tool_choice,
+                    "session_continuation": session_id is not None,
+                }
+
+                # Add usage data if available
+                if usage_data:
+                    provider_data["usage"] = usage_data
+
+                # Add run metadata to first chunk
+                if run_metadata:
+                    provider_data["run_metadata"] = run_metadata
+
                 # Yield response with content or tool calls
                 if content or tool_calls:
                     yield ModelResponse(
                         role="assistant",
                         content=content,
                         tool_calls=tool_calls if tool_calls else [],
-                        provider_data={
-                            "model_id": self.id,
-                            "provider": "claude-agent-sdk",
-                            "streaming": True,
-                            "permission_mode": self.permission_mode,
-                        },
+                        provider_data=provider_data,
                     )
 
         except Exception as e:
@@ -528,3 +665,182 @@ class ClaudeAgentSDKModel(Model):
             Provider name string
         """
         return "claude-agent-sdk"
+
+    def supports_native_structured_outputs(self) -> bool:
+        """Check if model supports native structured outputs.
+
+        Claude Agent SDK can follow structured output schemas via system prompts,
+        which provides reliable structured output support.
+
+        Returns:
+            True - Claude SDK supports structured outputs via system prompts
+        """
+        return True
+
+    def supports_json_schema_outputs(self) -> bool:
+        """Check if model supports JSON schema outputs.
+
+        Claude Agent SDK can be instructed to follow JSON schemas through
+        system prompts.
+
+        Returns:
+            True - Claude SDK supports JSON schema outputs
+        """
+        return True
+
+    def _format_response_format_prompt(
+        self, response_format: dict[str, Any] | type | None
+    ) -> str:
+        """Convert response_format to system prompt instructions.
+
+        Args:
+            response_format: Response format specification (BaseModel or dict)
+
+        Returns:
+            Formatted prompt instructions for response format
+        """
+        if response_format is None:
+            return ""
+
+        # Handle Pydantic BaseModel (structured outputs)
+        if isinstance(response_format, type) and issubclass(response_format, BaseModel):
+            schema = response_format.model_json_schema()
+            schema_str = json.dumps(schema, indent=2)
+            return (
+                f"\n\n## Response Format\n"
+                f"Return your response as valid JSON matching this schema:\n"
+                f"```json\n{schema_str}\n```\n"
+                f"Ensure all required fields are present and types match the schema."
+            )
+
+        # Handle JSON mode (dict with type: json_object)
+        if isinstance(response_format, dict):
+            if response_format.get("type") == "json_object":
+                return (
+                    "\n\n## Response Format\n"
+                    "Return your response as a valid JSON object. "
+                    "Use proper JSON syntax with quoted keys and appropriate "
+                    "data types."
+                )
+            # Handle other dict-based schemas
+            schema_str = json.dumps(response_format, indent=2)
+            return (
+                f"\n\n## Response Format\n"
+                f"Return your response matching this format:\n"
+                f"```json\n{schema_str}\n```"
+            )
+
+        return ""
+
+    def _process_tool_choice(
+        self, tool_choice: str | dict[str, Any] | None, allowed_tools: list[str]
+    ) -> tuple[list[str] | None, list[str] | None]:
+        """Process tool_choice parameter into allowed_tools and disallowed_tools.
+
+        Args:
+            tool_choice: Tool selection strategy from Agno
+            allowed_tools: Current list of allowed tools
+
+        Returns:
+            Tuple of (allowed_tools, disallowed_tools) - either can be None
+        """
+        if tool_choice is None:
+            # No preference - use allowed_tools as-is
+            return (allowed_tools if allowed_tools else None, None)
+
+        # Handle string tool_choice
+        if isinstance(tool_choice, str):
+            if tool_choice == "none":
+                # Disable all tools
+                return (None, allowed_tools if allowed_tools else None)
+            if tool_choice in ("required", "any"):
+                # Keep allowed_tools as-is (model must use tools)
+                return (allowed_tools if allowed_tools else None, None)
+            if tool_choice == "auto":
+                # Model decides - keep allowed_tools as-is
+                return (allowed_tools if allowed_tools else None, None)
+
+        # Handle dict tool_choice (specific tool selection)
+        if isinstance(tool_choice, dict):
+            tool_type = tool_choice.get("type")
+            if tool_type in ("tool", "function"):
+                # Specific tool required
+                tool_name = tool_choice.get("name")
+                if tool_name:
+                    # Only allow this specific tool
+                    # Disallow all others
+                    disallowed = [t for t in allowed_tools if t != tool_name]
+                    return ([tool_name], disallowed if disallowed else None)
+
+        # Default: use allowed_tools as-is
+        return (allowed_tools if allowed_tools else None, None)
+
+    def _extract_metadata_from_run_response(
+        self,
+        run_response: Any,  # noqa: ANN401
+    ) -> dict[str, Any]:
+        """Extract useful metadata from Agno run_response.
+
+        Args:
+            run_response: RunResponse object from Agno
+
+        Returns:
+            Dictionary with extracted metadata
+        """
+        metadata: dict[str, Any] = {}
+
+        if run_response is None:
+            return metadata
+
+        # Extract session_id for resume support
+        if hasattr(run_response, "session_id"):
+            metadata["session_id"] = run_response.session_id
+
+        # Extract user_id
+        if hasattr(run_response, "user_id"):
+            metadata["user_id"] = run_response.user_id
+
+        # Extract run_id
+        if hasattr(run_response, "run_id"):
+            metadata["run_id"] = run_response.run_id
+
+        # Extract metadata dict if present
+        if hasattr(run_response, "metadata"):
+            metadata["agno_metadata"] = run_response.metadata
+
+        return metadata
+
+    def _extract_usage_metadata(self, message: Any) -> dict[str, Any]:  # noqa: ANN401
+        """Extract usage and timing metadata from Claude SDK message.
+
+        Args:
+            message: Message object from Claude Agent SDK
+
+        Returns:
+            Dictionary with usage metadata
+        """
+        usage_data: dict[str, Any] = {}
+
+        # Try to extract usage information
+        if hasattr(message, "usage"):
+            usage = message.usage
+            if hasattr(usage, "input_tokens"):
+                usage_data["input_tokens"] = usage.input_tokens
+            if hasattr(usage, "output_tokens"):
+                usage_data["output_tokens"] = usage.output_tokens
+            if hasattr(usage, "cache_creation_input_tokens"):
+                usage_data["cache_creation_input_tokens"] = (
+                    usage.cache_creation_input_tokens
+                )
+            if hasattr(usage, "cache_read_input_tokens"):
+                usage_data["cache_read_input_tokens"] = usage.cache_read_input_tokens
+
+        # Try to extract stop_reason
+        if hasattr(message, "stop_reason"):
+            usage_data["stop_reason"] = message.stop_reason
+
+        # Try to extract model
+        if hasattr(message, "model"):
+            usage_data["model_used"] = message.model
+
+        return usage_data
