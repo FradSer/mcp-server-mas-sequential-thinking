@@ -203,6 +203,10 @@ Research is **optional** - requires `EXA_API_KEY` environment variable. The syst
 
 ### Supported Providers:
 - **Claude Agent SDK** - Use local Claude Code (no API key required!)
+  - ✨ **New: Advanced Agno Integration** - Structured outputs, tool choice strategies, session continuation
+  - ✅ Automatic usage tracking (tokens, cache efficiency, stop_reason)
+  - ✅ User context and session continuity across Multi-Thinking sequences
+  - 📖 See [CLAUDE.md: Claude Agent SDK Advanced Features](CLAUDE.md#claude-agent-sdk-advanced-features) for detailed usage
 - **DeepSeek** (default) - High performance, cost-effective
 - **Groq** - Ultra-fast inference
 - **OpenRouter** - Access to multiple models

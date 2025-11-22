@@ -162,6 +162,189 @@ ANTHROPIC_STANDARD_MODEL_ID="claude-3-5-haiku-20241022"   # Processing
 
 **For Agno Documentation**: Use deepwiki MCP reference with repoName: `agno-agi/agno`
 
+## Claude Agent SDK Advanced Features
+
+The Claude Agent SDK provider supports comprehensive Agno integration with advanced features:
+
+### Structured Outputs Support
+
+**Response Format Configuration:**
+The SDK supports structured outputs through Agno's `response_format` parameter:
+
+```python
+from pydantic import BaseModel
+
+class ThinkingResult(BaseModel):
+    """Structured thinking output"""
+    analysis: str
+    confidence: float
+    key_insights: list[str]
+
+# Agent automatically uses this schema
+agent = Agent(
+    model=claude_sdk_model,
+    output_schema=ThinkingResult  # Converted to system prompt instructions
+)
+```
+
+**Supported Formats:**
+- **Pydantic BaseModel**: Full schema with validation (converted to JSON schema in system prompt)
+- **JSON Mode**: `{"type": "json_object"}` for generic JSON output
+- **Custom Schemas**: Dict-based schemas with properties
+
+**How it Works:**
+- `supports_native_structured_outputs()` returns `True` for Agno compatibility
+- Schema is converted to detailed system prompt instructions
+- Claude follows the schema structure via system prompt guidance
+- Reliable structured output without native SDK support
+
+### Tool Choice Strategies
+
+**Fine-grained Tool Control:**
+```python
+agent = Agent(
+    model=claude_sdk_model,
+    tools=[ReasoningTools],
+    tool_choice="required"  # Force tool usage
+)
+
+# Available strategies:
+# - "none": Disable all tools
+# - "auto": Model decides (default)
+# - "required" / "any": Model must use tools
+# - {"type": "tool", "name": "Think"}: Specific tool only
+```
+
+**Automatic Mapping:**
+- `tool_choice="none"` → All tools added to `disallowed_tools`
+- `tool_choice="required"` → Keep `allowed_tools` as-is
+- Specific tool selection → Only that tool in `allowed_tools`, rest in `disallowed_tools`
+
+### Session Continuation and User Context
+
+**Automatic Session Tracking:**
+```python
+# Agno automatically provides session_id and user_id
+agent.arun(
+    "Continue our previous discussion",
+    session_id="abc123",  # Extracted automatically
+    user_id="user_456"     # Used for personalization
+)
+
+# SDK automatically:
+# - Sets continue_conversation=True
+# - Passes user context: {"id": "user_456"}
+# - Maintains conversation continuity
+```
+
+**Benefits:**
+- Multi-Thinking sequences maintain context across hat switches
+- User-specific personalization
+- Session history preservation
+
+### Usage and Cost Tracking
+
+**Automatic Metadata Extraction:**
+Every response includes comprehensive usage data:
+
+```python
+response = await agent.arun("Analyze this problem")
+
+# Available in response.provider_data:
+{
+    "usage": {
+        "input_tokens": 1500,
+        "output_tokens": 800,
+        "cache_creation_input_tokens": 200,
+        "cache_read_input_tokens": 1000,
+        "stop_reason": "end_turn",
+        "model_used": "claude-sonnet-4-5"
+    },
+    "run_metadata": {
+        "session_id": "abc123",
+        "user_id": "user_456",
+        "run_id": "run_789"
+    },
+    "response_format_used": True,
+    "tool_choice_used": "auto",
+    "session_continuation": True
+}
+```
+
+**Use Cases:**
+- Cost analysis and budget tracking
+- Performance monitoring
+- Cache efficiency optimization
+- Debugging and troubleshooting
+
+### Advanced Configuration
+
+**All Supported ClaudeAgentOptions:**
+```python
+from pathlib import Path
+
+model = ClaudeAgentSDKModel(
+    model_id="claude-sonnet-4-5",
+
+    # Permission control
+    permission_mode="bypassPermissions",  # default, acceptEdits, plan, bypassPermissions
+
+    # File system access
+    cwd="/path/to/project",
+    add_dirs=[Path("/extra/context")],
+
+    # MCP servers
+    mcp_servers={
+        "filesystem": {"path": "/path/to/mcp/config"}
+    },
+
+    # Environment
+    env={"DEBUG": "1", "CUSTOM_VAR": "value"},
+
+    # Event hooks
+    hooks={
+        "PreToolUse": [lambda ctx: print(f"Using {ctx.tool_name}")],
+        "PostToolUse": [lambda ctx: print(f"Completed {ctx.tool_name}")]
+    },
+
+    # Permission callback
+    can_use_tool=async_permission_checker
+)
+```
+
+**Automatic Agno Integration:**
+When used with Agno Agent:
+- ✅ `response_format` → System prompt schema instructions
+- ✅ `tool_choice` → Allowed/disallowed tools mapping
+- ✅ `tools` → Automatic tool name mapping (ReasoningTools → Think)
+- ✅ `tool_call_limit` → max_turns parameter
+- ✅ `run_response.session_id` → continue_conversation
+- ✅ `run_response.user_id` → user context
+- ✅ Usage metadata → Extracted and tracked
+
+### Multi-Thinking Integration Benefits
+
+**For Multi-Thinking Workflow:**
+1. **Structured Outputs**: Each hat can return structured JSON for reliable parsing
+2. **Tool Control**: Fine-tune which hats use Think tool vs direct responses
+3. **Session Context**: Maintain context across all 6 thinking agents
+4. **Cost Tracking**: Monitor token usage per hat for optimization
+5. **User Personalization**: Context-aware responses based on user history
+
+**Example Multi-Thinking Flow:**
+```
+Factual Hat → (session_id: abc123)
+   ↓ usage: 500 input, 200 output tokens
+Emotional Hat → (session continues, uses cache)
+   ↓ usage: 100 input (400 cached), 150 output
+Critical Hat → (session continues)
+   ↓ usage: 100 input (400 cached), 250 output
+...
+Synthesis Hat → (full context, structured output)
+   ✓ Total cost tracked across all hats
+   ✓ Cache efficiency: 80% cache hit rate
+```
+
 ## AI-Powered Complexity Analysis
 
 **Key Innovation**: The system uses AI instead of rule-based pattern matching for complexity analysis:
