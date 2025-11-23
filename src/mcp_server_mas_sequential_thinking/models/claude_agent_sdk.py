@@ -4,6 +4,7 @@ This module provides integration between Claude Agent SDK and Agno framework,
 allowing the use of local Claude Code as a model provider within Multi-Thinking.
 """
 
+import asyncio
 import json
 import logging
 from collections.abc import AsyncIterator, Awaitable, Callable
@@ -259,15 +260,14 @@ class ClaudeAgentSDKModel(Model):
 
         return tool_calls
 
-    async def aresponse(  # noqa: PLR0912, PLR0915
+    async def ainvoke(  # noqa: PLR0912, PLR0915
         self,
         messages: list[Message],
+        assistant_message: Message,
         response_format: dict[str, Any] | type | None = None,
         tools: list[Any] | None = None,
         tool_choice: str | dict[str, Any] | None = None,
-        tool_call_limit: int | None = None,
         run_response: Any = None,  # noqa: ANN401
-        send_media_to_model: bool = True,  # noqa: ARG002
     ) -> ModelResponse:
         """Generate async response using Claude Agent SDK.
 
@@ -275,12 +275,11 @@ class ClaudeAgentSDKModel(Model):
 
         Args:
             messages: List of conversation messages
+            assistant_message: Message object to track metrics (Agno framework)
             response_format: Optional response format specification (BaseModel or dict)
             tools: Optional list of tools (ReasoningTools mapped to Think tool)
             tool_choice: Optional tool selection strategy
-            tool_call_limit: Optional limit on tool calls
             run_response: Optional run response object with session/user metadata
-            send_media_to_model: Whether to send media content
 
         Returns:
             ModelResponse with generated content
@@ -309,10 +308,13 @@ class ClaudeAgentSDKModel(Model):
             # Extract metadata from run_response
             run_metadata = self._extract_metadata_from_run_response(run_response)
 
+            # Start metrics tracking
+            assistant_message.metrics.start_timer()
+
             # Create Claude Agent SDK options
             options_kwargs: dict[str, Any] = {
                 "system_prompt": system_prompt,
-                "max_turns": tool_call_limit or 10,
+                "max_turns": 10,  # Default max_turns
                 "model": self.id,
                 "permission_mode": self.permission_mode,
                 "cwd": self.cwd,
@@ -446,6 +448,9 @@ class ClaudeAgentSDKModel(Model):
             if run_metadata:
                 provider_data["run_metadata"] = run_metadata
 
+            # Stop metrics tracking
+            assistant_message.metrics.stop_timer()
+
             # Create Agno ModelResponse with all metadata
             return ModelResponse(
                 role="assistant",
@@ -456,6 +461,7 @@ class ClaudeAgentSDKModel(Model):
 
         except Exception as e:
             logger.exception("Claude Agent SDK query failed")
+            assistant_message.metrics.stop_timer()
             # Return error response
             return ModelResponse(
                 role="assistant",
@@ -467,28 +473,24 @@ class ClaudeAgentSDKModel(Model):
                 },
             )
 
-    async def aresponse_stream(  # noqa: PLR0912, PLR0915
+    async def ainvoke_stream(  # noqa: PLR0912, PLR0915
         self,
         messages: list[Message],
+        assistant_message: Message,
         response_format: dict[str, Any] | type | None = None,
         tools: list[Any] | None = None,
         tool_choice: str | dict[str, Any] | None = None,
-        tool_call_limit: int | None = None,
-        stream_model_response: bool = True,  # noqa: ARG002
         run_response: Any = None,  # noqa: ANN401
-        send_media_to_model: bool = True,  # noqa: ARG002
     ) -> AsyncIterator[ModelResponse]:
         """Generate streaming async response using Claude Agent SDK.
 
         Args:
             messages: List of conversation messages
+            assistant_message: Message object to track metrics (Agno framework)
             response_format: Optional response format specification (BaseModel or dict)
             tools: Optional list of tools
             tool_choice: Optional tool selection strategy
-            tool_call_limit: Optional limit on tool calls
-            stream_model_response: Whether to stream responses
             run_response: Optional run response object with session/user metadata
-            send_media_to_model: Whether to send media content
 
         Yields:
             ModelResponse objects as they arrive
@@ -517,10 +519,13 @@ class ClaudeAgentSDKModel(Model):
             # Extract metadata from run_response
             run_metadata = self._extract_metadata_from_run_response(run_response)
 
+            # Start metrics tracking
+            assistant_message.metrics.start_timer()
+
             # Create Claude Agent SDK options
             options_kwargs: dict[str, Any] = {
                 "system_prompt": system_prompt,
-                "max_turns": tool_call_limit or 10,
+                "max_turns": 10,  # Default max_turns
                 "model": self.id,
                 "permission_mode": self.permission_mode,
                 "cwd": self.cwd,
@@ -629,6 +634,7 @@ class ClaudeAgentSDKModel(Model):
 
         except Exception as e:
             logger.exception("Claude Agent SDK streaming query failed")
+            assistant_message.metrics.stop_timer()
             yield ModelResponse(
                 role="assistant",
                 content=f"Error in Claude Agent SDK streaming: {e!s}",
@@ -638,6 +644,159 @@ class ClaudeAgentSDKModel(Model):
                     "provider": "claude-agent-sdk",
                 },
             )
+        finally:
+            # Always stop timer when streaming ends
+            assistant_message.metrics.stop_timer()
+
+    def invoke(
+        self,
+        messages: list[Message],
+        assistant_message: Message,
+        response_format: dict[str, Any] | type | None = None,
+        tools: list[Any] | None = None,
+        tool_choice: str | dict[str, Any] | None = None,
+        run_response: Any = None,  # noqa: ANN401
+    ) -> ModelResponse:
+        """Synchronous invoke (wraps async ainvoke).
+
+        Claude Agent SDK is async-only, so this method wraps the async version.
+
+        Args:
+            messages: List of conversation messages
+            assistant_message: Message object to track metrics
+            response_format: Optional response format specification
+            tools: Optional list of tools
+            tool_choice: Optional tool selection strategy
+            run_response: Optional run response object
+
+        Returns:
+            ModelResponse with generated content
+        """
+        try:
+            loop = asyncio.get_event_loop()
+        except RuntimeError:
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+
+        return loop.run_until_complete(
+            self.ainvoke(
+                messages=messages,
+                assistant_message=assistant_message,
+                response_format=response_format,
+                tools=tools,
+                tool_choice=tool_choice,
+                run_response=run_response,
+            )
+        )
+
+    def invoke_stream(
+        self,
+        messages: list[Message],
+        assistant_message: Message,
+        response_format: dict[str, Any] | type | None = None,
+        tools: list[Any] | None = None,
+        tool_choice: str | dict[str, Any] | None = None,
+        run_response: Any = None,  # noqa: ANN401
+    ) -> AsyncIterator[ModelResponse]:
+        """Synchronous stream (wraps async ainvoke_stream).
+
+        Claude Agent SDK is async-only, so this method wraps the async version.
+
+        Args:
+            messages: List of conversation messages
+            assistant_message: Message object to track metrics
+            response_format: Optional response format specification
+            tools: Optional list of tools
+            tool_choice: Optional tool selection strategy
+            run_response: Optional run response object
+
+        Yields:
+            ModelResponse objects as they arrive
+        """
+        try:
+            loop = asyncio.get_event_loop()
+        except RuntimeError:
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+
+        async def _async_generator() -> AsyncIterator[ModelResponse]:
+            async for response in self.ainvoke_stream(
+                messages=messages,
+                assistant_message=assistant_message,
+                response_format=response_format,
+                tools=tools,
+                tool_choice=tool_choice,
+                run_response=run_response,
+            ):
+                yield response
+
+        # Return the async generator (caller must await it)
+        return _async_generator()
+
+    def _parse_provider_response(
+        self,
+        response: Any,
+        **kwargs: Any,  # noqa: ANN401, ARG002
+    ) -> ModelResponse:
+        """Parse Claude Agent SDK response into ModelResponse.
+
+        This method is required by the Model base class but isn't directly used
+        in our implementation since we parse responses inline in ainvoke().
+
+        Args:
+            response: Raw response from Claude Agent SDK
+            **kwargs: Additional keyword arguments
+
+        Returns:
+            ModelResponse object
+        """
+        # Extract content from message
+        content = ""
+        if hasattr(response, "content"):
+            if isinstance(response.content, str):
+                content = response.content
+            elif isinstance(response.content, list):
+                for block in response.content:
+                    if hasattr(block, "text"):
+                        content += block.text
+                    elif isinstance(block, dict) and "text" in block:
+                        content += block["text"]
+        else:
+            content = str(response)
+
+        # Extract tool calls
+        tool_calls = self._extract_tool_calls(response)
+
+        # Extract usage metadata
+        usage_data = self._extract_usage_metadata(response)
+
+        return ModelResponse(
+            role="assistant",
+            content=content,
+            tool_calls=tool_calls if tool_calls else [],
+            provider_data={
+                "model_id": self.id,
+                "provider": "claude-agent-sdk",
+                "usage": usage_data if usage_data else {},
+            },
+        )
+
+    def _parse_provider_response_delta(
+        self,
+        response_delta: Any,  # noqa: ANN401
+    ) -> ModelResponse:
+        """Parse Claude Agent SDK streaming response chunk into ModelResponse.
+
+        This method is required by the Model base class for streaming responses.
+
+        Args:
+            response_delta: Streaming response chunk from Claude Agent SDK
+
+        Returns:
+            ModelResponse object for this chunk
+        """
+        # For streaming, we parse each message chunk
+        return self._parse_provider_response(response_delta)
 
     def response(
         self,
