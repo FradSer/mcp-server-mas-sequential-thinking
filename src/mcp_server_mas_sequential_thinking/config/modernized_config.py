@@ -5,7 +5,7 @@ Clean configuration management with modern Python patterns.
 
 import os
 from abc import ABC, abstractmethod
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any, Protocol, runtime_checkable
 
 from agno.models.anthropic import Claude
@@ -136,6 +136,29 @@ class ModelConfig:
                 # current Agno version
             )
         return self.provider_class(id=self.standard_model_id)
+
+
+@dataclass(frozen=True)
+class ClaudeAgentSDKModelConfig(ModelConfig):
+    """Extended configuration for Claude Agent SDK with additional parameters."""
+
+    sdk_kwargs: dict[str, Any] = field(default_factory=dict)
+
+    def create_enhanced_model(self) -> Model:
+        """Create enhanced Claude Agent SDK model with custom configuration."""
+        return ClaudeAgentSDKModel(
+            model_id=self.enhanced_model_id,
+            name="Claude Agent SDK Enhanced",
+            **self.sdk_kwargs,
+        )
+
+    def create_standard_model(self) -> Model:
+        """Create standard Claude Agent SDK model with custom configuration."""
+        return ClaudeAgentSDKModel(
+            model_id=self.standard_model_id,
+            name="Claude Agent SDK Standard",
+            **self.sdk_kwargs,
+        )
 
 
 @runtime_checkable
@@ -321,6 +344,59 @@ class ClaudeAgentSDKStrategy(BaseProviderStrategy):
     def api_key_name(self) -> str | None:
         # Claude Agent SDK doesn't require API keys - uses local Claude Code
         return None
+
+    def get_config(self) -> ModelConfig:
+        """Get Claude Agent SDK configuration with environment variable overrides."""
+        # Get model IDs from environment or defaults
+        prefix = self.__class__.__name__.replace("Strategy", "").upper()
+
+        enhanced_model = self._get_env_with_fallback(
+            f"{prefix}_ENHANCED_MODEL_ID", self.default_enhanced_model
+        )
+        standard_model = self._get_env_with_fallback(
+            f"{prefix}_STANDARD_MODEL_ID", self.default_standard_model
+        )
+
+        # Read Claude SDK specific environment variables
+        permission_mode = os.environ.get(
+            "CLAUDE_SDK_PERMISSION_MODE", "bypassPermissions"
+        )
+        cwd = os.environ.get("CLAUDE_SDK_CWD")
+        add_dirs_str = os.environ.get("CLAUDE_SDK_ADD_DIRS", "")
+
+        # Parse add_dirs (comma-separated list)
+        add_dirs = (
+            [d.strip() for d in add_dirs_str.split(",") if d.strip()]
+            if add_dirs_str
+            else None
+        )
+
+        # Create kwargs for ClaudeAgentSDKModel
+        sdk_kwargs: dict[str, Any] = {}
+
+        # Only add parameters if they're set
+        if permission_mode and permission_mode in (
+            "default",
+            "acceptEdits",
+            "plan",
+            "bypassPermissions",
+        ):
+            sdk_kwargs["permission_mode"] = permission_mode
+
+        if cwd:
+            sdk_kwargs["cwd"] = cwd
+
+        if add_dirs:
+            sdk_kwargs["add_dirs"] = add_dirs
+
+        # Return ClaudeAgentSDKModelConfig with SDK-specific kwargs
+        return ClaudeAgentSDKModelConfig(
+            provider_class=self.provider_class,
+            enhanced_model_id=enhanced_model,
+            standard_model_id=standard_model,
+            api_key=None,  # No API key for Claude SDK
+            sdk_kwargs=sdk_kwargs,
+        )
 
 
 class ConfigurationManager:
