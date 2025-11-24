@@ -110,6 +110,10 @@ class ClaudeAgentSDKModel(Model):
             **kwargs,
         )
 
+        # Structured outputs support (via system prompt instructions)
+        self.supports_native_structured_outputs = True
+        self.supports_json_schema_outputs = True
+
         # Store configuration
         self.permission_mode = permission_mode
         self.cwd = cwd or str(Path.cwd())
@@ -735,7 +739,7 @@ class ClaudeAgentSDKModel(Model):
 
     def _parse_provider_response(
         self,
-        response: Any,
+        response: Any,  # noqa: ANN401
         **kwargs: Any,  # noqa: ANN401, ARG002
     ) -> ModelResponse:
         """Parse Claude Agent SDK response into ModelResponse.
@@ -824,28 +828,6 @@ class ClaudeAgentSDKModel(Model):
             Provider name string
         """
         return "claude-agent-sdk"
-
-    def supports_native_structured_outputs(self) -> bool:
-        """Check if model supports native structured outputs.
-
-        Claude Agent SDK can follow structured output schemas via system prompts,
-        which provides reliable structured output support.
-
-        Returns:
-            True - Claude SDK supports structured outputs via system prompts
-        """
-        return True
-
-    def supports_json_schema_outputs(self) -> bool:
-        """Check if model supports JSON schema outputs.
-
-        Claude Agent SDK can be instructed to follow JSON schemas through
-        system prompts.
-
-        Returns:
-            True - Claude SDK supports JSON schema outputs
-        """
-        return True
 
     def _format_response_format_prompt(
         self, response_format: dict[str, Any] | type | None

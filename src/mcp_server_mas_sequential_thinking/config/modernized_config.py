@@ -8,7 +8,6 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from typing import Any, Protocol, runtime_checkable
 
-from agno.models.anthropic import Claude
 from agno.models.base import Model
 from agno.models.deepseek import DeepSeek
 from agno.models.groq import Groq
@@ -19,6 +18,8 @@ from agno.models.openrouter import OpenRouter
 from mcp_server_mas_sequential_thinking.models.claude_agent_sdk import (
     ClaudeAgentSDKModel,
 )
+
+# Note: Claude is imported lazily in AnthropicStrategy to avoid anthropic dependency
 
 
 class GitHubOpenAI(OpenAIChat):
@@ -118,7 +119,7 @@ class ModelConfig:
     def create_enhanced_model(self) -> Model:
         """Create enhanced model instance (used for complex synthesis like Blue Hat)."""
         # Enable prompt caching for Anthropic models
-        if self.provider_class == Claude:
+        if self.provider_class.__name__ == "Claude":
             return self.provider_class(
                 id=self.enhanced_model_id,
                 # Note: cache_system_prompt removed - not available in
@@ -129,7 +130,7 @@ class ModelConfig:
     def create_standard_model(self) -> Model:
         """Create standard model instance (used for individual hat processing)."""
         # Enable prompt caching for Anthropic models
-        if self.provider_class == Claude:
+        if self.provider_class.__name__ == "Claude":
             return self.provider_class(
                 id=self.standard_model_id,
                 # Note: cache_system_prompt removed - not available in
@@ -303,6 +304,9 @@ class AnthropicStrategy(BaseProviderStrategy):
 
     @property
     def provider_class(self) -> type[Model]:
+        # Lazy import to avoid anthropic dependency unless needed
+        from agno.models.anthropic import Claude  # noqa: PLC0415
+
         return Claude
 
     @property
