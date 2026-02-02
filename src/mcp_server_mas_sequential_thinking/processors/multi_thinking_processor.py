@@ -407,7 +407,7 @@ class MultiThinkingSequentialProcessor:
         else:
             # No final synthesis - create programmatic synthesis
             final_answer = self._synthesize_full_thinking_results(
-                individual_results, thinking_sequence, thought_data.thought
+                individual_results, list(thinking_sequence), thought_data.thought
             )
 
         return {

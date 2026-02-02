@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.0] - 2026-02-02
+
 ### Added
 - LearningMachine-backed agent learning with culture updates and reasoning tools for synthesis agents
 - Event-driven token usage tracking from model request events
@@ -19,6 +21,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `sequentialthinking` tool contract now documents multi-step loop orchestration in tool description and input schema metadata
 - `sequentialthinking` now publishes `outputSchema` and returns `structuredContent` control fields (`should_continue`, `next_thought_number`, `stop_reason`, and parameter guidance)
 - Tool description and usage guidance now explicitly require active reflection (`isRevision=true` when correcting prior steps)
+
+### Fixed
+- Fixed type error in thinking sequence synthesis in `MultiThinkingSequentialProcessor`
 
 ## [0.7.0] - 2025-09-24
 
@@ -154,7 +159,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - MCP server implementation with FastMCP
 - Distributed intelligence across specialized agents
 
-[Unreleased]: https://github.com/FradSer/mcp-server-mas-sequential-thinking/compare/v0.7.0...HEAD
+[Unreleased]: https://github.com/FradSer/mcp-server-mas-sequential-thinking/compare/v0.8.0...HEAD
+[0.8.0]: https://github.com/FradSer/mcp-server-mas-sequential-thinking/compare/v0.7.0...v0.8.0
 [0.7.0]: https://github.com/FradSer/mcp-server-mas-sequential-thinking/compare/v0.5.0...v0.7.0
 [0.5.0]: https://github.com/FradSer/mcp-server-mas-sequential-thinking/compare/v0.4.1...v0.5.0
 [0.4.1]: https://github.com/FradSer/mcp-server-mas-sequential-thinking/compare/v0.4.0...v0.4.1
