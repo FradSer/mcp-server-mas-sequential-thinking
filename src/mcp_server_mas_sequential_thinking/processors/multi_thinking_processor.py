@@ -47,6 +47,7 @@ MESSAGE_HISTORY_CONFIG = {
     ThinkingDirection.OPTIMISTIC: 3,  # Focused opportunity analysis
     ThinkingDirection.CREATIVE: 8,  # Broader context for creative connections
     ThinkingDirection.SYNTHESIS: 10,  # Maximum context for comprehensive integration
+    ThinkingDirection.METACOGNITIVE: 5,  # Process analysis needs moderate context
 }
 
 
@@ -309,7 +310,7 @@ class MultiThinkingSequentialProcessor:
         non_synthesis_agents = [
             direction
             for direction in thinking_sequence
-            if direction != ThinkingDirection.SYNTHESIS
+            if direction not in (ThinkingDirection.SYNTHESIS, ThinkingDirection.METACOGNITIVE)
         ]
 
         if non_synthesis_agents:

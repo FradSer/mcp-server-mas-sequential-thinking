@@ -29,6 +29,7 @@ FULL_EXPLORATION_SEQUENCE: tuple[ThinkingDirection, ...] = (
     ThinkingDirection.OPTIMISTIC,
     ThinkingDirection.CRITICAL,
     ThinkingDirection.CREATIVE,
+    ThinkingDirection.METACOGNITIVE,
     ThinkingDirection.SYNTHESIS,
 )
 
