@@ -603,7 +603,7 @@ class MultiThinkingAgentFactory:
             role=capability.role,
             description=capability.description,
             model=model,
-            tools=capability.tools if capability.tools else None,
+            tools=capability.tools or None,
             instructions=capability.get_instructions(context, previous_results),
             markdown=True,
             learning=learning_override,
