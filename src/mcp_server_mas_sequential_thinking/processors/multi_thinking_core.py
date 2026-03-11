@@ -51,6 +51,7 @@ class ThinkingDirection(Enum):
     OPTIMISTIC = "optimistic"  # Optimism and value
     CREATIVE = "creative"  # Creativity and innovation
     SYNTHESIS = "synthesis"  # Metacognition and integration
+    METACOGNITIVE = "metacognitive"  # Thinking about thinking
 
 
 class ProcessingDepth(Enum):
@@ -94,6 +95,9 @@ THINKING_TIMING_CONFIGS = {
     ),  # Creativity requires more time
     ThinkingDirection.SYNTHESIS: ThinkingTimingConfig(
         ThinkingDirection.SYNTHESIS, 60, 30, 120, False
+    ),
+    ThinkingDirection.METACOGNITIVE: ThinkingTimingConfig(
+        ThinkingDirection.METACOGNITIVE, 90, 45, 180, False
     ),
 }
 
@@ -471,6 +475,78 @@ class CreativeThinkingCapability(ThinkingCapability):
         return instructions
 
 
+class MetaCognitiveThinkingCapability(ThinkingCapability):
+    """Meta-Cognitive thinking capability: thinking about thinking."""
+
+    def __init__(self) -> None:
+        super().__init__(
+            thinking_direction=ThinkingDirection.METACOGNITIVE,
+            role="Cognitive Process Analyst",
+            description="Analyze thinking process, identify cognitive biases, evaluate mental models",
+            role_description="I analyze HOW we think about the problem, not WHAT we think. I examine cognitive biases, evaluate our reasoning approach, and identify how our mental models shape our conclusions.",
+            thinking_mode="metacognitive_analysis",
+            cognitive_focus="Process awareness, bias detection, mental model evaluation",
+            output_style="Self-aware analysis, bias identification, reasoning evaluation",
+            timing_config=THINKING_TIMING_CONFIGS[ThinkingDirection.METACOGNITIVE],
+            reasoning_level=3,
+            memory_enabled=True,
+        )
+
+    def _get_specific_instructions(self) -> list[str]:
+        instructions = [
+            "",
+            "METACOGNITIVE ANALYSIS GUIDELINES:",
+            "• Analyze the thinking process itself, not just the content",
+            "• Identify cognitive biases that may be influencing reasoning",
+            "• Evaluate whether the approach being taken is appropriate",
+            "• Question assumptions about how we frame the problem",
+            "• Consider alternative framing that might yield different insights",
+            "",
+            "BIAS DETECTION FOCUS AREAS:",
+            "• Confirmation bias: Are we only seeing evidence that supports existing views?",
+            "• Anchoring bias: Are we overly influenced by initial information?",
+            "• Availability bias: Are we relying on easily recalled examples?",
+            "• Sunk cost fallacy: Are we continuing down a path because of past investment?",
+            "• Dunning-Kruger effect: Are we overestimating our understanding?",
+            "",
+            "PROCESS EVALUATION:",
+            "- Is the current thinking strategy appropriate for this problem?",
+            "- What mental models are we using, and are they fitting the problem?",
+            "- How might someone with different expertise approach this differently?",
+            "- What information gaps exist in our reasoning approach?",
+        ]
+
+        # Add research capabilities if ExaTools is available
+        if EXA_AVAILABLE and ExaTools is not None:
+            instructions.extend(
+                [
+                    "",
+                    "RESEARCH CAPABILITIES:",
+                    "• Use search_exa() to research cognitive biases and thinking fallacies",
+                    "• Search for academic insights on meta-cognition and reasoning",
+                    "• Find examples of how similar problems were reframed successfully",
+                ]
+            )
+
+        instructions.extend(
+            [
+                "",
+                "FORBIDDEN in metacognitive analysis:",
+                "- Making the final decision (that's Synthesis's job)",
+                "- Providing the actual answer to the question",
+                "- Focusing only on content rather than process",
+                "",
+                "YOUR OUTPUT SHOULD:",
+                "• Describe the thinking process being used",
+                "• Identify potential biases and limitations",
+                "• Suggest alternative framing if beneficial",
+                "• Evaluate if the current approach is optimal",
+            ]
+        )
+
+        return instructions
+
+
 class SynthesisThinkingCapability(ThinkingCapability):
     """Synthesis thinking capability: metacognition and integration."""
 
@@ -531,6 +607,7 @@ class MultiThinkingAgentFactory:
         ThinkingDirection.OPTIMISTIC: OptimisticThinkingCapability(),
         ThinkingDirection.CREATIVE: CreativeThinkingCapability(),
         ThinkingDirection.SYNTHESIS: SynthesisThinkingCapability(),
+        ThinkingDirection.METACOGNITIVE: MetaCognitiveThinkingCapability(),
     }
     _default_learning_resources: ClassVar[LearningResources | None] = None
 
@@ -603,7 +680,7 @@ class MultiThinkingAgentFactory:
             role=capability.role,
             description=capability.description,
             model=model,
-            tools=capability.tools if capability.tools else None,
+            tools=capability.tools or None,
             instructions=capability.get_instructions(context, previous_results),
             markdown=True,
             learning=learning_override,

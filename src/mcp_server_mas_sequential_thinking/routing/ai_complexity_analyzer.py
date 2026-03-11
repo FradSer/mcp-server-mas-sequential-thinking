@@ -345,7 +345,7 @@ class AIComplexityAnalyzer(ComplexityAnalyzer):
                 if clean_mode in allowed_modes:
                     validated_modes.append(clean_mode)
 
-        return validated_modes if validated_modes else ["SYNTHESIS"]
+        return validated_modes or ["SYNTHESIS"]
 
     def _sanitize_reasoning(self, reasoning: str) -> str:
         """Sanitize reasoning text to prevent injection."""

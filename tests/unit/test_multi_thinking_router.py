@@ -56,6 +56,7 @@ async def test_route_thought_defaults_to_full_exploration(
         "optimistic",
         "critical",
         "creative",
+        "metacognitive",
         "synthesis",
     ]
 
