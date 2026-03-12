@@ -22,7 +22,7 @@ __all__ = [
 
 
 def __getattr__(name: str):
-    if name in {"multi_thinking_core"}:
+    if name == "multi_thinking_core":
         return importlib.import_module(".multi_thinking_core", __name__)
 
     if name in {

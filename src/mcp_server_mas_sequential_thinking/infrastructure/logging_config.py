@@ -10,7 +10,7 @@ import sys
 import time
 from collections.abc import Mapping
 from types import TracebackType
-from typing import Any
+from typing import Any, Self
 from pathlib import Path
 
 
@@ -159,7 +159,7 @@ class LogTimer:
         self.level = level
         self.start_time: float | None = None
 
-    def __enter__(self) -> "LogTimer":
+    def __enter__(self) -> Self:
         if self.logger.isEnabledFor(logging.DEBUG):
             self.logger.debug("Starting: %s", self.operation)
 

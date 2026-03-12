@@ -16,7 +16,7 @@ __all__ = [
 
 
 def __getattr__(name: str):
-    if name in {"AIComplexityAnalyzer"}:
+    if name == "AIComplexityAnalyzer":
         module = importlib.import_module(".ai_complexity_analyzer", __name__)
         return getattr(module, name)
     if name in {"ComplexityLevel", "ProcessingStrategy"}:
