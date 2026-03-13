@@ -30,19 +30,19 @@ jobs:
 
     - name: Run security tests
       run: |
-        uv run pytest tests/unit/test_security_validation.py -v --tb=short --no-cov
+        uv run pytest tests/unit/test_security_validation.py -v --tb=short
 
     - name: Run configuration tests
       run: |
-        uv run pytest tests/unit/test_configuration_validation.py -v --tb=short --no-cov
+        uv run pytest tests/unit/test_configuration_validation.py -v --tb=short
 
     - name: Run unit tests with coverage
       run: |
-        uv run pytest tests/unit --cov=src/mcp_server_mas_sequential_thinking --cov-report=xml --cov-report=term-missing
+        uv run pytest tests/unit --cov=src/mcp_server_mas_sequential_thinking --cov-report=xml --cov-report=term-missing --cov-fail-under=70
 
     - name: Run integration tests
       run: |
-        uv run pytest tests/integration -v --tb=short --no-cov
+        uv run pytest tests/integration -v --tb=short
 
     - name: Type checking with mypy
       run: |
@@ -84,7 +84,7 @@ jobs:
 
     - name: Run security-focused tests
       run: |
-        uv run pytest tests -m security -v --tb=short --no-cov
+        uv run pytest tests -m security -v --tb=short
 
     - name: Security scan with safety
       run: |
