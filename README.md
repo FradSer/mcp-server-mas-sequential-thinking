@@ -106,7 +106,7 @@ flowchart TD
 
 ## Research Capabilities (ExaTools Integration)
 
-**4 out of 6 agents** are equipped with web research capabilities via ExaTools:
+**4 out of 6 agents** are equipped with web research capabilities via [ExaTools](https://exa.ai) - the fastest and most accurate web search API for AI:
 
 - **Factual Agent**: Search for current facts, statistics, verified data
 - **Critical Agent**: Find counterexamples, failed cases, regulatory issues
