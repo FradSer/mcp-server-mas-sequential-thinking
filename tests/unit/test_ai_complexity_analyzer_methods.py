@@ -7,12 +7,15 @@ from mcp_server_mas_sequential_thinking.routing.ai_complexity_analyzer import (
     AIComplexityAnalyzer,
     create_ai_complexity_analyzer,
 )
-from mcp_server_mas_sequential_thinking.routing.complexity_types import ComplexityMetrics
+from mcp_server_mas_sequential_thinking.routing.complexity_types import (
+    ComplexityMetrics,
+)
 
 
 def make_analyzer() -> AIComplexityAnalyzer:
     """Create analyzer with a stub config that won't make real API calls."""
     from unittest.mock import MagicMock
+
     model_config = MagicMock()
     model_config.create_enhanced_model.return_value = MagicMock()
     return AIComplexityAnalyzer(model_config=model_config)
@@ -36,8 +39,10 @@ class TestExtractResponseContent:
 
     def test_extracts_content_attr(self):
         analyzer = make_analyzer()
+
         class Obj:
             content = "extracted"
+
         assert analyzer._extract_response_content(Obj()) == "extracted"
 
     def test_falls_back_to_str(self):
@@ -78,6 +83,7 @@ class TestParseAndValidateJsonResponse:
     def test_parses_direct_json(self):
         analyzer = make_analyzer()
         import json
+
         data = {"complexity_score": 50.0, "primary_problem_type": "FACTUAL"}
         result = analyzer._parse_and_validate_json_response(json.dumps(data))
         assert result["complexity_score"] == 50.0
@@ -91,6 +97,7 @@ class TestParseAndValidateJsonResponse:
     def test_parses_inline_json_on_single_line(self):
         analyzer = make_analyzer()
         import json
+
         data = {"complexity_score": 20.0, "primary_problem_type": "GENERAL"}
         response = f"Here is the result:\n{json.dumps(data)}"
         result = analyzer._parse_and_validate_json_response(response)
@@ -177,7 +184,17 @@ class TestValidateProblemType:
 
     def test_valid_types(self):
         analyzer = make_analyzer()
-        for t in ["FACTUAL", "EMOTIONAL", "CRITICAL", "OPTIMISTIC", "CREATIVE", "SYNTHESIS", "EVALUATIVE", "PHILOSOPHICAL", "DECISION"]:
+        for t in [
+            "FACTUAL",
+            "EMOTIONAL",
+            "CRITICAL",
+            "OPTIMISTIC",
+            "CREATIVE",
+            "SYNTHESIS",
+            "EVALUATIVE",
+            "PHILOSOPHICAL",
+            "DECISION",
+        ]:
             assert analyzer._validate_problem_type(t) == t
 
     def test_case_insensitive(self):

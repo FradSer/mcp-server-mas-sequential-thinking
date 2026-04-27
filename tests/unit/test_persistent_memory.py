@@ -13,7 +13,9 @@ def make_manager() -> PersistentMemoryManager:
     return PersistentMemoryManager("sqlite:///:memory:")
 
 
-def make_thought(n: int = 1, branch_from: int | None = None, branch_id: str | None = None) -> ThoughtData:
+def make_thought(
+    n: int = 1, branch_from: int | None = None, branch_id: str | None = None
+) -> ThoughtData:
     return ThoughtData(
         thought=f"thought content {n}",
         thoughtNumber=n,
@@ -75,7 +77,9 @@ class TestStoreThought:
 
     def test_store_with_response(self):
         manager = make_manager()
-        thought_id = manager.store_thought("sess-b", make_thought(1), response="AI response")
+        thought_id = manager.store_thought(
+            "sess-b", make_thought(1), response="AI response"
+        )
         assert thought_id is not None
 
     def test_store_with_metadata(self):
@@ -89,7 +93,9 @@ class TestStoreThought:
             "processing_time": 2.5,
             "specialists": ["factual", "synthesis"],
         }
-        thought_id = manager.store_thought("sess-c", make_thought(1), processing_metadata=metadata)
+        thought_id = manager.store_thought(
+            "sess-c", make_thought(1), processing_metadata=metadata
+        )
         assert thought_id is not None
 
     def test_store_branch_thought(self):
@@ -202,8 +208,15 @@ class TestGetUsageStats:
 
     def test_stats_with_data(self):
         manager = make_manager()
-        metadata = {"actual_cost": 0.01, "token_usage": 100, "processing_time": 1.0, "strategy": "full"}
-        manager.store_thought("stats-sess", make_thought(1), processing_metadata=metadata)
+        metadata = {
+            "actual_cost": 0.01,
+            "token_usage": 100,
+            "processing_time": 1.0,
+            "strategy": "full",
+        }
+        manager.store_thought(
+            "stats-sess", make_thought(1), processing_metadata=metadata
+        )
         stats = manager.get_usage_stats(days_back=7)
         assert stats["total_thoughts"] >= 1
 

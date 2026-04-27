@@ -4,7 +4,6 @@ from unittest.mock import MagicMock
 
 from agno.team.mode import TeamMode
 
-from mcp_server_mas_sequential_thinking.config.constants import TeamModeMapping
 from mcp_server_mas_sequential_thinking.services.processing_orchestrator import (
     ProcessingOrchestrator,
 )
@@ -37,11 +36,6 @@ class TestResolveTeamMode:
         orch = _make_orchestrator()
         assert orch._resolve_team_mode(None) == TeamMode.coordinate
         assert orch._resolve_team_mode("unknown") == TeamMode.coordinate
-
-    def test_team_mode_mapping_constants(self):
-        assert TeamModeMapping.FULL_EXPLORATION == "broadcast"
-        assert TeamModeMapping.SINGLE_DIRECTION == "route"
-        assert TeamModeMapping.COORDINATED_SEQUENCE == "coordinate"
 
 
 class TestGetTeam:

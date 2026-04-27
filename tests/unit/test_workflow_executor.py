@@ -3,7 +3,9 @@
 from unittest.mock import MagicMock, patch
 
 from mcp_server_mas_sequential_thinking.core.session import SessionMemory
-from mcp_server_mas_sequential_thinking.services.workflow_executor import WorkflowExecutor
+from mcp_server_mas_sequential_thinking.services.workflow_executor import (
+    WorkflowExecutor,
+)
 
 
 def make_workflow_result(
@@ -67,6 +69,7 @@ class TestWorkflowExecutorCalculations:
 
     def test_log_workflow_completion(self):
         from mcp_server_mas_sequential_thinking.core.models import ThoughtData
+
         executor = make_executor()
         thought = ThoughtData(
             thought="test",
@@ -79,4 +82,6 @@ class TestWorkflowExecutorCalculations:
             needsMoreThoughts=False,
         )
         workflow_result = make_workflow_result()
-        executor.log_workflow_completion(thought, workflow_result, 2.5, "final response")
+        executor.log_workflow_completion(
+            thought, workflow_result, 2.5, "final response"
+        )

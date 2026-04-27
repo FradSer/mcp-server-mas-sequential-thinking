@@ -54,6 +54,7 @@ class TestResponseFormatter:
     def test_extract_response_content_object_with_content(self):
         class FakeResponse:
             content = "extracted content"
+
         formatter = ResponseFormatter()
         result = formatter.extract_response_content(FakeResponse())
         assert result == "extracted content"

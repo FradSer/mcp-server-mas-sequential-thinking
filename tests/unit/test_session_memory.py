@@ -6,7 +6,12 @@ from mcp_server_mas_sequential_thinking.core.models import ThoughtData
 from mcp_server_mas_sequential_thinking.core.session import SessionMemory
 
 
-def make_thought(n: int, branch_from: int | None = None, branch_id: str | None = None, is_revision: bool = False) -> ThoughtData:
+def make_thought(
+    n: int,
+    branch_from: int | None = None,
+    branch_id: str | None = None,
+    is_revision: bool = False,
+) -> ThoughtData:
     return ThoughtData(
         thought=f"thought {n}",
         thoughtNumber=n,

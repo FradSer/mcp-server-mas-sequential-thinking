@@ -22,7 +22,9 @@ class TestRetryConfig:
         assert config.use_exponential_backoff is False
 
     def test_custom_values(self):
-        config = RetryConfig(max_attempts=5, sleep_duration=0.1, use_exponential_backoff=True)
+        config = RetryConfig(
+            max_attempts=5, sleep_duration=0.1, use_exponential_backoff=True
+        )
         assert config.max_attempts == 5
         assert config.sleep_duration == 0.1
         assert config.use_exponential_backoff is True
@@ -80,7 +82,9 @@ class TestRetryHandler:
 
     @pytest.mark.asyncio
     async def test_exponential_backoff(self):
-        config = RetryConfig(max_attempts=2, sleep_duration=0.01, use_exponential_backoff=True)
+        config = RetryConfig(
+            max_attempts=2, sleep_duration=0.01, use_exponential_backoff=True
+        )
         handler = RetryHandler(config)
         call_count = 0
 

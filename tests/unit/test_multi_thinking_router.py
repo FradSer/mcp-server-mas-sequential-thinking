@@ -6,7 +6,9 @@ from mcp_server_mas_sequential_thinking.core.models import ThoughtData
 from mcp_server_mas_sequential_thinking.processors.multi_thinking_processor import (
     MultiThinkingSequentialProcessor,
 )
-from mcp_server_mas_sequential_thinking.routing.complexity_types import ComplexityMetrics
+from mcp_server_mas_sequential_thinking.routing.complexity_types import (
+    ComplexityMetrics,
+)
 
 
 @pytest.fixture

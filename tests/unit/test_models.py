@@ -31,11 +31,15 @@ class TestThoughtData:
         assert t.thought_type == ThoughtType.STANDARD
 
     def test_create_revision_thought(self):
-        t = ThoughtData(**base_thought(thoughtNumber=2, isRevision=True, branchFromThought=1))
+        t = ThoughtData(
+            **base_thought(thoughtNumber=2, isRevision=True, branchFromThought=1)
+        )
         assert t.thought_type == ThoughtType.REVISION
 
     def test_create_branch_thought(self):
-        t = ThoughtData(**base_thought(thoughtNumber=2, branchFromThought=1, branchId="b1"))
+        t = ThoughtData(
+            **base_thought(thoughtNumber=2, branchFromThought=1, branchId="b1")
+        )
         assert t.thought_type == ThoughtType.BRANCH
 
     def test_format_for_log_standard(self):
@@ -45,13 +49,17 @@ class TestThoughtData:
         assert "hello world" in log
 
     def test_format_for_log_revision(self):
-        t = ThoughtData(**base_thought(thoughtNumber=2, isRevision=True, branchFromThought=1))
+        t = ThoughtData(
+            **base_thought(thoughtNumber=2, isRevision=True, branchFromThought=1)
+        )
         log = t.format_for_log()
         assert "Revision" in log
         assert "#1" in log
 
     def test_format_for_log_branch(self):
-        t = ThoughtData(**base_thought(thoughtNumber=3, branchFromThought=1, branchId="feature"))
+        t = ThoughtData(
+            **base_thought(thoughtNumber=3, branchFromThought=1, branchId="feature")
+        )
         log = t.format_for_log()
         assert "Branch" in log
         assert "feature" in log

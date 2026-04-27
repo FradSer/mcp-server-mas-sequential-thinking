@@ -20,7 +20,9 @@ class TestProcessedResponse:
 
     def test_with_all_fields(self):
         meta = {"key": "val"}
-        r = ProcessedResponse(content="x", raw_response=None, processing_time=1.5, metadata=meta)
+        r = ProcessedResponse(
+            content="x", raw_response=None, processing_time=1.5, metadata=meta
+        )
         assert r.processing_time == 1.5
         assert r.metadata == meta
 
@@ -37,23 +39,30 @@ class TestResponseExtractor:
     def test_object_with_string_content(self):
         class Obj:
             content = "from content attr"
+
         assert ResponseExtractor.extract_content(Obj()) == "from content attr"
 
     def test_object_with_dict_content(self):
         class Obj:
             content = {"text": "from dict"}
+
         assert ResponseExtractor.extract_content(Obj()) == "from dict"
 
     def test_object_with_stringable_content(self):
         class Inner:
             def __str__(self):
                 return "stringified"
+
         class Obj:
             content = Inner()
+
         assert ResponseExtractor.extract_content(Obj()) == "stringified"
 
     def test_dict_response(self):
-        assert ResponseExtractor.extract_content({"content": "dict content"}) == "dict content"
+        assert (
+            ResponseExtractor.extract_content({"content": "dict content"})
+            == "dict content"
+        )
 
     def test_dict_response_text_key(self):
         assert ResponseExtractor.extract_content({"text": "text value"}) == "text value"
@@ -85,21 +94,25 @@ class TestResponseExtractor:
     def test_object_with_text_attr(self):
         class Obj:
             text = "from text"
+
         assert ResponseExtractor.extract_content(Obj()) == "from text"
 
     def test_object_with_message_attr(self):
         class Obj:
             message = "from message"
+
         assert ResponseExtractor.extract_content(Obj()) == "from message"
 
     def test_object_with_result_attr(self):
         class Obj:
             result = "from result"
+
         assert ResponseExtractor.extract_content(Obj()) == "from result"
 
     def test_object_with_output_attr(self):
         class Obj:
             output = "from output"
+
         assert ResponseExtractor.extract_content(Obj()) == "from output"
 
     def test_unknown_type_falls_back_to_str(self):
@@ -201,7 +214,9 @@ class TestResponseFormatterInProcessor:
 
     def test_format_with_metadata(self):
         meta = {"key": "value"}
-        processed = ProcessedResponse(content="test", raw_response=None, metadata=meta, processing_time=1.0)
+        processed = ProcessedResponse(
+            content="test", raw_response=None, metadata=meta, processing_time=1.0
+        )
         result = ResponseFormatter.format_with_metadata(processed)
         assert result["content"] == "test"
         assert result["metadata"] == meta

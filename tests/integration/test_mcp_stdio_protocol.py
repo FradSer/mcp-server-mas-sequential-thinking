@@ -48,14 +48,9 @@ def test_mcp_sdk_initialize_and_list_requests() -> None:
 
                 input_properties = sequential_tool.inputSchema.get("properties", {})
                 assert "thought" in input_properties
-                assert (
-                    "description"
-                    in input_properties["nextThoughtNeeded"]
-                )
+                assert "description" in input_properties["nextThoughtNeeded"]
 
-                output_properties = sequential_tool.outputSchema.get(
-                    "properties", {}
-                )
+                output_properties = sequential_tool.outputSchema.get("properties", {})
                 assert "should_continue" in output_properties
                 assert "next_thought_number" in output_properties
                 assert "stop_reason" in output_properties
@@ -99,6 +94,8 @@ def test_mcp_sdk_tool_call_request_shape() -> None:
                 assert call_result.structuredContent is not None
                 assert call_result.structuredContent["should_continue"] is True
                 assert call_result.structuredContent["next_thought_number"] == 1
-                assert call_result.structuredContent["stop_reason"] == "validation_error"
+                assert (
+                    call_result.structuredContent["stop_reason"] == "validation_error"
+                )
 
     anyio.run(run_assertions)
