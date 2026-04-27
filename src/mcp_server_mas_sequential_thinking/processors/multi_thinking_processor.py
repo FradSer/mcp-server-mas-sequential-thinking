@@ -8,6 +8,7 @@ from single direction to full multi-direction analysis.
 from __future__ import annotations
 
 # Lazy import to break circular dependency
+import asyncio
 import logging
 import time
 from dataclasses import dataclass
@@ -171,7 +172,10 @@ class MultiThinkingSequentialProcessor:
             logger.info("Input preview: %s", thought_data.thought[:100])
             logger.info("Context length: %d chars", len(context_prompt))
 
-        if forced_strategy_name is not None and forced_strategy_name != "full_exploration":
+        if (
+            forced_strategy_name is not None
+            and forced_strategy_name != "full_exploration"
+        ):
             return self._build_error_result(
                 "Unsupported strategy. Only 'full_exploration' is allowed.",
                 start_time,
@@ -299,15 +303,14 @@ class MultiThinkingSequentialProcessor:
         non_synthesis_agents = [
             direction
             for direction in thinking_sequence
-            if direction not in (ThinkingDirection.SYNTHESIS, ThinkingDirection.METACOGNITIVE)
+            if direction
+            not in (ThinkingDirection.SYNTHESIS, ThinkingDirection.METACOGNITIVE)
         ]
 
         if non_synthesis_agents:
             logger.info(
                 f"    Step 2: Parallel execution of {len(non_synthesis_agents)} thinking agents"
             )
-
-            import asyncio
 
             tasks: list[tuple[ThinkingDirection, Any]] = []
 
@@ -483,9 +486,8 @@ class MultiThinkingSequentialProcessor:
                 "all perspective outputs were empty."
             )
 
-        return (
-            f"Integrated response for '{original_thought}':\n\n"
-            + "\n".join(f"- {item}" for item in perspectives)
+        return f"Integrated response for '{original_thought}':\n\n" + "\n".join(
+            f"- {item}" for item in perspectives
         )
 
     def _get_generic_perspective_name(self, direction_name: str) -> str:

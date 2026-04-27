@@ -14,6 +14,7 @@ from agno.team.mode import TeamMode
 from agno.team.team import Team
 
 from mcp_server_mas_sequential_thinking.config import get_model_config
+from mcp_server_mas_sequential_thinking.config.constants import DefaultValues
 from mcp_server_mas_sequential_thinking.core import (
     SessionMemory,
     ThoughtProcessingError,
@@ -244,7 +245,7 @@ Provide a focused response with clear guidance for the next step."""
         Returns a Team constructed from model config with TeamMode determined
         by the TEAM_MODE env var. "standard" defaults to broadcast (full exploration).
         """
-        team = getattr(self._session, "_team", None)
+        team = self._session._team
         if team is not None:
             return team
 
@@ -252,7 +253,9 @@ Provide a focused response with clear guidance for the next step."""
         leader_model = model_config.create_enhanced_model()
         standard_model = model_config.create_standard_model()
 
-        team_mode_str = os.environ.get("TEAM_MODE", "standard").lower()
+        team_mode_str = os.environ.get(
+            "TEAM_MODE", DefaultValues.DEFAULT_TEAM_MODE
+        ).lower()
         strategy = (
             "full_exploration"
             if team_mode_str in ("standard", "broadcast")

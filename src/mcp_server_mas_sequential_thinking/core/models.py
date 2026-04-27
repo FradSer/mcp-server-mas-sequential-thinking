@@ -77,17 +77,13 @@ class ThoughtData(BaseModel):
     )
 
     # Required workflow fields
-    isRevision: bool = Field(
-        ..., description="Whether this revises a previous thought"
-    )
+    isRevision: bool = Field(..., description="Whether this revises a previous thought")
     branchFromThought: ThoughtNumber | None = Field(
         ...,
         ge=ValidationLimits.MIN_THOUGHT_NUMBER,
         description="Thought number to branch from",
     )
-    branchId: BranchId | None = Field(
-        ..., description="Unique branch identifier"
-    )
+    branchId: BranchId | None = Field(..., description="Unique branch identifier")
     needsMoreThoughts: bool = Field(
         ..., description="Whether more thoughts are needed beyond estimate"
     )

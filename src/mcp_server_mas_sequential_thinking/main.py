@@ -366,9 +366,7 @@ def _normalize_sequence_values(
     thought_number: int, total_thoughts: int
 ) -> tuple[int, int]:
     """Normalize sequence counters so output schema remains valid."""
-    normalized_thought_number = max(
-        ValidationLimits.MIN_THOUGHT_NUMBER, thought_number
-    )
+    normalized_thought_number = max(ValidationLimits.MIN_THOUGHT_NUMBER, thought_number)
     normalized_total_thoughts = max(1, total_thoughts, normalized_thought_number)
     return normalized_thought_number, normalized_total_thoughts
 
@@ -382,9 +380,7 @@ def _derive_progress_state(
     """Derive loop-control signals for the MCP structured output."""
     inferred_remaining_steps = thought_number < total_thoughts
     should_continue = (
-        needs_more_thoughts
-        or next_thought_needed
-        or inferred_remaining_steps
+        needs_more_thoughts or next_thought_needed or inferred_remaining_steps
     )
 
     if needs_more_thoughts:
@@ -515,9 +511,7 @@ async def sequentialthinking(
     isRevision: Annotated[
         bool,
         Field(
-            description=(
-                "Set true only when this step revises an earlier conclusion."
-            ),
+            description=("Set true only when this step revises an earlier conclusion."),
         ),
     ],
     branchFromThought: Annotated[
@@ -541,9 +535,7 @@ async def sequentialthinking(
     needsMoreThoughts: Annotated[
         bool,
         Field(
-            description=(
-                "Set true only when you must continue beyond totalThoughts."
-            ),
+            description=("Set true only when you must continue beyond totalThoughts."),
         ),
     ],
 ) -> Annotated[CallToolResult, SequentialThinkingStructuredContent]:

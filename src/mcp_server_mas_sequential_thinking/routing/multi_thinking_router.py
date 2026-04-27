@@ -88,8 +88,12 @@ class MultiThinkingIntelligentRouter:
             complexity_metrics = await self.complexity_analyzer.analyze(thought_data)
 
         problem_type = complexity_metrics.primary_problem_type
-        thinking_modes_needed = complexity_metrics.thinking_modes_needed or ["SYNTHESIS"]
-        cost_reduction = self._estimate_cost_reduction(complexity_metrics.complexity_score)
+        thinking_modes_needed = complexity_metrics.thinking_modes_needed or [
+            "SYNTHESIS"
+        ]
+        cost_reduction = self._estimate_cost_reduction(
+            complexity_metrics.complexity_score
+        )
 
         reasoning = (
             "Fixed routing strategy: full_exploration is mandatory for all thoughts."
@@ -118,7 +122,9 @@ class MultiThinkingIntelligentRouter:
             raise ValueError(
                 "Unsupported strategy. Only 'full_exploration' is allowed."
             )
-        return await self.route_thought(thought_data, complexity_metrics=complexity_metrics)
+        return await self.route_thought(
+            thought_data, complexity_metrics=complexity_metrics
+        )
 
     def _estimate_cost_reduction(self, complexity_score: float) -> float:
         """Estimate cost reduction using the previous baseline model."""

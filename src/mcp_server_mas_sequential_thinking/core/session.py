@@ -2,8 +2,12 @@
 
 import asyncio
 from dataclasses import dataclass, field
+from typing import TYPE_CHECKING
 
 from mcp_server_mas_sequential_thinking.config.constants import ValidationLimits
+
+if TYPE_CHECKING:
+    from agno.team.team import Team
 
 from .models import ThoughtData
 from .types import BranchId, ThoughtNumber
@@ -24,7 +28,7 @@ class SessionMemory:
     )
     # Thread safety lock for concurrent access protection
     _lock: asyncio.Lock = field(default_factory=asyncio.Lock, init=False, repr=False)
-    _team: object | None = field(default=None, init=False, repr=False)
+    _team: "Team | None" = field(default=None, init=False, repr=False)
 
     # DoS protection constants as class attributes
     MAX_THOUGHTS_PER_SESSION: int = ValidationLimits.MAX_THOUGHTS_PER_SESSION

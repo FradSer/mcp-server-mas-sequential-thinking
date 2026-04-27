@@ -85,11 +85,17 @@ class CoordinationPlan:
         }
 
         strategy_value = cls._routing_value(routing_decision, "strategy")
-        complexity_level_value = cls._routing_value(routing_decision, "complexity_level")
-        complexity_score = float(cls._routing_value(routing_decision, "complexity_score"))
+        complexity_level_value = cls._routing_value(
+            routing_decision, "complexity_level"
+        )
+        complexity_score = float(
+            cls._routing_value(routing_decision, "complexity_score")
+        )
         reasoning = str(cls._routing_value(routing_decision, "reasoning"))
 
-        execution_mode = strategy_to_mode.get(strategy_value, ExecutionMode.SINGLE_AGENT)
+        execution_mode = strategy_to_mode.get(
+            strategy_value, ExecutionMode.SINGLE_AGENT
+        )
         specialists = complexity_to_specialists.get(complexity_level_value, ["general"])
 
         return cls(
