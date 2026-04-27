@@ -86,3 +86,36 @@ def test_factory_reads_culture_learning_env_flag(monkeypatch):
 
     assert agent.kwargs["add_culture_to_context"] is True
     assert agent.kwargs["update_cultural_knowledge"] is True
+
+
+def test_agents_with_history_persist_messages(monkeypatch):
+    """Agents with num_history_messages > 0 must store history to DB."""
+    monkeypatch.setattr(multi_thinking_core, "Agent", DummyAgent)
+    factory = multi_thinking_core.MultiThinkingAgentFactory(
+        learning_machine="learning",
+        learning_db="db",
+    )
+    for direction in [
+        multi_thinking_core.ThinkingDirection.FACTUAL,
+        multi_thinking_core.ThinkingDirection.CRITICAL,
+        multi_thinking_core.ThinkingDirection.OPTIMISTIC,
+        multi_thinking_core.ThinkingDirection.CREATIVE,
+        multi_thinking_core.ThinkingDirection.SYNTHESIS,
+        multi_thinking_core.ThinkingDirection.METACOGNITIVE,
+    ]:
+        agent = factory.create_thinking_agent(direction, model=SimpleNamespace())
+        assert agent.kwargs["store_history_messages"] is True
+
+
+def test_emotional_agent_does_not_persist_messages(monkeypatch):
+    """EMOTIONAL direction uses no history, so no need to store."""
+    monkeypatch.setattr(multi_thinking_core, "Agent", DummyAgent)
+    factory = multi_thinking_core.MultiThinkingAgentFactory(
+        learning_machine="learning",
+        learning_db="db",
+    )
+    agent = factory.create_thinking_agent(
+        multi_thinking_core.ThinkingDirection.EMOTIONAL,
+        model=SimpleNamespace(),
+    )
+    assert agent.kwargs["store_history_messages"] is False
