@@ -22,6 +22,7 @@ from mcp_server_mas_sequential_thinking.routing.multi_thinking_router import (
 )
 
 from .multi_thinking_core import (
+    MESSAGE_HISTORY_CONFIG,
     MultiThinkingAgentFactory,
     ProcessingDepth,
     ThinkingDirection,
@@ -37,18 +38,6 @@ if TYPE_CHECKING:
     )
 
 logger = logging.getLogger(__name__)
-
-# Message History Configuration (Agno 2.2.12+ optimization)
-# Defines optimal context window size for each thinking direction to reduce token usage
-MESSAGE_HISTORY_CONFIG = {
-    ThinkingDirection.FACTUAL: 5,  # Recent context for data gathering
-    ThinkingDirection.EMOTIONAL: 0,  # Fresh perspective without historical bias
-    ThinkingDirection.CRITICAL: 3,  # Focused risk analysis with minimal context
-    ThinkingDirection.OPTIMISTIC: 3,  # Focused opportunity analysis
-    ThinkingDirection.CREATIVE: 8,  # Broader context for creative connections
-    ThinkingDirection.SYNTHESIS: 10,  # Maximum context for comprehensive integration
-    ThinkingDirection.METACOGNITIVE: 5,  # Process analysis needs moderate context
-}
 
 
 @dataclass

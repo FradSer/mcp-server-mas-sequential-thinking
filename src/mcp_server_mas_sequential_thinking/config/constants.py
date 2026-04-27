@@ -393,3 +393,11 @@ class ProcessingStrategy(Enum):
     SINGLE_AGENT = "single_agent"
     MULTI_AGENT = "multi_agent"
     ADAPTIVE = "adaptive"
+
+
+class TeamModeMapping:
+    """Mapping of processing strategies to Agno TeamMode values."""
+
+    FULL_EXPLORATION = "broadcast"  # All hats run in parallel
+    SINGLE_DIRECTION = "route"  # Leader routes to one specialist
+    COORDINATED_SEQUENCE = "coordinate"  # Leader orchestrates sequence

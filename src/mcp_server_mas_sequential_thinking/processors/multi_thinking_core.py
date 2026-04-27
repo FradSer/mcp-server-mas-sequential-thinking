@@ -63,6 +63,20 @@ class ProcessingDepth(Enum):
     FULL = "full"  # Complete multi-thinking
 
 
+# Message History Configuration (Agno 2.5.x+ optimization)
+# Defines optimal context window size for each thinking direction to reduce token usage.
+# Agents with history_limit > 0 need store_history_messages=True to persist across sessions.
+MESSAGE_HISTORY_CONFIG = {
+    ThinkingDirection.FACTUAL: 5,  # Recent context for data gathering
+    ThinkingDirection.EMOTIONAL: 0,  # Fresh perspective without historical bias
+    ThinkingDirection.CRITICAL: 3,  # Focused risk analysis with minimal context
+    ThinkingDirection.OPTIMISTIC: 3,  # Focused opportunity analysis
+    ThinkingDirection.CREATIVE: 8,  # Broader context for creative connections
+    ThinkingDirection.SYNTHESIS: 10,  # Maximum context for comprehensive integration
+    ThinkingDirection.METACOGNITIVE: 5,  # Process analysis needs moderate context
+}
+
+
 @dataclass(frozen=True)
 class ThinkingTimingConfig:
     """Thinking direction timing configuration."""
@@ -674,6 +688,12 @@ class MultiThinkingAgentFactory:
             culture_learning_enabled,
         )
 
+        # Agno 2.5.0 defaults store_history_messages=False. Agents with
+        # num_history_messages > 0 need history persisted to DB for cross-session
+        # context. EMOTIONAL (limit=0) skips DB writes entirely.
+        history_limit = MESSAGE_HISTORY_CONFIG.get(thinking_direction, 0)
+        store_history = kwargs.pop("store_history_messages", history_limit > 0)
+
         # Create new agent
         agent = Agent(
             name=f"{thinking_direction.value.title()}AnalysisAgent",
@@ -687,6 +707,7 @@ class MultiThinkingAgentFactory:
             db=db_override,
             add_culture_to_context=add_culture_to_context,
             update_cultural_knowledge=update_cultural_knowledge,
+            store_history_messages=store_history,
             **kwargs,
         )
 

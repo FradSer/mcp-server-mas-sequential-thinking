@@ -51,6 +51,7 @@ DEEPSEEK_API_KEY=your_key                               # Provider API key
 DEEPSEEK_ENHANCED_MODEL_ID=deepseek-chat                # Synthesis model
 DEEPSEEK_STANDARD_MODEL_ID=deepseek-chat                # Individual hats model
 EXA_API_KEY=your_key                                    # Optional: Research capabilities
+TEAM_MODE=standard                                      # Team mode (standard/broadcast, route, coordinate)
 ```
 
 **Model Strategy:**
@@ -96,6 +97,8 @@ async with _processor_lock:
 
 **Parallel Processing:** Non-synthesis agents use `asyncio.gather` for simultaneous execution
 
+**TeamMode (secondary path):** `ProcessingOrchestrator._get_team()` constructs Agno Teams with `TeamMode` based on `TEAM_MODE` env var. Primary path (`MultiThinkingSequentialProcessor`) uses manual `asyncio.gather` and is unaffected. Mapping: standard/broadcast -> `TeamMode.broadcast`, coordinate -> `TeamMode.coordinate`, route -> `TeamMode.route`.
+
 ---
 
 ## Agno 2.5.9+ Modern Patterns
@@ -106,9 +109,10 @@ Use typed state models (`routing/workflow_state.py`) instead of raw session_stat
 
 ### Message History Optimization
 
-Control context window per agent via `MESSAGE_HISTORY_CONFIG` in `processors/multi_thinking_processor.py`:
+Control context window per agent via `MESSAGE_HISTORY_CONFIG` in `processors/multi_thinking_core.py`:
 - Emotional: 0 (fresh perspective), Critical/Optimistic: 3, Factual: 5, Creative: 8, Synthesis: 10
 - Pass `num_history_messages` to `agent.arun()` -- reduces token usage 40-60%.
+- Agno 2.5.0+ defaults `store_history_messages=False`. Agents with history > 0 must set `store_history_messages=True` for cross-session persistence (handled automatically in `create_thinking_agent()`).
 
 **Security & Rate Limiting:**
 - Prompt injection protection with regex patterns and Shannon entropy

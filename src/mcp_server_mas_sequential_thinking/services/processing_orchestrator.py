@@ -5,10 +5,13 @@ coordinating between single-agent and multi-agent approaches, and managing
 execution flows based on complexity analysis.
 """
 
+import os
 import time
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 from agno.agent import Agent
+from agno.team.mode import TeamMode
+from agno.team.team import Team
 
 from mcp_server_mas_sequential_thinking.config import get_model_config
 from mcp_server_mas_sequential_thinking.core import (
@@ -209,19 +212,78 @@ Provide a focused response with clear guidance for the next step."""
             Dictionary containing team information
         """
         team = self._get_team()
+        members = team.members if isinstance(team.members, list) else []
         return {
             "name": team.name,
-            "member_count": len(team.members),
+            "member_count": len(members),
             "leader_class": team.model.__class__.__name__,
             "leader_model": getattr(team.model, "id", "unknown"),
-            "member_names": ", ".join([m.name for m in team.members]),
+            "member_names": ", ".join(
+                str(m.name) for m in members if hasattr(m, "name")
+            ),
         }
 
-    def _get_team(self) -> Any:
-        """Return team attached to session, or raise a clear error."""
-        team = getattr(self._session, "team", None)
-        if team is None:
-            raise ThoughtProcessingError("Team is not attached to the current session")
+    def _resolve_team_mode(self, strategy: str | None = None) -> TeamMode:
+        """Resolve TeamMode based on processing strategy.
+
+        Args:
+            strategy: Processing strategy name (defaults to full_exploration)
+
+        Returns:
+            Appropriate TeamMode for the given strategy
+        """
+        if strategy == "full_exploration":
+            return TeamMode.broadcast
+        if strategy in ("single_direction", "route"):
+            return TeamMode.route
+        return TeamMode.coordinate
+
+    def _get_team(self) -> Team:
+        """Build an Agno Team with appropriate TeamMode.
+
+        Returns a Team constructed from model config with TeamMode determined
+        by the TEAM_MODE env var. "standard" defaults to broadcast (full exploration).
+        """
+        team = getattr(self._session, "_team", None)
+        if team is not None:
+            return team
+
+        model_config = get_model_config()
+        leader_model = model_config.create_enhanced_model()
+        standard_model = model_config.create_standard_model()
+
+        team_mode_str = os.environ.get("TEAM_MODE", "standard").lower()
+        strategy = (
+            "full_exploration"
+            if team_mode_str in ("standard", "broadcast")
+            else team_mode_str
+        )
+        team_mode = self._resolve_team_mode(strategy)
+
+        team = Team(
+            name="MultiThinkingTeam",
+            mode=team_mode,
+            model=leader_model,
+            members=[
+                Agent(
+                    name="FactualMember",
+                    model=standard_model,
+                    instructions=["Analyze objective facts and data."],
+                ),
+                Agent(
+                    name="CriticalMember",
+                    model=standard_model,
+                    instructions=["Identify risks and potential problems."],
+                ),
+                Agent(
+                    name="CreativeMember",
+                    model=standard_model,
+                    instructions=["Generate innovative ideas and alternatives."],
+                ),
+            ],
+        )
+
+        self._session._team = team
         return team
 
     def _log_single_agent_call(self, agent: Agent, prompt: str) -> None:

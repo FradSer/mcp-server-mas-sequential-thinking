@@ -24,6 +24,7 @@ class SessionMemory:
     )
     # Thread safety lock for concurrent access protection
     _lock: asyncio.Lock = field(default_factory=asyncio.Lock, init=False, repr=False)
+    _team: object | None = field(default=None, init=False, repr=False)
 
     # DoS protection constants as class attributes
     MAX_THOUGHTS_PER_SESSION: int = ValidationLimits.MAX_THOUGHTS_PER_SESSION
