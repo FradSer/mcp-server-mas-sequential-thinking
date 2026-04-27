@@ -1,0 +1,7 @@
+scopes:
+    - name: scripts
+      description: scripts for build and deployment; does not include source code or tests.
+    - name: src
+      description: src holds application modules; not tests or scripts.
+    - name: tests
+      description: tests include unit and integration tests; not source code or scripts.
