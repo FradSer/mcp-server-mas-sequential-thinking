@@ -30,7 +30,7 @@ def test_mcp_sdk_initialize_and_list_requests() -> None:
         async with stdio_client(server) as (read_stream, write_stream):
             async with ClientSession(read_stream, write_stream) as session:
                 initialize_result = await session.initialize()
-                assert initialize_result.serverInfo.name == "FastMCP"
+                assert initialize_result.server_info.name == "sequential-thinking"
 
                 tools_result = await session.list_tools()
                 assert any(
@@ -44,13 +44,13 @@ def test_mcp_sdk_initialize_and_list_requests() -> None:
                 assert sequential_tool.description is not None
                 assert "multi-step" in sequential_tool.description.lower()
                 assert "actively use reflection" in sequential_tool.description.lower()
-                assert sequential_tool.outputSchema is not None
+                assert sequential_tool.output_schema is not None
 
-                input_properties = sequential_tool.inputSchema.get("properties", {})
+                input_properties = sequential_tool.input_schema.get("properties", {})
                 assert "thought" in input_properties
                 assert "description" in input_properties["nextThoughtNeeded"]
 
-                output_properties = sequential_tool.outputSchema.get("properties", {})
+                output_properties = sequential_tool.output_schema.get("properties", {})
                 assert "should_continue" in output_properties
                 assert "next_thought_number" in output_properties
                 assert "stop_reason" in output_properties
@@ -91,11 +91,11 @@ def test_mcp_sdk_tool_call_request_shape() -> None:
                 assert isinstance(call_result.content, list)
                 assert call_result.content
                 assert "text" in call_result.content[0].model_dump()
-                assert call_result.structuredContent is not None
-                assert call_result.structuredContent["should_continue"] is True
-                assert call_result.structuredContent["next_thought_number"] == 1
+                assert call_result.structured_content is not None
+                assert call_result.structured_content["should_continue"] is True
+                assert call_result.structured_content["next_thought_number"] == 1
                 assert (
-                    call_result.structuredContent["stop_reason"] == "validation_error"
+                    call_result.structured_content["stop_reason"] == "validation_error"
                 )
 
     anyio.run(run_assertions)

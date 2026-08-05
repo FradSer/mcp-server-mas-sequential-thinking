@@ -82,6 +82,7 @@ TEAM_MODE=standard                                      # Team mode (standard/br
 **Import Safety:** Avoid circular dependencies:
 ```python
 from typing import TYPE_CHECKING
+
 if TYPE_CHECKING:
     from module import Class
 ```

@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- Upgraded all dependencies to latest versions (agno 2.8.6, mcp 2.0.0, anthropic 0.120.2, etc.)
+- **BREAKING**: Migrated MCP server from FastMCP to MCPServer (mcp 2.0.0). `structuredContent`/`isError` renamed to `structured_content`/`is_error`; server name is now `sequential-thinking`
+- Removed dead Smithery badge from README and fixed the Agno framework link
+
 ## [0.8.0] - 2026-02-02
 
 ### Added

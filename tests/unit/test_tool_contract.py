@@ -46,8 +46,8 @@ def test_build_call_result_includes_structured_contract_fields():
         next_thought_number=2,
     )
 
-    assert result.structuredContent is not None
-    assert result.structuredContent["should_continue"] is True
-    assert result.structuredContent["next_thought_number"] == 2
-    assert result.structuredContent["stop_reason"] == "next_thought_required"
-    assert result.structuredContent["next_call_arguments"]["thoughtNumber"] == 2
+    assert result.structured_content is not None
+    assert result.structured_content["should_continue"] is True
+    assert result.structured_content["next_thought_number"] == 2
+    assert result.structured_content["stop_reason"] == "next_thought_required"
+    assert result.structured_content["next_call_arguments"]["thoughtNumber"] == 2
