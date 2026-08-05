@@ -1,7 +1,7 @@
 """Smoke-test this MCP server with the official Python MCP client.
 
 Usage:
-  uv run --with mcp==1.8.0 --with anyio python scripts/mcp_python_client_smoke.py
+  uv run --with mcp --with anyio python scripts/mcp_python_client_smoke.py
 """
 
 from __future__ import annotations
@@ -56,7 +56,7 @@ async def main() -> None:
                     "needsMoreThoughts": False,
                 },
             )
-            print("call_tool isError:", call_result.isError)
+            print("call_tool is_error:", call_result.is_error)
             if call_result.content:
                 print("call_tool first content:", call_result.content[0])
 
