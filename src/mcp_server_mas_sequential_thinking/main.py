@@ -11,8 +11,8 @@ from html import escape
 from typing import Annotated
 
 from dotenv import load_dotenv
-from mcp.server.fastmcp import FastMCP
-from mcp.types import CallToolResult, TextContent
+from mcp.server.mcpserver import MCPServer
+from mcp_types import CallToolResult, TextContent
 from pydantic import BaseModel, Field, ValidationError
 
 from .config import ProcessingDefaults, SecurityConstants, ValidationLimits
@@ -81,8 +81,8 @@ async def app_lifespan(app) -> AsyncIterator[None]:
     logger.info("Server stopped")
 
 
-# Initialize FastMCP with lifespan
-mcp = FastMCP(lifespan=app_lifespan)
+# Initialize MCPServer with lifespan
+mcp = MCPServer(name="sequential-thinking", lifespan=app_lifespan)
 
 
 def sanitize_and_validate_input(text: str, max_length: int, field_name: str) -> str:
@@ -462,8 +462,8 @@ def _build_call_result(
 
     return CallToolResult(
         content=[TextContent(type="text", text=message)],
-        structuredContent=structured_content.model_dump(mode="json"),
-        isError=is_error,
+        structured_content=structured_content.model_dump(mode="json"),
+        is_error=is_error,
     )
 
 
